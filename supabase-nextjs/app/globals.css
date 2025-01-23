@@ -2,12 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .test {
-    @apply text-sm;
-  }
-}
-
 body {
   font-family: Arial, Helvetica, sans-serif;
 }
