@@ -74,10 +74,15 @@ export interface GroupName {
   name: string;
 }
 
-export interface SectionName {
+export interface MainSection {
   id: string;
   name: string;
-  groupNames: GroupName[];
+}
+
+export interface SubSection {
+  id: string;
+  name: string;
+  main_section_id: string;
 }
 
 export interface Task {
@@ -89,13 +94,13 @@ export interface Task {
 export interface FieldGroup {
   id: string;
   type: string;
-  group_id: string;
+  sub_section_id: string;
 }
 
 export interface Field {
   id: string;
   field_group_id: string;
-  name: string;
+  description: string;
   training_id: string | null;
 }
 

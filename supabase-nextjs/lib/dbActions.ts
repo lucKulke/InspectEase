@@ -5,6 +5,8 @@ import {
   AnnotationData,
   ResponseMetadata,
   DBAnnotationData,
+  MainSection,
+  SubSection,
 } from "./interfaces";
 
 export class DBActions {
@@ -160,6 +162,89 @@ export class DBActions {
       .from("inspection_plans")
       .select("*")
       .eq("id", inspection_plan_id);
+
+    return { data, error };
+  }
+
+  async inspectionPlanFormCreateMainSection(newMainSection: {
+    name: string;
+    inspection_plan_id: string;
+  }): Promise<{
+    data: MainSection[];
+    error: any;
+  }> {
+    // Replace with your bucket name
+    const { data, error } = await this.supabase
+      .from("inspection_plan_main_sections")
+      .insert([newMainSection])
+      .select();
+
+    return { data, error };
+  }
+  async inspectionPlanFormFetchMainSection(inspectionPlanId: string): Promise<{
+    data: MainSection[];
+    error: any;
+  }> {
+    // Replace with your bucket name
+    const { data, error } = await this.supabase
+      .from("inspection_plan_main_sections")
+      .select("*")
+      .eq("inspection_plan_id", inspectionPlanId);
+
+    return { data, error };
+  }
+  async inspectionPlanFormFetchSubSection(inspectionPlanId: string): Promise<{
+    data: SubSection[];
+    error: any;
+  }> {
+    // Replace with your bucket name
+    const { data, error } = await this.supabase
+      .from("inspection_plan_sub_sections")
+      .select("*")
+      .eq("inspection_plan_id", inspectionPlanId);
+
+    return { data, error };
+  }
+
+  async inspectionPlanFormCreateSubSection(newSubSection: {
+    name: string;
+    main_section_id: string;
+    inspection_plan_id: string;
+  }): Promise<{
+    data: SubSection[];
+    error: any;
+  }> {
+    // Replace with your bucket name
+    const { data, error } = await this.supabase
+      .from("inspection_plan_sub_sections")
+      .insert([newSubSection])
+      .select();
+
+    return { data, error };
+  }
+
+  async inspectionPlanFormDeleteSubSection(subSectionId: string): Promise<{
+    data: SubSection[];
+    error: any;
+  }> {
+    // Replace with your bucket name
+    const { data, error } = await this.supabase
+      .from("inspection_plan_sub_sections")
+      .delete()
+      .eq("id", subSectionId);
+
+    return { data, error };
+  }
+
+  async inspectionPlanFormDeleteMainSection(mainSectionId: string): Promise<{
+    data: MainSection[];
+    error: any;
+  }> {
+    // Replace with your bucket name
+    const { data, error } = await this.supabase
+      .from("inspection_plan_main_sections")
+      .delete()
+      .eq("id", mainSectionId);
 
     return { data, error };
   }
