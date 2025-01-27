@@ -26,15 +26,7 @@ const Vehicle = async ({
     return vehicles[0];
   };
 
-  const fetchInspectionPlans = async () => {
-    const { inspectionPlans, error } = await dbActions.fetchInspectionPlans(
-      vehicleId
-    );
-    return inspectionPlans;
-  };
-
   const vehicle = await fetchVehicle();
-  const inspectionPlans = await fetchInspectionPlans();
 
   return (
     <div>
@@ -54,7 +46,7 @@ const Vehicle = async ({
           </Link>
         </div>
         <VehicleInspectionPlanList
-          inspectionPlans={inspectionPlans}
+          vehicleId={vehicleId}
         ></VehicleInspectionPlanList>
       </div>
     </div>

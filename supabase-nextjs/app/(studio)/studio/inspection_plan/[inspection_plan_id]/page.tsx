@@ -13,17 +13,16 @@ const InspectionPlan = async ({
   const inspectionPlanId = (await params).inspection_plan_id;
   const supabase = await createClient();
   const dbActions = new DBActions(supabase);
-  const { data, error } = await dbActions.fetchInspectionPlanMetaData(
-    inspectionPlanId
-  );
-  console.log(data);
+  const { inspectionPlanMetaData, inspectionPlanMetaDataError } =
+    await dbActions.fetchInspectionPlanMetaData(inspectionPlanId);
+  console.log(inspectionPlanMetaData);
 
   return (
     <div>
       <Heading>Form Editor</Heading>
       <div className="flex justify-end">
         <InspectionPlanMetadataInfoCard
-          infos={data[0]}
+          infos={inspectionPlanMetaData[0]}
         ></InspectionPlanMetadataInfoCard>
       </div>
       <div className="mt-3">

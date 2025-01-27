@@ -73,15 +73,30 @@ const FormEditorSideBar = ({
     deleteSubSection(subSectionId);
   };
 
+  const scrollToSection = (id: string) => {
+    const section = document.getElementById(id);
+    if (section) {
+      const topOffset = 100; // Adjust this value for how far from the top you want the section
+      const sectionPosition =
+        section.getBoundingClientRect().top + window.pageYOffset;
+      const offsetPosition = sectionPosition - topOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+    }
+  };
+
   return (
     <div className="border-2 rounded-xl m-3 p-2 w-1/4">
       <ul className="space-y-6">
         {mainSections.map((mainSection) => (
           <li key={mainSection.id}>
             <div className="flex items-center space-x-3 group ">
-              <h2 className="text-sm text-slate-500 hover:cursor-pointer ">
-                {mainSection.name}
-              </h2>
+              <button onClick={() => scrollToSection(mainSection.id)}>
+                <h2 className="text-sm text-slate-500">{mainSection.name}</h2>
+              </button>
 
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger>
@@ -113,14 +128,16 @@ const FormEditorSideBar = ({
                   return subSection.main_section_id === mainSection.id;
                 })
                 .map((subSection) => (
-                  <li key={subSection.id} className="ml-2 flex group">
-                    <Dot></Dot>
-                    <h3 className="hover:cursor-pointer mr-2">
-                      {subSection.name}
-                    </h3>
+                  <li key={subSection.id} className="ml-2   flex group">
+                    <button onClick={() => scrollToSection(subSection.id)}>
+                      <div className="flex">
+                        <h3 className="mr-2">-</h3>
+                        <h3 className="mr-2">{subSection.name}</h3>
+                      </div>
+                    </button>
                     <DropdownMenu modal={false}>
                       <DropdownMenuTrigger>
-                        <Ellipsis className="text-slate-500  opacity-0 group-hover:opacity-100 group-hover:visible transition-opacity duration-200"></Ellipsis>
+                        <Ellipsis className="text-slate-500 opacity-0 group-hover:opacity-100 group-hover:visible transition-opacity duration-200"></Ellipsis>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
@@ -161,7 +178,13 @@ const FormEditorSideBar = ({
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleAddSubSection}>Save changes</Button>
+            {subSectionName.length > 3 ? (
+              <Button onClick={handleAddSubSection}>Save changes</Button>
+            ) : (
+              <Button disabled variant="outline">
+                Save changes
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -192,7 +215,13 @@ const FormEditorSideBar = ({
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={handleAddMainSection}>Save changes</Button>
+              {mainSectionName.length > 3 ? (
+                <Button onClick={handleAddMainSection}>Save changes</Button>
+              ) : (
+                <Button disabled variant="outline">
+                  Save changes
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>

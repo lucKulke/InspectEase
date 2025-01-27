@@ -13,10 +13,14 @@ const UserAvatar = async () => {
       <h1 className="text-sm">{user?.email}</h1>
       <Avatar>
         {user && (
-          <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-        )}
+          <>
+            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
 
-        <AvatarFallback>CN</AvatarFallback>
+            <AvatarFallback>
+              {user.email && <p>{user?.email[0].toLocaleUpperCase()}</p>}
+            </AvatarFallback>
+          </>
+        )}
       </Avatar>
     </div>
   );

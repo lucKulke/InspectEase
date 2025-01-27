@@ -4,6 +4,7 @@ import "./globals.css";
 import Link from "next/link";
 import { NotificationProvider } from "./context/NotificationContext";
 import NotificationBanner from "@/components/NotificationBanner";
+import BackHomeButton from "@/components/BackHomeButton";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,9 +32,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <div className="p-5 m-auto w-[1200px]">
-          {" "}
           <NotificationProvider>
-            <Link href="/">Back to Home</Link>
+            <BackHomeButton></BackHomeButton>
+            
             <NotificationBanner />
 
             {children}

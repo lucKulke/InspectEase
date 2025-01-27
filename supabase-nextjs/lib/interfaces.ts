@@ -36,7 +36,19 @@ export interface AnnotationData {
   type: "FreeText";
 }
 
-export interface DBAnnotationData {
+export interface DBInsertAnnotationData {
+  inspection_plan_id: string;
+  page: number;
+  type: string;
+  field_id: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+export interface DBSelectAnnotationData {
+  id: string;
   inspection_plan_id: string;
   page: number;
   type: string;
@@ -102,11 +114,26 @@ export interface Field {
   field_group_id: string;
   description: string;
   training_id: string | null;
+  annotation_id: string;
 }
 
 export interface Training {
   id: string;
   field_id: string;
-  raw: string;
-  extracted_string: string;
+  sentence: string;
+  extracted_substring: string;
+}
+
+export interface FillableFormsMetadata {
+  id: string;
+  order_number: string;
+  progress: number;
+  inspection_plan_id: string;
+}
+
+export interface FillableFormFields {
+  id: string;
+  created_at: string;
+  field_id: string;
+  fillable_form_id: string;
 }

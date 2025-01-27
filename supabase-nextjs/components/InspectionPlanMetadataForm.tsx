@@ -178,14 +178,23 @@ export default function InspectionPlanMetadataCard({
           );
           router.push(`/studio/vehicle/${vehicle_id}`);
         } else {
-          showNotification(
-            "Inspection Plan",
-            "Failed to create inspection plan.",
-            "error"
-          );
+          // Attempt to parse the error message from the response
+          try {
+            const errorData = await finalResponse.json(); // Parse JSON response
+            showNotification(
+              "Inspection Plan",
+              errorData.error || "An unexpected error occurred",
+              "error"
+            );
+          } catch (e) {
+            console.error("Failed to parse error response:", e);
+            showNotification(
+              "Inspection Plan",
+              "An unexpected error occurred while processing your request",
+              "error"
+            );
+          }
         }
-      } else {
-        console.log("Failed to extract annotations");
       }
     } catch (error) {
       console.error("Error uploading file:", error);

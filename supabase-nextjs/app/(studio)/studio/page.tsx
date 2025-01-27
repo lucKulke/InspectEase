@@ -10,21 +10,10 @@ import {
   TableFooter,
 } from "@/components/ui/table";
 import { createClient } from "@/utils/supabase/server";
-import { Bike, Car, Truck, Cog } from "lucide-react";
+import { Bike, Car, Truck, Cog, Plus } from "lucide-react";
 import { DBActions } from "@/lib/dbActions";
 import Link from "next/link";
 import Heading from "@/components/Heading";
-
-const vehiclestest = [
-  {
-    id: "34",
-    type: "INV001",
-    make: "Paid",
-    model: "$250.00",
-    hsn: "sdf",
-    tsn: "dads",
-  },
-];
 
 const Studio = async () => {
   const supabase = await createClient();
@@ -43,7 +32,15 @@ const Studio = async () => {
 
   return (
     <>
-      <Heading>All Vehicles</Heading>
+      <div className="flex items-center">
+        <Heading>All Vehicles</Heading>
+        <Link
+          className="border-2 p-2 rounded-xl hover:bg-slate-600 hover:border-slate-600 active:bg-black"
+          href={"/studio/new-vehicle"}
+        >
+          <Plus />
+        </Link>
+      </div>
       <div className="p-7">
         <Table>
           <TableCaption>A list of your vehicles.</TableCaption>
@@ -52,9 +49,9 @@ const Studio = async () => {
               <TableHead className="w-[100px]">Type</TableHead>
               <TableHead>Make</TableHead>
               <TableHead>Model</TableHead>
-              <TableHead className="text-right">HSN</TableHead>
+              <TableHead>HSN</TableHead>
               <TableHead>TSN</TableHead>
-              <TableHead>Inspection Plans</TableHead>
+              <TableHead className="text-right">Inspection Plans</TableHead>
               <TableHead className="text-right">Config</TableHead>
             </TableRow>
           </TableHeader>
@@ -64,9 +61,11 @@ const Studio = async () => {
                 <TableCell>{vehicleTypes[vehicle.type]}</TableCell>
                 <TableCell>{vehicle.make}</TableCell>
                 <TableCell>{vehicle.model}</TableCell>
-                <TableCell className="text-right">{vehicle.hsn}</TableCell>
+                <TableCell>{vehicle.hsn}</TableCell>
                 <TableCell>{vehicle.tsn}</TableCell>
-                <TableCell>{vehicle.inspection_plan_count}</TableCell>
+                <TableCell className="text-right">
+                  {vehicle.inspection_plan_count}
+                </TableCell>
                 <TableCell className="flex justify-end">
                   <Link href={"/studio/vehicle/" + vehicle.id}>
                     <Cog />

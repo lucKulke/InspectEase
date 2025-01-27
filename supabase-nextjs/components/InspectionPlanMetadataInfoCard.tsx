@@ -29,7 +29,10 @@ const InspectionPlanMetadataInfoCard = ({
           <div>frequency: {infos.frequency}</div>
           <div>
             <h2>vehicle id:</h2>
-            <Link href={"/studio/vehicle/" + infos.vehicle_id}>
+            <Link
+              className="text-blue-500"
+              href={"/studio/vehicle/" + infos.vehicle_id}
+            >
               {infos.vehicle_id}
             </Link>
           </div>
