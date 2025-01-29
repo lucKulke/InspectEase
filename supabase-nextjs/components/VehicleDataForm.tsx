@@ -39,7 +39,7 @@ import {
 import {
   VehicleFormValues,
   carSchema,
-} from "@/app/(studio)/studio/new-vehicle/page";
+} from "@/app/(form_builder)/studio/new-vehicle/page";
 import { Vehicle } from "@/lib/interfaces";
 
 interface VehicleDataForm {

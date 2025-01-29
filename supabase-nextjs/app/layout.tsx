@@ -34,7 +34,7 @@ export default function RootLayout({
         <div className="p-5 m-auto w-[1200px]">
           <NotificationProvider>
             <BackHomeButton></BackHomeButton>
-            
+
             <NotificationBanner />
 
             {children}
