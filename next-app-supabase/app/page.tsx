@@ -12,6 +12,11 @@ import { formFillerLinks } from "@/lib/links/formFillerLinks";
 export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      <form action="/auth/signout" method="post">
+        <button className="button block" type="submit">
+          Sign out
+        </button>
+      </form>
       <h1 className="text-4xl font-bold text-center mb-8 text-gray-800 dark:text-gray-100">
         Welcome to FormCraft
       </h1>
