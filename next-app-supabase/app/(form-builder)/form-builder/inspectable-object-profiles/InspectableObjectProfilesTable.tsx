@@ -45,6 +45,7 @@ export const InspectableObjectProfilesTable = ({
       <TableBody>
         {inspectableObjectProfiles.map((profile) => (
           <TableRow key={profile.id}>
+            <TableCell>{profile.name}</TableCell>
             <TableCell>{profile.description}</TableCell>
           </TableRow>
         ))}
