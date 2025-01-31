@@ -70,7 +70,7 @@ export const DragAndDropPropertyList = ({
   }
 
   return (
-    <div className="flex justify-center">
+    <div>
       <Reorder.Group
         axis="y"
         values={propertyList}
