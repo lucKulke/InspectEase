@@ -7,7 +7,7 @@ import { InspectableObjectsTable } from "./InspectableObjectsTable";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { DBActionsFormBuilder } from "@/lib/database/formBuilder";
+import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import { MainAddButton } from "@/components/MainAddButton";
 
 export default async function FormBuilder() {
@@ -19,7 +19,7 @@ export default async function FormBuilder() {
 
   if (!user) redirect("/login");
 
-  const dbActions = new DBActionsFormBuilder(supabase);
+  const dbActions = new DBActionsFormBuilderFetch(supabase);
 
   const { inspectableObjects, inspectableObjectsError } =
     await dbActions.fetchInspectableObjects(user.id);

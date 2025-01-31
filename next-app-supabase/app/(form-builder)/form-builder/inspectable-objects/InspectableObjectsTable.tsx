@@ -15,7 +15,7 @@ import { Bike, Car, Truck, Cog, Plus } from "lucide-react";
 import { fetchInspectableObjects } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 
-import { IInspectableObjectResponse } from "@/lib/database/formBuilderInterfaces";
+import { IInspectableObjectResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { SupabaseError } from "@/lib/globalInterfaces";
 
 const objectTypes: Record<string, any> = {

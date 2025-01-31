@@ -1,7 +1,7 @@
 import React from "react";
 import { InspectableObjectProfilesTable } from "./InspectableObjectProfilesTable";
 import { PageHeading } from "@/components/PageHeading";
-import { DBActionsFormBuilder } from "@/lib/database/formBuilder";
+import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { MainAddButton } from "@/components/MainAddButton";
@@ -16,7 +16,7 @@ export default async function InspectableObjectProfilesPage() {
 
   if (!user) redirect("/login");
 
-  const dbActions = new DBActionsFormBuilder(supabase);
+  const dbActions = new DBActionsFormBuilderFetch(supabase);
 
   const { inspectableObjectProfiles, inspectableObjectProfilesError } =
     await dbActions.fetchInspectableObjectProfiles(user.id);
@@ -24,15 +24,17 @@ export default async function InspectableObjectProfilesPage() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <PageHeading>Form Builder</PageHeading>
+        <PageHeading>Profiles</PageHeading>
         <MainAddButton
           href={formBuilderLinks["createInspectableObjectProfile"].href}
         />
       </div>
-      <InspectableObjectProfilesTable
-        inspectableObjectProfiles={inspectableObjectProfiles}
-        inspectableObjectProfilesError={inspectableObjectProfilesError}
-      />
+      <div className="flex justify-center m-10">
+        <InspectableObjectProfilesTable
+          inspectableObjectProfiles={inspectableObjectProfiles}
+          inspectableObjectProfilesError={inspectableObjectProfilesError}
+        />
+      </div>
     </div>
   );
 }

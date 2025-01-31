@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/card";
 
 import { useNotification } from "@/app/context/NotificationContext";
-import { IconSelector } from "./IconSelector";
+import { IconSelector } from "../../../../../components/IconSelector";
 import { IconType } from "@/lib/availableIcons";
 import { createInspectableObjectProfile } from "./actions";
 import { redirect } from "next/navigation";
@@ -56,19 +56,23 @@ export const CreateProfileCard = () => {
   });
 
   async function onSubmit(formData: MetadataFormValues) {
-    const { inspectableObjectProfiles, inspectableObjectProfilesError } =
-      await createInspectableObjectProfile(formData, iconKey);
+    const { inspectableObjectProfile, inspectableObjectProfileError } =
+      await createInspectableObjectProfile({
+        name: formData.name,
+        description: formData.description,
+        icon_key: iconKey,
+      });
 
-    if (inspectableObjectProfilesError) {
+    if (inspectableObjectProfileError) {
       showNotification(
         "Create Profile",
-        `Error: ${inspectableObjectProfilesError.message} (${inspectableObjectProfilesError.code})`,
+        `Error: ${inspectableObjectProfileError.message} (${inspectableObjectProfileError.code})`,
         "error"
       );
       return;
     }
 
-    const profileId = inspectableObjectProfiles[0].id;
+    const profileId = inspectableObjectProfile.id;
 
     showNotification(
       "Create Profile",
