@@ -28,7 +28,9 @@ export default async function FormBuilder() {
     <div className="">
       <div className="flex justify-between items-center">
         <PageHeading>All Objects</PageHeading>
-        <MainAddButton href={formBuilderLinks["home"].href} />
+        <MainAddButton
+          href={formBuilderLinks["createInspectableObject"].href}
+        />
       </div>
 
       <InspectableObjectsTable

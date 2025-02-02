@@ -13,7 +13,7 @@ export const NotificationBanner: React.FC = () => {
 
   const bannerClasses = {
     error: "bg-red-500",
-    info: "bg-blue-500",
+    info: "bg-blue-200",
     warning: "bg-yellow-500 text-black",
   };
 

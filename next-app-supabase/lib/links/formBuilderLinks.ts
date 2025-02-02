@@ -12,4 +12,8 @@ export const formBuilderLinks = {
     label: "Create Profile",
     href: "/form-builder/inspectable-object-profiles/create",
   },
+  createInspectableObject: {
+    label: "Create Object",
+    href: "/form-builder/inspectable-objects/create",
+  },
 };

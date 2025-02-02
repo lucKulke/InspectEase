@@ -42,7 +42,7 @@ export interface IInspectableObjectProfilePropertyInsert {
 }
 
 export interface IInspectableObjectProfilePropertyResponse {
-  id: string;
+  id: UUID;
   name: string;
   description: string;
   order_number: number;

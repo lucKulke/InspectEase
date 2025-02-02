@@ -1,11 +1,14 @@
 "use server";
-import { DBActionsFormBuilderCreate } from "@/lib/database/form-builder/formBuilderCreate";
+
 import {
   IInspectableObjectProfilePropertyInsert,
   IInspectableObjectProfilePropertyResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
+import { DBActionsFormBuilderCreate } from "@/lib/database/form-builder/formBuilderCreate";
 import { DBActionsFormBuilderUpdate } from "@/lib/database/form-builder/formBuilderUpdate";
+import { DBActionsFormBuilderDelete } from "@/lib/database/form-builder/formBuilderDelete";
 import { createClient } from "@/utils/supabase/server";
+import { UUID } from "crypto";
 
 export async function createProfileProperty(
   property: IInspectableObjectProfilePropertyInsert
@@ -23,4 +26,11 @@ export async function updateProfileProperty(
   const dbActions = new DBActionsFormBuilderUpdate(supabase);
 
   return await dbActions.updateInspectableObjectProfileProperty(property);
+}
+
+export async function deleteProfileProperty(propertyId: UUID) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderDelete(supabase);
+
+  return await dbActions.deleteInspectableObjectProfileProperty(propertyId);
 }

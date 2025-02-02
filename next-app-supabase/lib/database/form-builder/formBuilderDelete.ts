@@ -34,4 +34,29 @@ export class DBActionsFormBuilderDelete {
       deletedInspectableObjectProfileError: error as SupabaseError | null,
     };
   }
+
+  async deleteInspectableObjectProfileProperty(propertyId: UUID): Promise<{
+    deletedInspectableObjectProfileProperty: IInspectableObjectProfileResponse;
+    deletedInspectableObjectProfilePropertyError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_profile_property")
+      .delete()
+      .eq("id", propertyId)
+      .select();
+
+    console.log("delete inspectable object profile property in db:", data);
+    if (error) {
+      console.error(
+        "delete inspectable object profile property in db error:",
+        error
+      );
+    }
+
+    return {
+      deletedInspectableObjectProfileProperty: data ? data[0] : null,
+      deletedInspectableObjectProfilePropertyError:
+        error as SupabaseError | null,
+    };
+  }
 }
