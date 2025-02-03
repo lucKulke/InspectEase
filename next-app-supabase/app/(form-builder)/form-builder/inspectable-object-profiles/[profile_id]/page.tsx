@@ -19,7 +19,7 @@ export default async function InspectableObjectProfilePage({
 
   if (!user) redirect("/login");
 
-  const { inspectableObjectProfile, inspectableObjectProfilesError } =
+  const { inspectableObjectProfile, inspectableObjectProfileError } =
     await dbActions.fetchInspectableObjectProfile(profileId);
 
   const {
@@ -33,7 +33,7 @@ export default async function InspectableObjectProfilePage({
       <div className="flex justify-center">
         <ProfileCard
           profileData={inspectableObjectProfile}
-          profileDataError={inspectableObjectProfilesError}
+          profileDataError={inspectableObjectProfileError}
           profilePropertys={inspectableObjectProfilePropertys}
           profilePropertysError={inspectableObjectProfilePropertysError}
         ></ProfileCard>

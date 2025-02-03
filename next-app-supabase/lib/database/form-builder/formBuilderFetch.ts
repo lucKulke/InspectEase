@@ -34,6 +34,26 @@ export class DBActionsFormBuilderFetch {
       inspectableObjectsError: error as SupabaseError,
     };
   }
+
+  async fetchInspectableObject(objectId: UUID): Promise<{
+    inspectableObject: IInspectableObjectResponse;
+    inspectableObjectError: SupabaseError;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object")
+      .select("*")
+      .eq("id", objectId);
+
+    console.log("fetch inspectable object in db:", data);
+    if (error) {
+      console.error("fetch inspectable object in db error: ", error);
+    }
+
+    return {
+      inspectableObject: data ? data[0] : null,
+      inspectableObjectError: error as SupabaseError,
+    };
+  }
   async fetchInspectableObjectPropertys(objectId: UUID): Promise<{
     inspectableObjectPropertys: IInspectableObjectPropertyResponse[];
     inspectableObjectPropertysError: SupabaseError;
@@ -95,8 +115,8 @@ export class DBActionsFormBuilderFetch {
   }
 
   async fetchInspectableObjectProfile(profileId: UUID): Promise<{
-    inspectableObjectProfile: IInspectableObjectProfileResponse | null;
-    inspectableObjectProfilesError: SupabaseError | null;
+    inspectableObjectProfile: IInspectableObjectProfileResponse;
+    inspectableObjectProfileError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("inspectable_object_profile")
@@ -109,10 +129,8 @@ export class DBActionsFormBuilderFetch {
     }
 
     return {
-      inspectableObjectProfile: data
-        ? (data[0] as IInspectableObjectProfileResponse)
-        : null,
-      inspectableObjectProfilesError: error as SupabaseError | null,
+      inspectableObjectProfile: data ? data[0] : null,
+      inspectableObjectProfileError: error as SupabaseError | null,
     };
   }
 

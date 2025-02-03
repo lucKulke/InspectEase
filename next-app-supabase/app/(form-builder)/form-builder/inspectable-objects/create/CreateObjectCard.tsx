@@ -32,7 +32,7 @@ import {
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { redirect } from "next/navigation";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 

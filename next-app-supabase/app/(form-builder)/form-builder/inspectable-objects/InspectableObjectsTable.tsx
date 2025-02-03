@@ -26,10 +26,12 @@ import {
   IInspectableObjectResponse,
   IInspectableObjectPropertyResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
-import { SupabaseError } from "@/lib/globalInterfaces";
-import { redirect } from "next/navigation";
+
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 import { UUID } from "crypto";
+import { Spinner } from "@/components/Spinner";
+
+import Link from "next/link";
 
 const objectTypes: Record<string, any> = {
   motorbike: <Bike />,
@@ -121,7 +123,6 @@ export const InspectableObjectsTable = ({
   };
 
   useEffect(() => {
-    console.log("rerender", profile.id);
     const profileProper = fetchProfilePropertys();
     const obj = fetchObjectsByProfileId();
   }, []);
@@ -159,7 +160,7 @@ export const InspectableObjectsTable = ({
     return 0;
   }
 
-  return (
+  return objects ? (
     <Table>
       <TableCaption>A list of your objects.</TableCaption>
       <TableHeader>
@@ -170,21 +171,33 @@ export const InspectableObjectsTable = ({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {objects &&
-          Object.entries(objects).map(([objectId, propertys]) => {
-            console.log("table row");
-            return (
-              <TableRow key={objectId}>
-                {propertys.sort(compareObjectPropertys).map((prop) => (
-                  <TableCell key={prop.id}>{prop.value}</TableCell>
-                ))}
-              </TableRow>
-            );
-          })}
-        {/* {inspectableObjects.map((object) => (
-          
-        ))} */}
+        {Object.entries(objects).map(([objectId, propertys]) => {
+          return (
+            <TableRow key={objectId}>
+              {propertys.sort(compareObjectPropertys).map((prop) => (
+                <TableCell key={prop.id}>{prop.value}</TableCell>
+              ))}
+              <TableCell>
+                <div className="flex justify-end">
+                  <Link
+                    href={
+                      formBuilderLinks["inspectableObjects"].href +
+                      "/" +
+                      objectId
+                    }
+                  >
+                    <Cog />
+                  </Link>
+                </div>
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
+  ) : (
+    <div className="flex justify-center">
+      <Spinner></Spinner>
+    </div>
   );
 };
