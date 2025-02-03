@@ -12,11 +12,24 @@ import {
 } from "@/components/ui/table";
 import { createClient } from "@/utils/supabase/server";
 import { Bike, Car, Truck, Cog, Plus } from "lucide-react";
-import { fetchInspectableObjects } from "./actions";
+import {
+  fetchInspectableObjectProfilePropertys,
+  fetchInspectableObjects,
+  fetchInspectableObjectsByProfileId,
+  fetchObjectPropertys,
+} from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 
-import { IInspectableObjectResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
+import {
+  IInspectableObjectProfileResponse,
+  IInspectableObjectProfilePropertyResponse,
+  IInspectableObjectResponse,
+  IInspectableObjectPropertyResponse,
+} from "@/lib/database/form-builder/formBuilderInterfaces";
 import { SupabaseError } from "@/lib/globalInterfaces";
+import { redirect } from "next/navigation";
+import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
+import { UUID } from "crypto";
 
 const objectTypes: Record<string, any> = {
   motorbike: <Bike />,
@@ -25,21 +38,125 @@ const objectTypes: Record<string, any> = {
 };
 
 interface InspectableObjectsTableProps {
-  inspectableObjects: IInspectableObjectResponse[];
-  inspectableObjectsError: SupabaseError | null;
+  profile: IInspectableObjectProfileResponse;
 }
 
 export const InspectableObjectsTable = ({
-  inspectableObjects,
-  inspectableObjectsError,
+  profile,
 }: InspectableObjectsTableProps) => {
   const { showNotification } = useNotification();
-  if (inspectableObjectsError) {
-    showNotification(
-      "Objects",
-      `Error: ${inspectableObjectsError.message} (${inspectableObjectsError.code})`,
-      "error"
-    );
+
+  const [profilePropertys, setProfilePropertys] =
+    useState<IInspectableObjectProfilePropertyResponse[]>();
+  const [objects, setObjects] =
+    useState<Record<UUID, IInspectableObjectPropertyResponse[]>>();
+  const [propertyOrder, setPropertyOrder] = useState<Record<UUID, number>>();
+
+  const fetchProfilePropertys = async () => {
+    const {
+      inspectableObjectProfilePropertys,
+      inspectableObjectProfilePropertysError,
+    } = await fetchInspectableObjectProfilePropertys(profile.id);
+
+    if (inspectableObjectProfilePropertysError) {
+      showNotification(
+        "Fetch Profile Propertys",
+        `Error: ${inspectableObjectProfilePropertysError.message} ${inspectableObjectProfilePropertysError.code}`,
+        "error"
+      );
+      return;
+    }
+
+    const tempPropOrder: Record<UUID, number> = {};
+    inspectableObjectProfilePropertys.forEach((prop) => {
+      tempPropOrder[prop.id] = prop.order_number;
+    });
+
+    setPropertyOrder(tempPropOrder);
+
+    setProfilePropertys(inspectableObjectProfilePropertys);
+    return inspectableObjectProfilePropertys;
+  };
+
+  const fetchObjectsByProfileId = async () => {
+    const { inspectableObjects, inspectableObjectsError } =
+      await fetchInspectableObjectsByProfileId(profile.id);
+
+    if (inspectableObjectsError) {
+      showNotification(
+        `Fetch Objects with profile '${profile.name}'`,
+        `Error: ${inspectableObjectsError.message} ${inspectableObjectsError.code}`,
+        "error"
+      );
+      return;
+    }
+
+    // Use Promise.all to fetch properties in parallel
+    const objectPropertiesPromises = inspectableObjects.map(async (object) => {
+      console.log("fetch object props", object.id);
+      const { inspectableObjectPropertys, inspectableObjectPropertysError } =
+        await fetchObjectPropertys(object.id);
+
+      if (inspectableObjectPropertysError) {
+        console.error(
+          `Error fetching properties for object ${object.id}:`,
+          inspectableObjectPropertysError
+        );
+        return { objectId: object.id, properties: [] }; // Handle errors gracefully
+      }
+
+      return { objectId: object.id, properties: inspectableObjectPropertys };
+    });
+
+    const resolvedProperties = await Promise.all(objectPropertiesPromises);
+
+    // Convert array to Record<UUID, IInspectableObjectPropertyResponse[]>
+    const tempObjects: Record<UUID, IInspectableObjectPropertyResponse[]> = {};
+    resolvedProperties.forEach(({ objectId, properties }) => {
+      tempObjects[objectId] = properties;
+    });
+
+    setObjects(tempObjects);
+    console.log("temp objects", tempObjects);
+  };
+
+  useEffect(() => {
+    console.log("rerender", profile.id);
+    const profileProper = fetchProfilePropertys();
+    const obj = fetchObjectsByProfileId();
+  }, []);
+
+  function compareProfilePropertys(
+    a: IInspectableObjectProfilePropertyResponse,
+    b: IInspectableObjectProfilePropertyResponse
+  ) {
+    if (a.order_number < b.order_number) return -1;
+
+    if (a.order_number > b.order_number) return 1;
+
+    return 0;
+  }
+
+  function compareObjectPropertys(
+    a: IInspectableObjectPropertyResponse,
+    b: IInspectableObjectPropertyResponse
+  ) {
+    console.log("before");
+    if (!propertyOrder) return 0;
+    console.log("true");
+    if (
+      propertyOrder[a.profile_property_id] <
+      propertyOrder[b.profile_property_id]
+    )
+      return -1;
+
+    if (
+      propertyOrder[a.profile_property_id] >
+      propertyOrder[b.profile_property_id]
+    )
+      return 1;
+
+    return 0;
   }
 
   return (
@@ -47,15 +164,26 @@ export const InspectableObjectsTable = ({
       <TableCaption>A list of your objects.</TableCaption>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-[100px]">Type</TableHead>
+          {profilePropertys?.sort(compareProfilePropertys).map((property) => (
+            <TableHead key={property.id}>{property.name}</TableHead>
+          ))}
         </TableRow>
       </TableHeader>
       <TableBody>
-        {inspectableObjects.map((object) => (
-          <TableRow key={object.id}>
-            <TableCell>{objectTypes[object.type]}</TableCell>
-          </TableRow>
-        ))}
+        {objects &&
+          Object.entries(objects).map(([objectId, propertys]) => {
+            console.log("table row");
+            return (
+              <TableRow key={objectId}>
+                {propertys.sort(compareObjectPropertys).map((prop) => (
+                  <TableCell key={prop.id}>{prop.value}</TableCell>
+                ))}
+              </TableRow>
+            );
+          })}
+        {/* {inspectableObjects.map((object) => (
+          
+        ))} */}
       </TableBody>
     </Table>
   );

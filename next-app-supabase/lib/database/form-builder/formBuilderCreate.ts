@@ -1,9 +1,12 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  IInspectableObjectInsert,
   IInspectableObjectProfileInsert,
   IInspectableObjectProfilePropertyInsert,
   IInspectableObjectProfilePropertyResponse,
   IInspectableObjectProfileResponse,
+  IInspectableObjectPropertyInsert,
+  IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
@@ -60,6 +63,48 @@ export class DBActionsFormBuilderCreate {
     return {
       inspectableObjectProfileProperty: data ? data[0] : null,
       inspectableObjectProfilePropertyError: error as SupabaseError | null,
+    };
+  }
+
+  async createInspectableObjectProperty(
+    propertyData: IInspectableObjectPropertyInsert[]
+  ): Promise<{
+    inspectableObjectPropertys: IInspectableObjectPropertyResponse[];
+    inspectableObjectPropertysError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_property")
+      .insert(propertyData)
+      .select();
+
+    console.log("create inspectable object property in db:", data);
+    if (error) {
+      console.error("create inspectable object property in db error: ", error);
+    }
+
+    return {
+      inspectableObjectPropertys: data ? data : [],
+      inspectableObjectPropertysError: error as SupabaseError | null,
+    };
+  }
+
+  async createInspectableObject(object: IInspectableObjectInsert): Promise<{
+    inspectableObject: IInspectableObjectResponse;
+    inspectableObjectError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object")
+      .insert([object])
+      .select();
+
+    console.log("create inspectable object in db:", data);
+    if (error) {
+      console.error("create inspectable object in db error: ", error);
+    }
+
+    return {
+      inspectableObject: data ? data[0] : null,
+      inspectableObjectError: error as SupabaseError | null,
     };
   }
 }

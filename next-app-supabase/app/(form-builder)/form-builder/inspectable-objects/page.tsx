@@ -10,7 +10,7 @@ import { redirect } from "next/navigation";
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import { MainAddButton } from "@/components/MainAddButton";
 
-export default async function FormBuilder() {
+export default async function ObjectsPage() {
   const supabase = await createClient("form_builder");
 
   const {
@@ -21,22 +21,28 @@ export default async function FormBuilder() {
 
   const dbActions = new DBActionsFormBuilderFetch(supabase);
 
-  const { inspectableObjects, inspectableObjectsError } =
-    await dbActions.fetchInspectableObjects(user.id);
+  const { inspectableObjectProfiles, inspectableObjectProfilesError } =
+    await dbActions.fetchInspectableObjectProfiles(user.id);
 
   return (
     <div className="">
       <div className="flex justify-between items-center">
         <PageHeading>All Objects</PageHeading>
+
         <MainAddButton
           href={formBuilderLinks["createInspectableObject"].href}
         />
       </div>
-
-      <InspectableObjectsTable
-        inspectableObjects={inspectableObjects}
-        inspectableObjectsError={inspectableObjectsError}
-      />
+      <ul>
+        {inspectableObjectProfiles.map((profile) => (
+          <li key={profile.id}>
+            <p>{profile.name}</p>
+            <InspectableObjectsTable
+              profile={profile}
+            ></InspectableObjectsTable>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

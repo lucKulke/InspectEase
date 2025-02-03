@@ -1,21 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-
 import {
   Card,
   CardContent,
@@ -24,66 +8,132 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { useNotification } from "@/app/context/NotificationContext";
-import { IconSelector } from "../../../../../components/IconSelector";
-import { IconType } from "@/lib/availableIcons";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
+import { Label } from "@/components/ui/label";
+
+import { useNotification } from "@/app/context/NotificationContext";
+import { UUID } from "crypto";
+import {
+  createObjectPropertys,
+  createObject,
+  fetchObjectProfilePropertys,
+} from "./actions";
+import { SupabaseError } from "@/lib/globalInterfaces";
+import {
+  IInspectableObjectProfilePropertyResponse,
+  IInspectableObjectProfileResponse,
+} from "@/lib/database/form-builder/formBuilderInterfaces";
 import { redirect } from "next/navigation";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
-const profileSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().min(1, "Description is required"),
-});
+interface CreateObjectCardProps {
+  availableProfiles: IInspectableObjectProfileResponse[];
+  availableProfilesError: SupabaseError | null;
+}
 
-type MetadataFormValues = z.infer<typeof profileSchema>;
-
-export const CreateObjectCard = () => {
+export const CreateObjectCard = ({
+  availableProfiles,
+  availableProfilesError,
+}: CreateObjectCardProps) => {
   const { showNotification } = useNotification();
+  const [selectedProfileId, setSelectedProfileId] = useState<UUID>();
+  const [rerenderkey, setRerenderKey] = useState(+new Date());
+  const [profilePropertys, setProfilePropertys] =
+    useState<IInspectableObjectProfilePropertyResponse[]>();
+  const [propertyValues, setPropertyValues] = useState<Record<string, string>>(
+    {}
+  );
 
-  const [iconKey, setIconKey] = useState<IconType>("default");
+  if (availableProfilesError) {
+    showNotification(
+      "Fetch Profiles",
+      `Error: ${availableProfilesError.message} (${availableProfilesError.code})`,
+      "error"
+    );
+    redirect(formBuilderLinks["inspectableObjects"].href);
+  }
 
-  const onIconSelect = (key: IconType) => {
-    setIconKey(key);
+  const handleSelectProfile = async (profileId: UUID) => {
+    setSelectedProfileId(profileId);
+    console.log("load propertys");
+    const {
+      inspectableObjectProfilePropertys,
+      inspectableObjectProfilePropertysError,
+    } = await fetchObjectProfilePropertys(profileId);
+
+    if (inspectableObjectProfilePropertysError) {
+      showNotification(
+        "Fetch Profile Propertys",
+        `Error: ${inspectableObjectProfilePropertysError.message} (${inspectableObjectProfilePropertysError.code})`,
+        "error"
+      );
+      setSelectedProfileId(undefined);
+      setRerenderKey(+new Date());
+    } else {
+      setProfilePropertys(inspectableObjectProfilePropertys);
+    }
   };
 
-  const form = useForm<MetadataFormValues>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-    },
-  });
+  const handleInputChange = (propertyId: string, value: string) => {
+    setPropertyValues((prev) => ({ ...prev, [propertyId]: value }));
+  };
 
-  async function onSubmit(formData: MetadataFormValues) {
-    const { inspectableObjectProfile, inspectableObjectProfileError } =
-      await createInspectableObjectProfile({
-        name: formData.name,
-        description: formData.description,
-        icon_key: iconKey,
-      });
+  const handleSubmit = async () => {
+    if (!selectedProfileId) return;
+    const { inspectableObject, inspectableObjectError } = await createObject(
+      selectedProfileId
+    );
 
-    if (inspectableObjectProfileError) {
+    if (inspectableObjectError) {
       showNotification(
-        "Create Profile",
-        `Error: ${inspectableObjectProfileError.message} (${inspectableObjectProfileError.code})`,
+        "Create Object",
+        `Error: ${inspectableObjectError.message} (${inspectableObjectError.code})`,
         "error"
       );
       return;
     }
 
-    const profileId = inspectableObjectProfile.id;
+    const { inspectableObjectPropertys, inspectableObjectPropertysError } =
+      await createObjectPropertys(inspectableObject.id, propertyValues);
+
+    if (inspectableObjectPropertysError) {
+      showNotification(
+        "Create Object Propertys",
+        `Error: ${inspectableObjectPropertysError.message} (${inspectableObjectPropertysError.code})`,
+        "error"
+      );
+      return;
+    }
 
     showNotification(
-      "Create Profile",
-      `Successfully created profile with id '${profileId}'`,
+      "Create Object",
+      `Successfully created Object with id '${inspectableObject.id}'`,
       "info"
     );
-    redirect(
-      formBuilderLinks["inspectableObjectProfiles"].href + "/" + profileId
-    );
-  }
 
+    redirect(formBuilderLinks["inspectableObjects"].href);
+  };
+
+  function compare(
+    a: IInspectableObjectProfilePropertyResponse,
+    b: IInspectableObjectProfilePropertyResponse
+  ) {
+    if (a.order_number < b.order_number) return -1;
+
+    if (a.order_number > b.order_number) return 1;
+
+    return 0;
+  }
   return (
     <Card className="w-1/2">
       <div className="flex justify-between items-center">
@@ -91,53 +141,48 @@ export const CreateObjectCard = () => {
           <CardTitle>Object</CardTitle>
           <CardDescription>Enter objects metadata.</CardDescription>
         </CardHeader>
-        <IconSelector onSelect={onIconSelect} currentIcon={iconKey} />
       </div>
       <CardContent className="space-y-5">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. BMW m3" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    The name of the Object
-                  </FormDescription>  
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
+        <Select
+          key={rerenderkey}
+          onValueChange={(profileId) => handleSelectProfile(profileId as UUID)}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select profile..." />
+          </SelectTrigger>
+          <SelectContent>
+            {availableProfiles.map((profile) => (
+              <SelectItem key={profile.id} value={profile.id}>
+                {profile.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {profilePropertys && (
+          <div>
+            <ul className="space-y-3">
+              {profilePropertys?.sort(compare).map((property) => (
+                <li key={property.id}>
+                  <Label>
+                    {property.name}
                     <Input
-                      placeholder="e.g. This profile includes all cars"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    The description of the profile.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
+                      onChange={(e) =>
+                        handleInputChange(property.id, e.target.value)
+                      }
+                      value={propertyValues[property.id] || ""}
+                    ></Input>
+                  </Label>
+                  <p className="text-sm text-slate-500">
+                    {property.description}
+                  </p>
+                </li>
+              ))}
+            </ul>
             <div className="flex justify-center mt-5">
-              <Button type="submit">Submit</Button>
+              <Button onClick={() => handleSubmit()}>Submit</Button>
             </div>
-          </form>
-        </Form>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

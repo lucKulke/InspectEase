@@ -50,3 +50,30 @@ export interface IInspectableObjectProfilePropertyResponse {
 }
 
 // ---------------------------
+
+// Inspectable object propertys
+
+export interface IInspectableObjectPropertyInsert {
+  object_id: UUID;
+  profile_property_id: UUID;
+  value: string;
+}
+
+export interface IInspectableObjectPropertyResponse
+  extends IInspectableObjectPropertyInsert {
+  id: UUID;
+  created_at: Date | string;
+}
+
+// Inspectable object
+
+export interface IInspectableObjectInsert {
+  profile_id: UUID;
+}
+
+export interface IInspectableObjectResponse extends IInspectableObjectInsert {
+  id: UUID;
+  created_at: Date | string;
+  updated_at: string | Date;
+  profile_id: UUID;
+}
