@@ -80,7 +80,8 @@ export interface IInspectableObjectResponse extends IInspectableObjectInsert {
 
 // -------------------
 
-export interface IInspectableObjectResponseWithInspectableObjectProperties
+export interface IInspectableObjectWithPropertiesAndProfileResponse
   extends IInspectableObjectResponse {
   inspectable_object_property: IInspectableObjectPropertyResponse[];
+  inspectable_object_profile: IInspectableObjectProfileResponse;
 }

@@ -4,6 +4,7 @@ import {
   IInspectableObjectProfileResponse,
   IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
+  IInspectableObjectWithPropertiesAndProfileResponse,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
@@ -74,27 +75,46 @@ export class DBActionsFormBuilderFetch {
     };
   }
 
-  async fetchInspectableObjectWithProperties(objectId: UUID): Promise<null> {
+  async fetchInspectableObjectWithPropertiesAndProfile(
+    objectId: UUID
+  ): Promise<{
+    inspectableObjectWithPropertiesAndProfile:
+      | IInspectableObjectWithPropertiesAndProfileResponse[]
+      | null;
+    inspectableObjectWithPropertiesAndProfileError: SupabaseError | null;
+  }> {
     const { data, error } = await this.supabase
       .from("inspectable_object")
-      .select("*, inspectable_object_property(*)")
+      .select(
+        `
+    *, 
+    inspectable_object_property(*), 
+    inspectable_object_profile!profile_id(*)
+    
+  `
+      )
       .eq("id", objectId);
 
-    console.log("fetch inspectable objects test in db:", data);
+    console.log(
+      "fetch inspectable object with properties and profile test in db:",
+      data
+    );
     if (error) {
-      console.error("fetch inspectable objects test in db error: ", error);
+      console.log(
+        "fetch inspectable  object with properties and profile in db error: ",
+        error
+      );
     }
 
-    if (data) {
-      const newData = data as Special[];
-      console.log(newData[0].inspectable_object_property);
-    }
-    return null;
-
-    // return {
-    //   inspectableObjectPropertys: data ? data : [],
-    //   inspectableObjectPropertysError: error as SupabaseError,
-    // };
+    return {
+      inspectableObjectWithPropertiesAndProfile:
+        data && data.length > 0
+          ? (data as IInspectableObjectWithPropertiesAndProfileResponse[])
+          : null,
+      inspectableObjectWithPropertiesAndProfileError: error
+        ? (error as SupabaseError)
+        : null,
+    };
   }
 
   async fetchInspectableObjectsByProfileId(profileId: UUID): Promise<{
@@ -168,7 +188,7 @@ export class DBActionsFormBuilderFetch {
 
     console.log("fetch inspectable object profile in db:", data);
     if (error) {
-      console.error("fetch inspectable object profile in db error: ", error);
+      console.log("fetch inspectable object profile in db error: ", error);
     }
 
     return {

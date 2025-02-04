@@ -1,5 +1,3 @@
-"use client";
-import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -12,65 +10,31 @@ import {
   IInspectableObjectProfileResponse,
   IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
+  IInspectableObjectWithPropertiesAndProfileResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { SupabaseError } from "@/lib/globalInterfaces";
 
-import { useNotification } from "@/app/context/NotificationContext";
 import { redirect } from "next/navigation";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 import { profileIcons } from "@/lib/availableIcons";
 import { UUID } from "crypto";
 
 interface ObjectCardProps {
-  object: IInspectableObjectResponse;
-  objectProps: Record<UUID, IInspectableObjectPropertyResponse>;
-  objectProfile: IInspectableObjectProfileResponse;
-  objectProfileProps: IInspectableObjectProfilePropertyResponse[];
+  objectInfo: IInspectableObjectWithPropertiesAndProfileResponse[] | null;
+  objectProfileProps: IInspectableObjectProfilePropertyResponse[] | null;
 }
 
-export const ObjectCard = ({
-  object,
-  objectProps,
+export const ObjectCard = async ({
+  objectInfo,
   objectProfileProps,
-  objectProfile,
 }: ObjectCardProps) => {
-  // const { showNotification } = useNotification();
+  const objectProps: Record<UUID, IInspectableObjectPropertyResponse> = {};
 
-  // if (objectError) {
-  //   showNotification(
-  //     "Fetch Object",
-  //     `Error: ${objectError.message} (${objectError.code})`,
-  //     "error"
-  //   );
-  //   redirect(formBuilderLinks["inspectableObjects"].href);
-  // }
+  if (!objectInfo || !objectProfileProps) return <div>No Data...</div>;
 
-  // if (objectPropsError) {
-  //   showNotification(
-  //     "Fetch Object Propertys",
-  //     `Error: ${objectPropsError.message} (${objectPropsError.code})`,
-  //     "error"
-  //   );
-  //   redirect(formBuilderLinks["inspectableObjects"].href);
-  // }
-
-  // if (objectProfilePropsError) {
-  //   showNotification(
-  //     "Fetch Object Propertys",
-  //     `Error: ${objectProfilePropsError.message} (${objectProfilePropsError.code})`,
-  //     "error"
-  //   );
-  //   redirect(formBuilderLinks["inspectableObjects"].href);
-  // }
-
-  // if (objectProfileError) {
-  //   showNotification(
-  //     "Fetch Object Propertys",
-  //     `Error: ${objectProfileError.message} (${objectProfileError.code})`,
-  //     "error"
-  //   );
-  //   redirect(formBuilderLinks["inspectableObjects"].href);
-  // }
+  objectInfo[0].inspectable_object_property.forEach((objectProp) => {
+    objectProps[objectProp.profile_property_id] = objectProp;
+  });
 
   function compare(
     a: IInspectableObjectProfilePropertyResponse,
@@ -90,7 +54,9 @@ export const ObjectCard = ({
           <CardTitle>Metadata</CardTitle>
           <CardDescription>all the objects metadata</CardDescription>
         </CardHeader>
-        <div className="m-7">{profileIcons[objectProfile.icon_key]}</div>
+        <div className="m-7">
+          {profileIcons[objectInfo[0].inspectable_object_profile.icon_key]}
+        </div>
       </div>
       <CardContent className="space-y-5">
         <ul className="space-y-4">
