@@ -26,59 +26,51 @@ interface ObjectCardProps {
   objectProps: Record<UUID, IInspectableObjectPropertyResponse>;
   objectProfile: IInspectableObjectProfileResponse;
   objectProfileProps: IInspectableObjectProfilePropertyResponse[];
-  objectError: SupabaseError | null;
-  objectPropsError: SupabaseError | null;
-  objectProfileError: SupabaseError | null;
-  objectProfilePropsError: SupabaseError | null;
 }
 
 export const ObjectCard = ({
   object,
-  objectError,
   objectProps,
-  objectPropsError,
   objectProfileProps,
-  objectProfilePropsError,
   objectProfile,
-  objectProfileError,
 }: ObjectCardProps) => {
-  const { showNotification } = useNotification();
+  // const { showNotification } = useNotification();
 
-  if (objectError) {
-    showNotification(
-      "Fetch Object",
-      `Error: ${objectError.message} (${objectError.code})`,
-      "error"
-    );
-    redirect(formBuilderLinks["inspectableObjects"].href);
-  }
+  // if (objectError) {
+  //   showNotification(
+  //     "Fetch Object",
+  //     `Error: ${objectError.message} (${objectError.code})`,
+  //     "error"
+  //   );
+  //   redirect(formBuilderLinks["inspectableObjects"].href);
+  // }
 
-  if (objectPropsError) {
-    showNotification(
-      "Fetch Object Propertys",
-      `Error: ${objectPropsError.message} (${objectPropsError.code})`,
-      "error"
-    );
-    redirect(formBuilderLinks["inspectableObjects"].href);
-  }
+  // if (objectPropsError) {
+  //   showNotification(
+  //     "Fetch Object Propertys",
+  //     `Error: ${objectPropsError.message} (${objectPropsError.code})`,
+  //     "error"
+  //   );
+  //   redirect(formBuilderLinks["inspectableObjects"].href);
+  // }
 
-  if (objectProfilePropsError) {
-    showNotification(
-      "Fetch Object Propertys",
-      `Error: ${objectProfilePropsError.message} (${objectProfilePropsError.code})`,
-      "error"
-    );
-    redirect(formBuilderLinks["inspectableObjects"].href);
-  }
+  // if (objectProfilePropsError) {
+  //   showNotification(
+  //     "Fetch Object Propertys",
+  //     `Error: ${objectProfilePropsError.message} (${objectProfilePropsError.code})`,
+  //     "error"
+  //   );
+  //   redirect(formBuilderLinks["inspectableObjects"].href);
+  // }
 
-  if (objectProfileError) {
-    showNotification(
-      "Fetch Object Propertys",
-      `Error: ${objectProfileError.message} (${objectProfileError.code})`,
-      "error"
-    );
-    redirect(formBuilderLinks["inspectableObjects"].href);
-  }
+  // if (objectProfileError) {
+  //   showNotification(
+  //     "Fetch Object Propertys",
+  //     `Error: ${objectProfileError.message} (${objectProfileError.code})`,
+  //     "error"
+  //   );
+  //   redirect(formBuilderLinks["inspectableObjects"].href);
+  // }
 
   function compare(
     a: IInspectableObjectProfilePropertyResponse,

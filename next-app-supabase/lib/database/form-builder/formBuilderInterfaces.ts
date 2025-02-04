@@ -77,3 +77,10 @@ export interface IInspectableObjectResponse extends IInspectableObjectInsert {
   updated_at: string | Date;
   profile_id: UUID;
 }
+
+// -------------------
+
+export interface IInspectableObjectResponseWithInspectableObjectProperties
+  extends IInspectableObjectResponse {
+  inspectable_object_property: IInspectableObjectPropertyResponse[];
+}

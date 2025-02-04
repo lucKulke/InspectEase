@@ -6,6 +6,8 @@ import { PageHeading } from "@/components/PageHeading";
 import { ObjectCard } from "./ObjectCard";
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import { IInspectableObjectPropertyResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
+import { ErrorHandler } from "./ErrorHandler";
+import { SupabaseError } from "@/lib/globalInterfaces";
 
 export default async function ObjectPage({
   params,
@@ -13,6 +15,7 @@ export default async function ObjectPage({
   params: Promise<{ object_id: UUID }>;
 }) {
   const objectId = (await params).object_id;
+  const errorList: SupabaseError[] = [];
 
   const supabase = await createClient("form_builder");
 
@@ -23,13 +26,24 @@ export default async function ObjectPage({
   if (!user) redirect("/login");
 
   const dbActions = new DBActionsFormBuilderFetch(supabase);
+
   const { inspectableObject, inspectableObjectError } =
     await dbActions.fetchInspectableObject(objectId);
+  if (inspectableObjectError) errorList.push(inspectableObjectError);
+
   const { inspectableObjectPropertys, inspectableObjectPropertysError } =
     await dbActions.fetchInspectableObjectPropertys(objectId);
+  if (inspectableObjectPropertysError)
+    errorList.push(inspectableObjectPropertysError);
+
+  const test = await dbActions.fetchInspectableObjectWithProperties(objectId);
+
+  return <div>page</div>;
 
   const { inspectableObjectProfile, inspectableObjectProfileError } =
     await dbActions.fetchInspectableObjectProfile(inspectableObject.profile_id);
+  if (inspectableObjectProfileError)
+    errorList.push(inspectableObjectProfileError);
 
   const {
     inspectableObjectProfilePropertys,
@@ -37,6 +51,8 @@ export default async function ObjectPage({
   } = await dbActions.fetchInspectableObjectProfilePropertys(
     inspectableObject.profile_id
   );
+  if (inspectableObjectProfilePropertysError)
+    errorList.push(inspectableObjectProfilePropertysError);
 
   // for performance reasons
   const objectProps: Record<UUID, IInspectableObjectPropertyResponse> = {};
@@ -47,15 +63,12 @@ export default async function ObjectPage({
   return (
     <div>
       <PageHeading>Object</PageHeading>
+      <ErrorHandler errors={errorList} />
       <ObjectCard
         object={inspectableObject}
-        objectError={inspectableObjectError}
         objectProps={objectProps}
-        objectPropsError={inspectableObjectPropertysError}
         objectProfile={inspectableObjectProfile}
-        objectProfileError={inspectableObjectProfileError}
         objectProfileProps={inspectableObjectProfilePropertys}
-        objectProfilePropsError={inspectableObjectProfilePropertysError}
       ></ObjectCard>
     </div>
   );

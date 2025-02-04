@@ -32,6 +32,7 @@ import { UUID } from "crypto";
 import { Spinner } from "@/components/Spinner";
 
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 const objectTypes: Record<string, any> = {
   motorbike: <Bike />,
@@ -66,7 +67,7 @@ export const InspectableObjectsTable = ({
         `Error: ${inspectableObjectProfilePropertysError.message} ${inspectableObjectProfilePropertysError.code}`,
         "error"
       );
-      return;
+      redirect(formBuilderLinks["home"].href);
     }
 
     const tempPropOrder: Record<UUID, number> = {};
@@ -90,7 +91,7 @@ export const InspectableObjectsTable = ({
         `Error: ${inspectableObjectsError.message} ${inspectableObjectsError.code}`,
         "error"
       );
-      return;
+      redirect(formBuilderLinks["home"].href);
     }
 
     // Use Promise.all to fetch properties in parallel
