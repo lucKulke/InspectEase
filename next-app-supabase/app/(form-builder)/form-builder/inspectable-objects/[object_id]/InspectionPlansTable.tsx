@@ -28,7 +28,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 export const InspectionPlansTable = () => {
   return (
     <div>
-      <ScrollArea className="h-80 border-2 border-black rounded-lg p-4">
+      <ScrollArea className="border-2 border-black rounded-lg p-4">
         <Table>
           <TableCaption>All inspection plans for object</TableCaption>
           <TableHeader>
@@ -37,7 +37,7 @@ export const InspectionPlansTable = () => {
           <TableBody></TableBody>
         </Table>
       </ScrollArea>
-      <AlertDialog
+      {/* <AlertDialog
         open={openDeleteAlertDialog}
         onOpenChange={setOpenDeleteAlertDialog}
       >
@@ -61,7 +61,7 @@ export const InspectionPlansTable = () => {
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </AlertDialog> */}
     </div>
   );
 };
