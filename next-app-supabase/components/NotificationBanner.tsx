@@ -24,7 +24,7 @@ export const NotificationBanner: React.FC = () => {
     >
       <Alert className={bannerClasses[notification.type]}>
         <Terminal className="h-4 w-4 " />
-        <AlertTitle>{notification.title}</AlertTitle>
+        <AlertTitle className="font-bold">{notification.title}</AlertTitle>
         <AlertDescription>{notification.message}</AlertDescription>
       </Alert>
     </div>

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+
 import {
   Table,
   TableBody,
@@ -10,195 +10,185 @@ import {
   TableRow,
   TableFooter,
 } from "@/components/ui/table";
-import { createClient } from "@/utils/supabase/server";
-import { Bike, Car, Truck, Cog, Plus } from "lucide-react";
+
 import {
-  fetchInspectableObjectProfilePropertys,
-  fetchInspectableObjects,
-  fetchInspectableObjectsByProfileId,
-  fetchObjectPropertys,
-} from "./actions";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  IInspectableObjectProfilePropertyResponse,
+  IInspectableObjectProfileResponse,
+  IInspectableObjectPropertyResponse,
+  IInspectableObjectWithPropertiesResponse,
+} from "@/lib/database/form-builder/formBuilderInterfaces";
+import { UUID } from "crypto";
+import React, { useState } from "react";
+import Link from "next/link";
+import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
+import { Cog, Trash2 } from "lucide-react";
+import { deleteObject } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 
-import {
-  IInspectableObjectProfileResponse,
-  IInspectableObjectProfilePropertyResponse,
-  IInspectableObjectResponse,
-  IInspectableObjectPropertyResponse,
-} from "@/lib/database/form-builder/formBuilderInterfaces";
-
-import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
-import { UUID } from "crypto";
-import { Spinner } from "@/components/Spinner";
-
-import Link from "next/link";
-import { redirect } from "next/navigation";
-
-const objectTypes: Record<string, any> = {
-  motorbike: <Bike />,
-  car: <Car />,
-  truck: <Truck />,
-};
-
 interface InspectableObjectsTableProps {
+  profileProps: IInspectableObjectProfilePropertyResponse[];
+  tempPropOrder: Record<UUID, number>;
+  objectsWithProps: IInspectableObjectWithPropertiesResponse[];
   profile: IInspectableObjectProfileResponse;
 }
 
 export const InspectableObjectsTable = ({
+  profileProps,
+  tempPropOrder,
+  objectsWithProps,
   profile,
 }: InspectableObjectsTableProps) => {
   const { showNotification } = useNotification();
-
-  const [profilePropertys, setProfilePropertys] =
-    useState<IInspectableObjectProfilePropertyResponse[]>();
   const [objects, setObjects] =
-    useState<Record<UUID, IInspectableObjectPropertyResponse[]>>();
-  const [propertyOrder, setPropertyOrder] = useState<Record<UUID, number>>();
+    useState<IInspectableObjectWithPropertiesResponse[]>(objectsWithProps);
+  const [openDeleteAlertDialog, setOpenDeleteAlertDialog] =
+    useState<boolean>(false);
+  const [selectedObjectId, setSelectedObjectId] = useState<UUID>();
 
-  const fetchProfilePropertys = async () => {
-    const {
-      inspectableObjectProfilePropertys,
-      inspectableObjectProfilePropertysError,
-    } = await fetchInspectableObjectProfilePropertys(profile.id);
+  const handleDeleteObject = async (objectId: UUID) => {
+    const { inspectableObject, inspectableObjectError } = await deleteObject(
+      objectId
+    );
 
-    if (inspectableObjectProfilePropertysError) {
+    if (inspectableObjectError) {
       showNotification(
-        "Fetch Profile Propertys",
-        `Error: ${inspectableObjectProfilePropertysError.message} ${inspectableObjectProfilePropertysError.code}`,
+        "Delete object",
+        `Error: ${inspectableObjectError.message} (${inspectableObjectError.code})`,
         "error"
       );
-      redirect(formBuilderLinks["home"].href);
+      return;
     }
 
-    const tempPropOrder: Record<UUID, number> = {};
-    inspectableObjectProfilePropertys.forEach((prop) => {
-      tempPropOrder[prop.id] = prop.order_number;
-    });
-
-    setPropertyOrder(tempPropOrder);
-
-    setProfilePropertys(inspectableObjectProfilePropertys);
-    return inspectableObjectProfilePropertys;
-  };
-
-  const fetchObjectsByProfileId = async () => {
-    const { inspectableObjects, inspectableObjectsError } =
-      await fetchInspectableObjectsByProfileId(profile.id);
-
-    if (inspectableObjectsError) {
-      showNotification(
-        `Fetch Objects with profile '${profile.name}'`,
-        `Error: ${inspectableObjectsError.message} ${inspectableObjectsError.code}`,
-        "error"
-      );
-      redirect(formBuilderLinks["home"].href);
+    if (!inspectableObject) {
+      showNotification("Delete object", "Error: Unknown", "error");
+      return;
     }
-
-    // Use Promise.all to fetch properties in parallel
-    const objectPropertiesPromises = inspectableObjects.map(async (object) => {
-      console.log("fetch object props", object.id);
-      const { inspectableObjectPropertys, inspectableObjectPropertysError } =
-        await fetchObjectPropertys(object.id);
-
-      if (inspectableObjectPropertysError) {
-        console.error(
-          `Error fetching properties for object ${object.id}:`,
-          inspectableObjectPropertysError
-        );
-        return { objectId: object.id, properties: [] }; // Handle errors gracefully
-      }
-
-      return { objectId: object.id, properties: inspectableObjectPropertys };
-    });
-
-    const resolvedProperties = await Promise.all(objectPropertiesPromises);
-
-    // Convert array to Record<UUID, IInspectableObjectPropertyResponse[]>
-    const tempObjects: Record<UUID, IInspectableObjectPropertyResponse[]> = {};
-    resolvedProperties.forEach(({ objectId, properties }) => {
-      tempObjects[objectId] = properties;
-    });
-
-    setObjects(tempObjects);
-    console.log("temp objects", tempObjects);
+    setObjects(objects.filter((obj) => obj.id !== inspectableObject.id));
+    showNotification(
+      "Delete object",
+      `Successfully deleted object with id '${inspectableObject.id}'`,
+      "info"
+    );
   };
 
-  useEffect(() => {
-    const profileProper = fetchProfilePropertys();
-    const obj = fetchObjectsByProfileId();
-  }, []);
-
-  function compareProfilePropertys(
+  function compareProfileProps(
     a: IInspectableObjectProfilePropertyResponse,
     b: IInspectableObjectProfilePropertyResponse
   ) {
-    if (a.order_number < b.order_number) return -1;
-
     if (a.order_number > b.order_number) return 1;
-
+    if (a.order_number < b.order_number) return -1;
     return 0;
   }
 
-  function compareObjectPropertys(
+  function compareObjectProps(
     a: IInspectableObjectPropertyResponse,
     b: IInspectableObjectPropertyResponse
   ) {
-    console.log("before");
-    if (!propertyOrder) return 0;
-    console.log("true");
     if (
-      propertyOrder[a.profile_property_id] <
-      propertyOrder[b.profile_property_id]
+      tempPropOrder[a.profile_property_id] <
+      tempPropOrder[b.profile_property_id]
     )
       return -1;
 
     if (
-      propertyOrder[a.profile_property_id] >
-      propertyOrder[b.profile_property_id]
+      tempPropOrder[a.profile_property_id] >
+      tempPropOrder[b.profile_property_id]
     )
       return 1;
 
     return 0;
   }
 
-  return objects ? (
-    <Table>
-      <TableCaption>A list of your objects.</TableCaption>
-      <TableHeader>
-        <TableRow>
-          {profilePropertys?.sort(compareProfilePropertys).map((property) => (
-            <TableHead key={property.id}>{property.name}</TableHead>
-          ))}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {Object.entries(objects).map(([objectId, propertys]) => {
-          return (
-            <TableRow key={objectId}>
-              {propertys.sort(compareObjectPropertys).map((prop) => (
-                <TableCell key={prop.id}>{prop.value}</TableCell>
+  return (
+    <div>
+      <ScrollArea className="h-80 border-2 border-black rounded-lg p-4">
+        <Table>
+          <TableCaption>
+            A list of your {profile.name.toLowerCase()} objects.
+          </TableCaption>
+          <TableHeader>
+            <TableRow>
+              {profileProps.sort(compareProfileProps).map((profileProp) => (
+                <TableCell key={profileProp.id}>{profileProp.name}</TableCell>
               ))}
-              <TableCell>
-                <div className="flex justify-end">
-                  <Link
-                    href={
-                      formBuilderLinks["inspectableObjects"].href +
-                      "/" +
-                      objectId
-                    }
-                  >
-                    <Cog />
-                  </Link>
-                </div>
-              </TableCell>
             </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
-  ) : (
-    <div className="flex justify-center">
-      <Spinner></Spinner>
+          </TableHeader>
+          <TableBody>
+            {objects.map((object) => (
+              <TableRow key={object.id}>
+                {object.inspectable_object_property
+                  .sort(compareObjectProps)
+                  .map((objectProp) => (
+                    <TableCell key={objectProp.id}>
+                      {objectProp.value}
+                    </TableCell>
+                  ))}
+                <TableCell>
+                  <div className="flex justify-end space-x-3">
+                    <Link
+                      href={
+                        formBuilderLinks["inspectableObjects"].href +
+                        "/" +
+                        object.id
+                      }
+                    >
+                      <Cog></Cog>
+                    </Link>
+
+                    <button
+                      onClick={() => {
+                        setSelectedObjectId(object.id);
+                        setOpenDeleteAlertDialog(true);
+                      }}
+                      className=" text-red-500"
+                    >
+                      <Trash2></Trash2>
+                    </button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </ScrollArea>
+      <AlertDialog
+        open={openDeleteAlertDialog}
+        onOpenChange={setOpenDeleteAlertDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your
+              object and remove all its data from our servers (including
+              inspection plans).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (selectedObjectId) handleDeleteObject(selectedObjectId);
+              }}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

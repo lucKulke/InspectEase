@@ -33,7 +33,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased  bg-gradient-to-b  from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}
       >
-        <div className="p-5 m-auto w-[1200px]">
+        <div className="p-5 m-auto max-w-[1400px]">
           {/* <NextThemesProvider
             attribute="class"
             defaultTheme="system"

@@ -6,12 +6,6 @@ import { CreateProfileCard } from "./CreateProfileCard";
 export default async function InspectableObjectCreatePage() {
   const supabase = await createClient("form_builder");
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login");
-
   return (
     <div>
       <PageHeading>Create Profile</PageHeading>

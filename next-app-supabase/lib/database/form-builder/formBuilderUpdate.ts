@@ -3,6 +3,7 @@ import {
   IInspectableObjectProfileInsert,
   IInspectableObjectProfilePropertyResponse,
   IInspectableObjectProfileResponse,
+  IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
@@ -59,6 +60,30 @@ export class DBActionsFormBuilderUpdate {
       updatedInspectableObjectProfilePropertys: data ? data : [],
       updatedInspectableObjectProfilePropertysError:
         error as SupabaseError | null,
+    };
+  }
+
+  async updateInspectableObjectProperty(
+    propertyId: UUID,
+    property: {}
+  ): Promise<{
+    updatedInspectableObjectProperty: IInspectableObjectPropertyResponse | null;
+    updatedInspectableObjectPropertyError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_property")
+      .update(property)
+      .eq("id", propertyId)
+      .select();
+
+    console.log("update inspectable object property in db:", data);
+    if (error) {
+      console.error("update inspectable object property in db error: ", error);
+    }
+
+    return {
+      updatedInspectableObjectProperty: data ? data[0] : null,
+      updatedInspectableObjectPropertyError: error as SupabaseError | null,
     };
   }
 }

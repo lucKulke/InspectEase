@@ -4,6 +4,7 @@ import { PageHeading } from "@/components/PageHeading";
 import { redirect } from "next/navigation";
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import { UUID } from "crypto";
+import { ErrorHandler } from "@/components/ErrorHandler";
 
 export default async function InspectableObjectProfilePage({
   params,
@@ -13,30 +14,28 @@ export default async function InspectableObjectProfilePage({
   const profileId = (await params).profile_id;
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderFetch(supabase);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login");
-
-  const { inspectableObjectProfile, inspectableObjectProfileError } =
-    await dbActions.fetchInspectableObjectProfile(profileId);
 
   const {
-    inspectableObjectProfilePropertys,
-    inspectableObjectProfilePropertysError,
-  } = await dbActions.fetchInspectableObjectProfilePropertys(profileId);
+    inspectableObjectProfileWithProps,
+    inspectableObjectProfileWithPropsError,
+  } = await dbActions.fetchInspectableObjectProfileWithProperties(profileId);
+
+  if (inspectableObjectProfileWithPropsError)
+    return (
+      <ErrorHandler
+        error={inspectableObjectProfileWithPropsError}
+      ></ErrorHandler>
+    );
 
   return (
     <div>
       <PageHeading>Profile</PageHeading>
       <div className="flex justify-center">
-        <ProfileCard
-          profileData={inspectableObjectProfile}
-          profileDataError={inspectableObjectProfileError}
-          profilePropertys={inspectableObjectProfilePropertys}
-          profilePropertysError={inspectableObjectProfilePropertysError}
-        ></ProfileCard>
+        {inspectableObjectProfileWithProps && (
+          <ProfileCard
+            profileData={inspectableObjectProfileWithProps}
+          ></ProfileCard>
+        )}
       </div>
     </div>
   );

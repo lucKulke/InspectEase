@@ -14,7 +14,7 @@ export default async function InspectableObjectProfilesPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) return <div>No User! Please go to login page...</div>;
 
   const dbActions = new DBActionsFormBuilderFetch(supabase);
 

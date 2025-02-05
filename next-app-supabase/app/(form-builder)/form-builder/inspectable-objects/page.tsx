@@ -1,15 +1,15 @@
 import React from "react";
 
-import { Bike, Car, Truck, Cog, Plus } from "lucide-react";
-import Link from "next/link";
 import { PageHeading } from "@/components/PageHeading";
-import { InspectableObjectsTable } from "./InspectableObjectsTable";
+
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
+
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import { MainAddButton } from "@/components/MainAddButton";
 import { IInspectableObjectProfileResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
+import { Objects } from "./Objects";
+import { profileIcons } from "@/lib/availableIcons";
 
 export default async function ObjectsPage() {
   const supabase = await createClient("form_builder");
@@ -18,9 +18,9 @@ export default async function ObjectsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
-
   const dbActions = new DBActionsFormBuilderFetch(supabase);
+
+  if (!user) return <div>No user! please go to login page...</div>;
 
   const { inspectableObjectProfiles, inspectableObjectProfilesError } =
     await dbActions.fetchInspectableObjectProfiles(user.id);
@@ -47,10 +47,11 @@ export default async function ObjectsPage() {
       <ul>
         {inspectableObjectProfiles.sort(compare).map((profile) => (
           <li key={profile.id}>
-            <p>{profile.name}</p>
-            <InspectableObjectsTable
-              profile={profile}
-            ></InspectableObjectsTable>
+            <div className="flex items-center space-x-2 mt-4">
+              {profileIcons[profile.icon_key]}
+              <h2 className=" text-slate-600">{profile.name}</h2>
+            </div>
+            <Objects profile={profile}></Objects>
           </li>
         ))}
       </ul>

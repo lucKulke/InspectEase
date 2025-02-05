@@ -36,6 +36,7 @@ import { useNotification } from "@/app/context/NotificationContext";
 import {
   IInspectableObjectProfilePropertyResponse,
   IInspectableObjectProfileResponse,
+  IInspectableObjectProfileWithProperties,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { SupabaseError } from "@/lib/globalInterfaces";
 
@@ -49,44 +50,19 @@ import { createProfileProperty } from "./actions";
 import { DragAndDropPropertyList } from "./DragAndDropPropertyList";
 
 interface ProfileCardProps {
-  profileData: IInspectableObjectProfileResponse | null;
-  profileDataError: SupabaseError | null;
-  profilePropertys: IInspectableObjectProfilePropertyResponse[];
-  profilePropertysError: SupabaseError | null;
+  profileData: IInspectableObjectProfileWithProperties;
 }
 
-export const ProfileCard = ({
-  profileData,
-  profileDataError,
-  profilePropertys,
-  profilePropertysError,
-}: ProfileCardProps) => {
+export const ProfileCard = ({ profileData }: ProfileCardProps) => {
   const { showNotification } = useNotification();
 
   const [openAddPropertyDialog, setOpenAddPropertyDialog] =
     useState<boolean>(false);
-  const [profilePropertyList, setProfilePropertyList] =
-    useState<IInspectableObjectProfilePropertyResponse[]>(profilePropertys);
+  const [profilePropertyList, setProfilePropertyList] = useState<
+    IInspectableObjectProfilePropertyResponse[]
+  >(profileData?.inspectable_object_profile_property);
   const [propertyName, setPropertyName] = useState<string>("");
   const [propertyDescription, setPropertyDescription] = useState<string>("");
-
-  if (profileDataError && profileData === null) {
-    showNotification(
-      "fetching profile",
-      `Error: ${profileDataError.message} (${profileDataError.code})`,
-      "error"
-    );
-    redirect(formBuilderLinks["inspectableObjectProfiles"].href);
-  }
-
-  if (profilePropertysError) {
-    showNotification(
-      "fetching profile propertys",
-      `Error: ${profilePropertysError.message} (${profilePropertysError.code})`,
-      "error"
-    );
-    redirect(formBuilderLinks["inspectableObjectProfiles"].href);
-  }
 
   useEffect(() => {
     if (!openAddPropertyDialog) {

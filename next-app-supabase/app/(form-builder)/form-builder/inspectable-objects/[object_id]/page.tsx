@@ -9,8 +9,9 @@ import {
   IInspectableObjectProfilePropertyResponse,
   IInspectableObjectPropertyResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
-import { ErrorHandler } from "./ErrorHandler";
+import { ErrorHandler } from "../../../../../components/ErrorHandler";
 import { SupabaseError } from "@/lib/globalInterfaces";
+import { InspectionPlansTable } from "./InspectionPlansTable";
 
 export default async function ObjectPage({
   params,
@@ -22,12 +23,6 @@ export default async function ObjectPage({
 
   const supabase = await createClient("form_builder");
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login");
-
   const dbActions = new DBActionsFormBuilderFetch(supabase);
 
   const {
@@ -36,7 +31,9 @@ export default async function ObjectPage({
   } = await dbActions.fetchInspectableObjectWithPropertiesAndProfile(objectId);
 
   if (inspectableObjectWithPropertiesAndProfileError)
-    errorList.push(inspectableObjectWithPropertiesAndProfileError);
+    return (
+      <ErrorHandler error={inspectableObjectWithPropertiesAndProfileError} />
+    );
 
   let profileProperties: IInspectableObjectProfilePropertyResponse[] | null =
     null;
@@ -51,7 +48,7 @@ export default async function ObjectPage({
     );
 
     if (inspectableObjectProfilePropertysError)
-      errorList.push(inspectableObjectProfilePropertysError);
+      return <ErrorHandler error={inspectableObjectProfilePropertysError} />;
 
     profileProperties = inspectableObjectProfilePropertys;
     profilePropertiesError = inspectableObjectProfilePropertysError;
@@ -60,14 +57,13 @@ export default async function ObjectPage({
   return (
     <div>
       <PageHeading>Object</PageHeading>
-      {errorList.length > 0 ? (
-        <ErrorHandler errors={errorList} />
-      ) : (
-        <ObjectCard
-          objectProfileProps={profileProperties}
-          objectInfo={inspectableObjectWithPropertiesAndProfile}
-        ></ObjectCard>
-      )}
+      <ObjectCard
+        objectProfileProps={profileProperties}
+        objectInfo={inspectableObjectWithPropertiesAndProfile}
+      ></ObjectCard>
+      <div className="flex justify-center mt-5">
+        <InspectionPlansTable></InspectionPlansTable>
+      </div>
     </div>
   );
 }

@@ -11,14 +11,6 @@ import { redirect } from "next/navigation";
 import { PageHeading } from "@/components/PageHeading";
 
 export default async function FormBuilderPage() {
-  const supabase = await createClient("form_builder");
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login");
-
   return (
     <div className="">
       <PageHeading>Form Builder Home</PageHeading>

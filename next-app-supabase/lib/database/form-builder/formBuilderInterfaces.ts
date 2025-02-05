@@ -85,3 +85,13 @@ export interface IInspectableObjectWithPropertiesAndProfileResponse
   inspectable_object_property: IInspectableObjectPropertyResponse[];
   inspectable_object_profile: IInspectableObjectProfileResponse;
 }
+
+export interface IInspectableObjectWithPropertiesResponse
+  extends IInspectableObjectResponse {
+  inspectable_object_property: IInspectableObjectPropertyResponse[];
+}
+
+export interface IInspectableObjectProfileWithProperties
+  extends IInspectableObjectProfileResponse {
+  inspectable_object_profile_property: IInspectableObjectProfilePropertyResponse[];
+}
