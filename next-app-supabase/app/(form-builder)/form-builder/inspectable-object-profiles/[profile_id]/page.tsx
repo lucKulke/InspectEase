@@ -1,10 +1,21 @@
 import { createClient } from "@/utils/supabase/server";
-import { ProfileCard } from "./ProfileCard";
+
 import { PageHeading } from "@/components/PageHeading";
 import { redirect } from "next/navigation";
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import { UUID } from "crypto";
 import { ErrorHandler } from "@/components/ErrorHandler";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+import { FormConfigCard } from "./FormConfigCard";
+import { ObjectPropertyCard } from "./ObjectPropertyCard";
+import { profileIcons } from "@/lib/availableIcons";
 
 export default async function InspectableObjectProfilePage({
   params,
@@ -16,26 +27,73 @@ export default async function InspectableObjectProfilePage({
   const dbActions = new DBActionsFormBuilderFetch(supabase);
 
   const {
-    inspectableObjectProfileWithProps,
-    inspectableObjectProfileWithPropsError,
-  } = await dbActions.fetchInspectableObjectProfileWithProperties(profileId);
+    inspectableObjectProfileWithObjProps,
+    inspectableObjectProfileWithObjPropsError,
+  } = await dbActions.fetchInspectableObjectProfileWithObjProperties(profileId);
 
-  if (inspectableObjectProfileWithPropsError)
+  if (inspectableObjectProfileWithObjPropsError)
     return (
       <ErrorHandler
-        error={inspectableObjectProfileWithPropsError}
+        error={inspectableObjectProfileWithObjPropsError}
       ></ErrorHandler>
     );
+
+  const {
+    inspectableObjectProfileFormTypes,
+    inspectableObjectProfileFormTypesError,
+  } = await dbActions.fetchInspectableObjectProfileFormTypes(profileId);
+
+  if (inspectableObjectProfileFormTypesError)
+    return (
+      <ErrorHandler
+        error={inspectableObjectProfileFormTypesError}
+      ></ErrorHandler>
+    );
+
+  if (!inspectableObjectProfileWithObjProps)
+    return <div>No data available</div>;
+  if (!inspectableObjectProfileFormTypes) return <div>No data available</div>;
 
   return (
     <div>
       <PageHeading>Profile</PageHeading>
       <div className="flex justify-center">
-        {inspectableObjectProfileWithProps && (
+        <ul className="w-1/2 space-y-7">
+          <li>
+            <Card className="min-w-[500px]">
+              <div className="flex justify-between items-center">
+                <CardHeader>
+                  <CardTitle>
+                    {inspectableObjectProfileWithObjProps?.name}
+                  </CardTitle>
+                  <CardDescription>
+                    {inspectableObjectProfileWithObjProps?.description}
+                  </CardDescription>
+                </CardHeader>
+                <div className="m-7">
+                  {inspectableObjectProfileWithObjProps?.icon_key &&
+                    profileIcons[inspectableObjectProfileWithObjProps.icon_key]}
+                </div>
+              </div>
+            </Card>
+          </li>
+          <li>
+            <ObjectPropertyCard
+              profileData={inspectableObjectProfileWithObjProps}
+            ></ObjectPropertyCard>
+          </li>
+          <li>
+            <FormConfigCard
+              profileId={profileId}
+              formTypes={inspectableObjectProfileFormTypes}
+            ></FormConfigCard>
+          </li>
+          {/* {inspectableObjectProfileWithProps && (
           <ProfileCard
             profileData={inspectableObjectProfileWithProps}
           ></ProfileCard>
-        )}
+        )} */}
+        </ul>
       </div>
     </div>
   );

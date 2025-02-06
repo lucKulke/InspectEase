@@ -17,11 +17,11 @@ export async function fetchUsersAvailableObjectProfiles(
   return await dbActions.fetchInspectableObjectProfiles(userId);
 }
 
-export async function fetchObjectProfilePropertys(profileId: UUID) {
+export async function fetchObjectProfileObjPropertys(profileId: UUID) {
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderFetch(supabase);
 
-  return await dbActions.fetchInspectableObjectProfilePropertys(profileId);
+  return await dbActions.fetchInspectableObjectProfileObjPropertys(profileId);
 }
 
 export async function createObject(profileId: UUID) {

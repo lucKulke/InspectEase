@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Reorder } from "framer-motion";
-import { IInspectableObjectProfilePropertyResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
-import { deleteProfileProperty, updateProfileProperty } from "./actions";
+import { IInspectableObjectProfileObjPropertyResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
+import { deleteProfileObjProperty, updateProfileObjProperty } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { Ellipsis, Trash2 } from "lucide-react";
 
@@ -27,35 +27,31 @@ const debounce = (func: Function, delay: number) => {
   };
 };
 
-interface DragAndDropPropertyListProps {
-  propertyList: IInspectableObjectProfilePropertyResponse[];
+interface DraggableObjPropertyListProps {
+  propertyList: IInspectableObjectProfileObjPropertyResponse[];
   setPropertyList: React.Dispatch<
-    React.SetStateAction<IInspectableObjectProfilePropertyResponse[]>
+    React.SetStateAction<IInspectableObjectProfileObjPropertyResponse[]>
   >;
 }
 
-export const DragAndDropPropertyList = ({
+export const DraggableObjPropertyList = ({
   propertyList,
   setPropertyList,
-}: DragAndDropPropertyListProps) => {
+}: DraggableObjPropertyListProps) => {
   const { showNotification } = useNotification();
 
-  useEffect(() => {
-    console.log("items", propertyList);
-  }, [propertyList]);
-
   const updateOrderInDB = async (
-    updatedItems: IInspectableObjectProfilePropertyResponse[]
+    updatedItems: IInspectableObjectProfileObjPropertyResponse[]
   ) => {
     const {
-      updatedInspectableObjectProfilePropertys,
-      updatedInspectableObjectProfilePropertysError,
-    } = await updateProfileProperty(updatedItems);
+      updatedInspectableObjectProfileObjPropertys,
+      updatedInspectableObjectProfileObjPropertysError,
+    } = await updateProfileObjProperty(updatedItems);
 
-    if (updatedInspectableObjectProfilePropertysError) {
+    if (updatedInspectableObjectProfileObjPropertysError) {
       showNotification(
-        "Property order",
-        `Error: ${updatedInspectableObjectProfilePropertysError.message} (${updatedInspectableObjectProfilePropertysError.code})`,
+        "Obj property order",
+        `Error: ${updatedInspectableObjectProfileObjPropertysError.message} (${updatedInspectableObjectProfileObjPropertysError.code})`,
         "error"
       );
     }
@@ -64,7 +60,7 @@ export const DragAndDropPropertyList = ({
   const debouncedUpdate = debounce(updateOrderInDB, 500);
 
   const handleReorder = (
-    newOrder: IInspectableObjectProfilePropertyResponse[]
+    newOrder: IInspectableObjectProfileObjPropertyResponse[]
   ) => {
     const updatedItems = reorderItems(newOrder);
     setPropertyList(updatedItems);
@@ -72,7 +68,7 @@ export const DragAndDropPropertyList = ({
   };
 
   const reorderItems = (
-    newOrder: IInspectableObjectProfilePropertyResponse[]
+    newOrder: IInspectableObjectProfileObjPropertyResponse[]
   ) => {
     return newOrder.map((item, index) => ({
       ...item,
@@ -81,8 +77,8 @@ export const DragAndDropPropertyList = ({
   };
 
   function compare(
-    a: IInspectableObjectProfilePropertyResponse,
-    b: IInspectableObjectProfilePropertyResponse
+    a: IInspectableObjectProfileObjPropertyResponse,
+    b: IInspectableObjectProfileObjPropertyResponse
   ) {
     if (a.order_number < b.order_number) return -1;
 
@@ -93,28 +89,34 @@ export const DragAndDropPropertyList = ({
 
   const handleDeleteProperty = async (propertyId: UUID) => {
     const {
-      deletedInspectableObjectProfileProperty,
-      deletedInspectableObjectProfilePropertyError,
-    } = await deleteProfileProperty(propertyId);
-    if (deletedInspectableObjectProfilePropertyError) {
+      deletedInspectableObjectProfileObjProperty,
+      deletedInspectableObjectProfileObjPropertyError,
+    } = await deleteProfileObjProperty(propertyId);
+    if (deletedInspectableObjectProfileObjPropertyError) {
       showNotification(
         "Delete property",
-        `Error: ${deletedInspectableObjectProfilePropertyError.message} (${deletedInspectableObjectProfilePropertyError.code})`,
+        `Error: ${deletedInspectableObjectProfileObjPropertyError.message} (${deletedInspectableObjectProfileObjPropertyError.code})`,
         "error"
       );
       return;
     }
     showNotification(
       "Delete property",
-      `Successfully deleted property '${deletedInspectableObjectProfileProperty.name}' with id '${deletedInspectableObjectProfileProperty.id}'`,
+      `Successfully deleted property '${deletedInspectableObjectProfileObjProperty.name}' with id '${deletedInspectableObjectProfileObjProperty.id}'`,
       "info"
     );
 
-    setPropertyList(
-      propertyList.filter(
-        (prop) => prop.id !== deletedInspectableObjectProfileProperty.id
+    const updatedList = propertyList
+      .filter(
+        (prop) => prop.id !== deletedInspectableObjectProfileObjProperty.id
       )
-    );
+      .map((item, index) => ({
+        ...item,
+        order_number: index + 1, // Ensure sequential order numbers
+      }));
+
+    setPropertyList(updatedList);
+    await updateOrderInDB(updatedList);
   };
 
   return (

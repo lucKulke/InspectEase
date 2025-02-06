@@ -6,12 +6,15 @@ import { PageHeading } from "@/components/PageHeading";
 import { ObjectCard } from "./ObjectCard";
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import {
-  IInspectableObjectProfilePropertyResponse,
+  IInspectableObjectProfileObjPropertyResponse,
   IInspectableObjectPropertyResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { ErrorHandler } from "../../../../../components/ErrorHandler";
 import { SupabaseError } from "@/lib/globalInterfaces";
+
+import { MainAddButton } from "@/components/MainAddButton";
 import { InspectionPlansTable } from "./InspectionPlansTable";
+import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 
 export default async function ObjectPage({
   params,
@@ -35,7 +38,7 @@ export default async function ObjectPage({
       <ErrorHandler error={inspectableObjectWithPropertiesAndProfileError} />
     );
 
-  let profileProperties: IInspectableObjectProfilePropertyResponse[] | null =
+  let profileProperties: IInspectableObjectProfileObjPropertyResponse[] | null =
     null;
   let profilePropertiesError: SupabaseError | null = null;
 
@@ -43,7 +46,7 @@ export default async function ObjectPage({
     const {
       inspectableObjectProfilePropertys,
       inspectableObjectProfilePropertysError,
-    } = await dbActions.fetchInspectableObjectProfilePropertys(
+    } = await dbActions.fetchInspectableObjectProfileObjPropertys(
       inspectableObjectWithPropertiesAndProfile[0].inspectable_object_profile.id
     );
 
@@ -61,6 +64,17 @@ export default async function ObjectPage({
         objectProfileProps={profileProperties}
         objectInfo={inspectableObjectWithPropertiesAndProfile}
       ></ObjectCard>
+      <div className="flex justify-between m-6 items-center ">
+        <p className="text-slate-500">Inspection plans</p>
+        <MainAddButton
+          href={
+            formBuilderLinks["inspectableObjects"].href +
+            "/" +
+            objectId +
+            "/inspection-plans/create"
+          }
+        ></MainAddButton>
+      </div>
       <div className="flex justify-center mt-5">
         <InspectionPlansTable></InspectionPlansTable>
       </div>

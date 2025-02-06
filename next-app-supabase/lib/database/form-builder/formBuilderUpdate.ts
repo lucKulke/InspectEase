@@ -1,7 +1,10 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  IInspectableObjectProfileFormPropertyResponse,
+  IInspectableObjectProfileFormTypePropertyInsert,
+  IInspectableObjectProfileFormTypePropertyResponse,
   IInspectableObjectProfileInsert,
-  IInspectableObjectProfilePropertyResponse,
+  IInspectableObjectProfileObjPropertyResponse,
   IInspectableObjectProfileResponse,
   IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
@@ -40,25 +43,54 @@ export class DBActionsFormBuilderUpdate {
     };
   }
 
-  async updateInspectableObjectProfileProperty(
-    propertys: IInspectableObjectProfilePropertyResponse[]
+  async updateInspectableObjectProfileObjProperty(
+    propertys: IInspectableObjectProfileObjPropertyResponse[]
   ): Promise<{
-    updatedInspectableObjectProfilePropertys: IInspectableObjectProfileResponse[];
-    updatedInspectableObjectProfilePropertysError: SupabaseError | null;
+    updatedInspectableObjectProfileObjPropertys: IInspectableObjectProfileObjPropertyResponse[];
+    updatedInspectableObjectProfileObjPropertysError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
-      .from("inspectable_object_profile_property")
+      .from("inspectable_object_profile_obj_property")
       .upsert(propertys)
       .select();
 
-    console.log("update inspectable object profiles in db:", data);
+    console.log("update inspectable object profile obj propertys in db:", data);
     if (error) {
-      console.error("update inspectable object profiles in db error: ", error);
+      console.error(
+        "update inspectable object profile obj propertys in db error: ",
+        error
+      );
     }
 
     return {
-      updatedInspectableObjectProfilePropertys: data ? data : [],
-      updatedInspectableObjectProfilePropertysError:
+      updatedInspectableObjectProfileObjPropertys: data ? data : [],
+      updatedInspectableObjectProfileObjPropertysError:
+        error as SupabaseError | null,
+    };
+  }
+
+  async updateInspectableObjectProfileFormProperty(
+    propertys: IInspectableObjectProfileFormPropertyResponse[]
+  ): Promise<{
+    updatedInspectableObjectProfileFormPropertys: IInspectableObjectProfileFormPropertyResponse[];
+    updatedInspectableObjectProfileFormPropertysError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_profile_form_property")
+      .upsert(propertys)
+      .select();
+
+    console.log("update inspectable object profile obj propertys in db:", data);
+    if (error) {
+      console.error(
+        "update inspectable object profile obj propertys in db error: ",
+        error
+      );
+    }
+
+    return {
+      updatedInspectableObjectProfileFormPropertys: data ? data : [],
+      updatedInspectableObjectProfileFormPropertysError:
         error as SupabaseError | null,
     };
   }
@@ -84,6 +116,35 @@ export class DBActionsFormBuilderUpdate {
     return {
       updatedInspectableObjectProperty: data ? data[0] : null,
       updatedInspectableObjectPropertyError: error as SupabaseError | null,
+    };
+  }
+
+  async updateInspectableObjectProfileFormTypeProps(
+    formTypeProps: IInspectableObjectProfileFormTypePropertyResponse[]
+  ): Promise<{
+    updatedInspectableObjectProfileFormTypeProperty: IInspectableObjectPropertyResponse | null;
+    updatedInspectableObjectProfileFormTypePropertyError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_profile_form_type_property")
+      .upsert(formTypeProps)
+      .select();
+
+    console.log(
+      "update inspectable object profile form type props in db:",
+      data
+    );
+    if (error) {
+      console.error(
+        "update inspectable object profile form type props in db error: ",
+        error
+      );
+    }
+
+    return {
+      updatedInspectableObjectProfileFormTypeProperty: data ? data[0] : null,
+      updatedInspectableObjectProfileFormTypePropertyError:
+        error as SupabaseError | null,
     };
   }
 }

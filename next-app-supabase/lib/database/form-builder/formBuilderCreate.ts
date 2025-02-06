@@ -1,9 +1,15 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
   IInspectableObjectInsert,
+  IInspectableObjectProfileFormPropertyInsert,
+  IInspectableObjectProfileFormPropertyResponse,
+  IInspectableObjectProfileFormTypeInsert,
+  IInspectableObjectProfileFormTypePropertyInsert,
+  IInspectableObjectProfileFormTypePropertyResponse,
+  IInspectableObjectProfileFormTypeResponse,
   IInspectableObjectProfileInsert,
-  IInspectableObjectProfilePropertyInsert,
-  IInspectableObjectProfilePropertyResponse,
+  IInspectableObjectProfileObjPropertyInsert,
+  IInspectableObjectProfileObjPropertyResponse,
   IInspectableObjectProfileResponse,
   IInspectableObjectPropertyInsert,
   IInspectableObjectPropertyResponse,
@@ -41,28 +47,53 @@ export class DBActionsFormBuilderCreate {
     };
   }
 
-  async createInspectableObjectProfileProperty(
-    property: IInspectableObjectProfilePropertyInsert
+  async createInspectableObjectProfileObjProperty(
+    property: IInspectableObjectProfileObjPropertyInsert
   ): Promise<{
-    inspectableObjectProfileProperty: IInspectableObjectProfilePropertyResponse;
-    inspectableObjectProfilePropertyError: SupabaseError | null;
+    inspectableObjectProfileObjProperty: IInspectableObjectProfileObjPropertyResponse;
+    inspectableObjectProfileObjPropertyError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
-      .from("inspectable_object_profile_property")
+      .from("inspectable_object_profile_obj_property")
       .insert([property])
       .select();
 
-    console.log("create inspectable object profile property in db:", data);
+    console.log("create inspectable object profile obj property in db:", data);
     if (error) {
       console.error(
-        "create inspectable object profile property in db error: ",
+        "create inspectable object profile obj property in db error: ",
         error
       );
     }
 
     return {
-      inspectableObjectProfileProperty: data ? data[0] : null,
-      inspectableObjectProfilePropertyError: error as SupabaseError | null,
+      inspectableObjectProfileObjProperty: data ? data[0] : null,
+      inspectableObjectProfileObjPropertyError: error as SupabaseError | null,
+    };
+  }
+
+  async createInspectableObjectProfileFormProperty(
+    property: IInspectableObjectProfileFormPropertyInsert
+  ): Promise<{
+    inspectableObjectProfileFormProperty: IInspectableObjectProfileFormPropertyResponse;
+    inspectableObjectProfileFormPropertyError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_profile_form_property")
+      .insert([property])
+      .select();
+
+    console.log("create inspectable object profile form property in db:", data);
+    if (error) {
+      console.error(
+        "create inspectable object profile property from in db error: ",
+        error
+      );
+    }
+
+    return {
+      inspectableObjectProfileFormProperty: data ? data[0] : null,
+      inspectableObjectProfileFormPropertyError: error as SupabaseError | null,
     };
   }
 
@@ -105,6 +136,56 @@ export class DBActionsFormBuilderCreate {
     return {
       inspectableObject: data ? data[0] : null,
       inspectableObjectError: error as SupabaseError | null,
+    };
+  }
+
+  async createInspectableObjectProfileFormType(
+    formType: IInspectableObjectProfileFormTypeInsert
+  ): Promise<{
+    inspectableObjectProfileFormType: IInspectableObjectProfileFormTypeResponse | null;
+    inspectableObjectProfileFormTypeError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_profile_form_type")
+      .insert([formType])
+      .select();
+
+    console.log("create inspectable object profile form type in db:", data);
+    if (error) {
+      console.error(
+        "create inspectable object profile form type in db error: ",
+        error
+      );
+    }
+
+    return {
+      inspectableObjectProfileFormType: data ? data[0] : null,
+      inspectableObjectProfileFormTypeError: error as SupabaseError | null,
+    };
+  }
+
+  async createInspectableObjectProfileFormTypeProp(
+    formTypeProp: IInspectableObjectProfileFormTypePropertyInsert
+  ): Promise<{
+    inspectableObjectProfileFormTypeProp: IInspectableObjectProfileFormTypePropertyResponse | null;
+    inspectableObjectProfileFormTypePropError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_profile_form_type_property")
+      .insert([formTypeProp])
+      .select();
+
+    console.log("create inspectable object profile form type propin db:", data);
+    if (error) {
+      console.error(
+        "create inspectable object profile form type prop in db error: ",
+        error
+      );
+    }
+
+    return {
+      inspectableObjectProfileFormTypeProp: data ? data[0] : null,
+      inspectableObjectProfileFormTypePropError: error as SupabaseError | null,
     };
   }
 }

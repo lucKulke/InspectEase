@@ -16,7 +16,7 @@ export const Objects = async ({ profile }: ObjectsProps) => {
   const {
     inspectableObjectProfilePropertys,
     inspectableObjectProfilePropertysError,
-  } = await dbActions.fetchInspectableObjectProfilePropertys(profile.id);
+  } = await dbActions.fetchInspectableObjectProfileObjPropertys(profile.id);
   if (inspectableObjectProfilePropertysError)
     return (
       <ErrorHandler

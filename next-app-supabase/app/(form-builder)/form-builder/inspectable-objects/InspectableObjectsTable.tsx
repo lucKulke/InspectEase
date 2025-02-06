@@ -25,7 +25,7 @@ import {
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  IInspectableObjectProfilePropertyResponse,
+  IInspectableObjectProfileObjPropertyResponse,
   IInspectableObjectProfileResponse,
   IInspectableObjectPropertyResponse,
   IInspectableObjectWithPropertiesResponse,
@@ -39,7 +39,7 @@ import { deleteObject } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 
 interface InspectableObjectsTableProps {
-  profileProps: IInspectableObjectProfilePropertyResponse[];
+  profileProps: IInspectableObjectProfileObjPropertyResponse[];
   tempPropOrder: Record<UUID, number>;
   objectsWithProps: IInspectableObjectWithPropertiesResponse[];
   profile: IInspectableObjectProfileResponse;
@@ -85,8 +85,8 @@ export const InspectableObjectsTable = ({
   };
 
   function compareProfileProps(
-    a: IInspectableObjectProfilePropertyResponse,
-    b: IInspectableObjectProfilePropertyResponse
+    a: IInspectableObjectProfileObjPropertyResponse,
+    b: IInspectableObjectProfileObjPropertyResponse
   ) {
     if (a.order_number > b.order_number) return 1;
     if (a.order_number < b.order_number) return -1;

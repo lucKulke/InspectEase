@@ -34,14 +34,14 @@ export interface IInspectableObjectProfileInsert {
 // ---------------------------
 
 // Inspectable object profile property
-export interface IInspectableObjectProfilePropertyInsert {
+export interface IInspectableObjectProfileObjPropertyInsert {
   name: string;
   description: string;
   order_number: number;
   profile_id: UUID;
 }
 
-export interface IInspectableObjectProfilePropertyResponse {
+export interface IInspectableObjectProfileObjPropertyResponse {
   id: UUID;
   name: string;
   description: string;
@@ -50,6 +50,20 @@ export interface IInspectableObjectProfilePropertyResponse {
 }
 
 // ---------------------------
+export interface IInspectableObjectProfileFormPropertyInsert {
+  name: string;
+  description: string;
+  order_number: number;
+  profile_id: UUID;
+}
+
+export interface IInspectableObjectProfileFormPropertyResponse {
+  id: UUID;
+  name: string;
+  description: string;
+  order_number: number;
+  created_at: string;
+}
 
 // Inspectable object propertys
 
@@ -61,6 +75,35 @@ export interface IInspectableObjectPropertyInsert {
 
 export interface IInspectableObjectPropertyResponse
   extends IInspectableObjectPropertyInsert {
+  id: UUID;
+  created_at: Date | string;
+}
+
+// Inspectable object profile form type property
+
+export interface IInspectableObjectProfileFormTypePropertyInsert {
+  name: string;
+  description: string;
+  order_number: number;
+  form_type_id: UUID;
+}
+
+export interface IInspectableObjectProfileFormTypePropertyResponse
+  extends IInspectableObjectProfileFormTypePropertyInsert {
+  id: UUID;
+  created_at: Date | string;
+}
+
+// Inspectable object profile form type
+
+export interface IInspectableObjectProfileFormTypeInsert {
+  name: string;
+  description: string;
+  profile_id: UUID;
+}
+
+export interface IInspectableObjectProfileFormTypeResponse
+  extends IInspectableObjectProfileFormTypeInsert {
   id: UUID;
   created_at: Date | string;
 }
@@ -91,7 +134,17 @@ export interface IInspectableObjectWithPropertiesResponse
   inspectable_object_property: IInspectableObjectPropertyResponse[];
 }
 
-export interface IInspectableObjectProfileWithProperties
+export interface IInspectableObjectProfileWithObjProperties
   extends IInspectableObjectProfileResponse {
-  inspectable_object_profile_property: IInspectableObjectProfilePropertyResponse[];
+  inspectable_object_profile_obj_property: IInspectableObjectProfileObjPropertyResponse[];
+}
+
+export interface IInspectableObjectProfileWithFormProperties
+  extends IInspectableObjectProfileResponse {
+  inspectable_object_profile_form_property: IInspectableObjectProfileFormPropertyResponse[];
+}
+
+export interface IInspectableObjectProfileFormTypesWithProperties
+  extends IInspectableObjectProfileFormTypeResponse {
+  inspectable_object_profile_form_type_property: IInspectableObjectProfileFormTypePropertyResponse[];
 }

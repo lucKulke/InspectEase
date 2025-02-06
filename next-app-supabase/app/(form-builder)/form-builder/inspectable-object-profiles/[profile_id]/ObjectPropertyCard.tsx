@@ -1,4 +1,5 @@
 "use client";
+import React, { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -8,16 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableFooter,
-} from "@/components/ui/table";
 
 import {
   Dialog,
@@ -27,63 +18,47 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-
-import { useNotification } from "@/app/context/NotificationContext";
-
 import {
-  IInspectableObjectProfilePropertyResponse,
-  IInspectableObjectProfileResponse,
-  IInspectableObjectProfileWithProperties,
+  IInspectableObjectProfileObjPropertyInsert,
+  IInspectableObjectProfileObjPropertyResponse,
+  IInspectableObjectProfileWithObjProperties,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
-import { SupabaseError } from "@/lib/globalInterfaces";
 
-import { redirect } from "next/navigation";
 import { profileIcons } from "@/lib/availableIcons";
-import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
-import { useEffect, useState } from "react";
-import { IInspectableObjectProfilePropertyInsert } from "@/lib/database/form-builder/formBuilderInterfaces";
-import { createProfileProperty } from "./actions";
+import { createProfileObjProperty } from "./actions";
+import { useNotification } from "@/app/context/NotificationContext";
+import { DraggableObjPropertyList } from "./DraggableObjPropertyList";
 
-import { DragAndDropPropertyList } from "./DragAndDropPropertyList";
-
-interface ProfileCardProps {
-  profileData: IInspectableObjectProfileWithProperties;
+interface ObjectPropertyCard {
+  profileData: IInspectableObjectProfileWithObjProperties;
 }
 
-export const ProfileCard = ({ profileData }: ProfileCardProps) => {
+export const ObjectPropertyCard = ({ profileData }: ObjectPropertyCard) => {
   const { showNotification } = useNotification();
 
   const [openAddPropertyDialog, setOpenAddPropertyDialog] =
     useState<boolean>(false);
   const [profilePropertyList, setProfilePropertyList] = useState<
-    IInspectableObjectProfilePropertyResponse[]
-  >(profileData?.inspectable_object_profile_property);
+    IInspectableObjectProfileObjPropertyResponse[]
+  >(profileData?.inspectable_object_profile_obj_property);
   const [propertyName, setPropertyName] = useState<string>("");
   const [propertyDescription, setPropertyDescription] = useState<string>("");
 
-  useEffect(() => {
-    if (!openAddPropertyDialog) {
-      setPropertyName("");
-      setPropertyDescription("");
-    }
-  }, [openAddPropertyDialog]);
-
   const handleCreateProperty = async (
-    property: IInspectableObjectProfilePropertyInsert
+    property: IInspectableObjectProfileObjPropertyInsert
   ) => {
     console.log("propety", property);
     const {
-      inspectableObjectProfileProperty,
-      inspectableObjectProfilePropertyError,
-    } = await createProfileProperty(property);
+      inspectableObjectProfileObjProperty,
+      inspectableObjectProfileObjPropertyError,
+    } = await createProfileObjProperty(property);
 
-    if (inspectableObjectProfilePropertyError) {
+    if (inspectableObjectProfileObjPropertyError) {
       showNotification(
-        "Create property",
-        `Error: ${inspectableObjectProfilePropertyError.message} (${inspectableObjectProfilePropertyError.code})`,
+        "Create obj property",
+        `Error: ${inspectableObjectProfileObjPropertyError.message} (${inspectableObjectProfileObjPropertyError.code})`,
         "error"
       );
       return;
@@ -91,35 +66,35 @@ export const ProfileCard = ({ profileData }: ProfileCardProps) => {
 
     showNotification(
       "Create property",
-      `Successfully created profile property with id '${inspectableObjectProfileProperty.id}'`,
+      `Successfully created profile obj property with id '${inspectableObjectProfileObjProperty.id}'`,
       "info"
     );
 
     setProfilePropertyList([
       ...profilePropertyList,
-      inspectableObjectProfileProperty,
+      inspectableObjectProfileObjProperty,
     ]);
   };
 
   return (
-    <>
-      <Card className="w-1/2">
-        <div className="flex justify-between items-center">
-          <CardHeader>
-            <CardTitle>{profileData?.name}</CardTitle>
-            <CardDescription>{profileData?.description}</CardDescription>
-          </CardHeader>
-          <div className="m-7">
-            {profileData?.icon_key && profileIcons[profileData.icon_key]}
-          </div>
-        </div>
+    <div>
+      <Card className="min-w-[500px]">
+        <CardHeader>
+          <CardTitle>Object properties</CardTitle>
+          <CardDescription>
+            All properties that are needed to identify the object
+          </CardDescription>
+        </CardHeader>
+
         <CardContent className="space-y-5">
           <div className="flex justify-between mt-8">
-            <p className="text-sm text-slate-600">Additional propertys</p>
-            <Button onClick={() => setOpenAddPropertyDialog(true)}>Add</Button>
+            <p className="text-sm text-slate-600">Propertys</p>
+            <Button onClick={() => setOpenAddPropertyDialog(true)}>
+              Create
+            </Button>
           </div>
 
-          <DragAndDropPropertyList
+          <DraggableObjPropertyList
             propertyList={profilePropertyList}
             setPropertyList={setProfilePropertyList}
           />
@@ -179,6 +154,6 @@ export const ProfileCard = ({ profileData }: ProfileCardProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 };

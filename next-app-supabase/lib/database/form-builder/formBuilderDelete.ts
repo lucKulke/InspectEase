@@ -1,5 +1,9 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  IInspectableObjectProfileFormPropertyResponse,
+  IInspectableObjectProfileFormTypeInsert,
+  IInspectableObjectProfileFormTypePropertyResponse,
+  IInspectableObjectProfileFormTypeResponse,
   IInspectableObjectProfileInsert,
   IInspectableObjectProfileResponse,
   IInspectableObjectResponse,
@@ -35,28 +39,102 @@ export class DBActionsFormBuilderDelete {
     };
   }
 
-  async deleteInspectableObjectProfileProperty(propertyId: UUID): Promise<{
-    deletedInspectableObjectProfileProperty: IInspectableObjectProfileResponse;
-    deletedInspectableObjectProfilePropertyError: SupabaseError | null;
+  async deleteInspectableObjectProfileObjProperty(propertyId: UUID): Promise<{
+    deletedInspectableObjectProfileObjProperty: IInspectableObjectProfileResponse;
+    deletedInspectableObjectProfileObjPropertyError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
-      .from("inspectable_object_profile_property")
+      .from("inspectable_object_profile_obj_property")
       .delete()
       .eq("id", propertyId)
       .select();
 
-    console.log("delete inspectable object profile property in db:", data);
+    console.log("delete inspectable object profile obj property in db:", data);
     if (error) {
       console.error(
-        "delete inspectable object profile property in db error:",
+        "delete inspectable object profile obj property in db error:",
         error
       );
     }
 
     return {
-      deletedInspectableObjectProfileProperty: data ? data[0] : null,
-      deletedInspectableObjectProfilePropertyError:
+      deletedInspectableObjectProfileObjProperty: data ? data[0] : null,
+      deletedInspectableObjectProfileObjPropertyError:
         error as SupabaseError | null,
+    };
+  }
+
+  async deleteInspectableObjectProfileFormProperty(propertyId: UUID): Promise<{
+    deletedInspectableObjectProfileFormProperty: IInspectableObjectProfileFormPropertyResponse;
+    deletedInspectableObjectProfileFormPropertyError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_profile_form_property")
+      .delete()
+      .eq("id", propertyId)
+      .select();
+
+    console.log("delete inspectable object profile form property in db:", data);
+    if (error) {
+      console.error(
+        "delete inspectable object profile form property in db error:",
+        error
+      );
+    }
+
+    return {
+      deletedInspectableObjectProfileFormProperty: data ? data[0] : null,
+      deletedInspectableObjectProfileFormPropertyError:
+        error as SupabaseError | null,
+    };
+  }
+
+  async deleteInspectableObjectProfileFormTypeProp(propertyId: UUID): Promise<{
+    deletedInspectableObjectProfileFormTypeProperty: IInspectableObjectProfileFormTypePropertyResponse | null;
+    deletedInspectableObjectProfileFormTypePropertyError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_profile_form_type_property")
+      .delete()
+      .eq("id", propertyId)
+      .select();
+
+    console.log(
+      "delete inspectable object profile form type property in db:",
+      data
+    );
+    if (error) {
+      console.error(
+        "delete inspectable object profile form type property in db error:",
+        error
+      );
+    }
+
+    return {
+      deletedInspectableObjectProfileFormTypeProperty: data ? data[0] : null,
+      deletedInspectableObjectProfileFormTypePropertyError:
+        error as SupabaseError | null,
+    };
+  }
+
+  async deleteProfileFormType(formTypeId: UUID): Promise<{
+    deletedProfileFormType: IInspectableObjectProfileFormTypeResponse | null;
+    deletedProfileFormTypeError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_profile_form_type")
+      .delete()
+      .eq("id", formTypeId)
+      .select();
+
+    console.log("delete inspectable object in db:", data);
+    if (error) {
+      console.error("delete inspectable object  in db error:", error);
+    }
+
+    return {
+      deletedProfileFormType: data ? data[0] : null,
+      deletedProfileFormTypeError: error as SupabaseError | null,
     };
   }
 

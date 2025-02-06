@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  IInspectableObjectProfilePropertyResponse,
+  IInspectableObjectProfileObjPropertyResponse,
   IInspectableObjectProfileResponse,
   IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
@@ -42,7 +42,7 @@ import { useRouter } from "next/navigation";
 
 interface ObjectCardProps {
   objectInfo: IInspectableObjectWithPropertiesAndProfileResponse[] | null;
-  objectProfileProps: IInspectableObjectProfilePropertyResponse[] | null;
+  objectProfileProps: IInspectableObjectProfileObjPropertyResponse[] | null;
 }
 
 export const ObjectCard = ({
@@ -94,8 +94,8 @@ export const ObjectCard = ({
   };
 
   function compare(
-    a: IInspectableObjectProfilePropertyResponse,
-    b: IInspectableObjectProfilePropertyResponse
+    a: IInspectableObjectProfileObjPropertyResponse,
+    b: IInspectableObjectProfileObjPropertyResponse
   ) {
     if (a.order_number < b.order_number) return -1;
 

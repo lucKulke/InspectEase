@@ -23,11 +23,11 @@ import { UUID } from "crypto";
 import {
   createObjectPropertys,
   createObject,
-  fetchObjectProfilePropertys,
+  fetchObjectProfileObjPropertys,
 } from "./actions";
 import { SupabaseError } from "@/lib/globalInterfaces";
 import {
-  IInspectableObjectProfilePropertyResponse,
+  IInspectableObjectProfileObjPropertyResponse,
   IInspectableObjectProfileResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { redirect } from "next/navigation";
@@ -49,7 +49,7 @@ export const CreateObjectCard = ({
   const [selectedProfileId, setSelectedProfileId] = useState<UUID>();
   const [rerenderkey, setRerenderKey] = useState(+new Date());
   const [profilePropertys, setProfilePropertys] =
-    useState<IInspectableObjectProfilePropertyResponse[]>();
+    useState<IInspectableObjectProfileObjPropertyResponse[]>();
   const [propertyValues, setPropertyValues] = useState<Record<string, string>>(
     {}
   );
@@ -69,7 +69,7 @@ export const CreateObjectCard = ({
     const {
       inspectableObjectProfilePropertys,
       inspectableObjectProfilePropertysError,
-    } = await fetchObjectProfilePropertys(profileId);
+    } = await fetchObjectProfileObjPropertys(profileId);
 
     if (inspectableObjectProfilePropertysError) {
       showNotification(
@@ -125,8 +125,8 @@ export const CreateObjectCard = ({
   };
 
   function compare(
-    a: IInspectableObjectProfilePropertyResponse,
-    b: IInspectableObjectProfilePropertyResponse
+    a: IInspectableObjectProfileObjPropertyResponse,
+    b: IInspectableObjectProfileObjPropertyResponse
   ) {
     if (a.order_number < b.order_number) return -1;
 
