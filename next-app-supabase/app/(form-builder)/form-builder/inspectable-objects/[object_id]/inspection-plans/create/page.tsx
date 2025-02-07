@@ -1,10 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { NewInspectionFormCard } from "./NewInspectionFormCard";
 
 import { PageHeading } from "@/components/PageHeading";
 import { ErrorHandler } from "@/components/ErrorHandler";
@@ -29,17 +23,31 @@ export default async function CreateInpsectionPlanPage({
 
   if (!inspectableObject) return <div>No object found. try again...</div>;
 
+  const {
+    inspectableObjectProfileWithFormTypes,
+    inspectableObjectProfileWithFormTypesError,
+  } = await dbActions.fetchInspectableObjectProfileWitFormTypes(
+    inspectableObject.profile_id
+  );
+
+  if (inspectableObjectProfileWithFormTypesError)
+    return (
+      <ErrorHandler
+        error={inspectableObjectProfileWithFormTypesError}
+      ></ErrorHandler>
+    );
+
+  if (!inspectableObjectProfileWithFormTypes)
+    return <div>No form types found. try again...</div>;
+
   return (
     <div>
       <PageHeading>Create inspect form</PageHeading>
-      <div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Create inpection plan</CardTitle>
-            <CardDescription></CardDescription>
-          </CardHeader>
-          <CardContent></CardContent>
-        </Card>
+      <div className="flex justify-center">
+        <NewInspectionFormCard
+          objectId={inspectableObject.id}
+          profileWithFormTypes={inspectableObjectProfileWithFormTypes}
+        ></NewInspectionFormCard>
       </div>
     </div>
   );

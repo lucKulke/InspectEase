@@ -148,3 +148,8 @@ export interface IInspectableObjectProfileFormTypesWithProperties
   extends IInspectableObjectProfileFormTypeResponse {
   inspectable_object_profile_form_type_property: IInspectableObjectProfileFormTypePropertyResponse[];
 }
+
+export interface IInspectableObjectProfileWitFormTypes
+  extends IInspectableObjectProfileResponse {
+  inspectable_object_profile_form_type: IInspectableObjectProfileFormTypeResponse[];
+}
