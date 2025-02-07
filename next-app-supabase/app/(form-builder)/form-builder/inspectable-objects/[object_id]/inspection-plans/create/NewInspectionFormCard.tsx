@@ -50,8 +50,8 @@ export const NewInspectionFormCard = ({
   >([]);
   const [selectedFormTypeId, setSelectedFormTypeId] = useState<UUID>();
   const [resetSelectComponent, setResetSelectComponent] = useState(+new Date());
-
   const [formTypeValues, setFormTypeValues] = useState<Record<UUID, string>>();
+  const [isFilled, setIsFilled] = useState<boolean>(false);
 
   const [file, setFile] = useState<File | null>(null);
 
@@ -81,10 +81,12 @@ export const NewInspectionFormCard = ({
 
   const handleInputChange = (propertyId: string, value: string) => {
     setFormTypeValues((prev) => ({ ...prev, [propertyId]: value }));
-    console.log(formTypeValues);
   };
 
-  const handleUploadFile = (file: File) => {};
+  const handleCreateInspectionForm = () => {
+    console.log("plan", formTypeValues);
+    console.log("file", file?.name);
+  };
 
   function compare(
     a: IInspectableObjectProfileFormTypePropertyResponse,
@@ -140,10 +142,16 @@ export const NewInspectionFormCard = ({
           ))}
         </ul>
 
-        <UploadDocument file={file} setFile={setFile}></UploadDocument>
+        {selectedFormTypeId && (
+          <UploadDocument file={file} setFile={setFile}></UploadDocument>
+        )}
       </CardContent>
       <CardFooter className="flex justify-center">
-        <Button>Create</Button>
+        {isFilled ? (
+          <Button onClick={() => handleCreateInspectionForm()}>Create</Button>
+        ) : (
+          <Button variant="outline">Create</Button>
+        )}
       </CardFooter>
     </Card>
   );
