@@ -15,6 +15,7 @@ import { SupabaseError } from "@/lib/globalInterfaces";
 import { MainAddButton } from "@/components/MainAddButton";
 import { InspectionPlansTable } from "./InspectionPlansTable";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
+import { DiscAlbum } from "lucide-react";
 
 export default async function ObjectPage({
   params,
@@ -56,6 +57,17 @@ export default async function ObjectPage({
     profileProperties = inspectableObjectProfilePropertys;
     profilePropertiesError = inspectableObjectProfilePropertysError;
   }
+
+  if (!inspectableObjectWithPropertiesAndProfile) return <div>No object</div>;
+
+  const {
+    inspectableObjectInspectionForms,
+    inspectableObjectInspectionFormsError,
+  } = await dbActions.fetchInspectableObjectInspectionForms(objectId);
+
+  const {} = await dbActions.fetchInspectableObjectProfileFormTypes(
+    inspectableObjectWithPropertiesAndProfile[0].inspectable_object_profile.id
+  );
 
   return (
     <div>

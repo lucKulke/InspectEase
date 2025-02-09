@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  IInspectableObjectInspectionFormResponse,
   IInspectableObjectProfileFormPropertyResponse,
   IInspectableObjectProfileFormTypeInsert,
   IInspectableObjectProfileFormTypePropertyResponse,
@@ -355,31 +356,29 @@ export class DBActionsFormBuilderFetch {
       inspectableObjectProfileFormTypePropsError: error as SupabaseError | null,
     };
   }
+
   async fetchInspectableObjectInspectionForms(objectId: UUID): Promise<{
-    inspectableObjectProfileFormTypeProps:
-      | IInspectableObjectProfileFormTypePropertyResponse[]
+    inspectableObjectInspectionForms:
+      | IInspectableObjectInspectionFormResponse[]
       | null;
-    inspectableObjectProfileFormTypePropsError: SupabaseError | null;
+    inspectableObjectInspectionFormsError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
-      .from("inspectable_object_profile_form_type_property")
+      .from("inspectable_object_inspection_form")
       .select("*")
-      .eq("form_type_id", formTypeId);
+      .eq("object_id", objectId);
 
-    console.log(
-      "fetch inspectable object profile form type props in db:",
-      data
-    );
+    console.log("fetch inspectable object inspection forms in db:", data);
     if (error) {
       console.error(
-        "fetch inspectable object profile form type props in db error: ",
+        "fetch inspectable object inspection forms in db error: ",
         error
       );
     }
 
     return {
-      inspectableObjectProfileFormTypeProps: data ? data : [],
-      inspectableObjectProfileFormTypePropsError: error as SupabaseError | null,
+      inspectableObjectInspectionForms: data ? data : [],
+      inspectableObjectInspectionFormsError: error as SupabaseError | null,
     };
   }
 }
