@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  IInspectableObjectInspectionFormInsert,
   IInspectableObjectProfileFormTypePropertyInsert,
   IInspectableObjectProfileFormTypePropertyResponse,
   IInspectableObjectProfileWitFormTypes,
@@ -31,8 +32,13 @@ import { UploadDocument } from "./UploadDocument";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { fetchProfileFormTypeProps } from "./actions";
+import { createInspectionForm, fetchProfileFormTypeProps } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
+import { AnnotationData, AnnotationsApiResponse } from "@/lib/globalInterfaces";
+import { Progress } from "@/components/ui/progress";
+import { redirect } from "next/navigation";
+import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
+import { Spinner } from "@/components/Spinner";
 
 interface NewInspectionFormCardProps {
   objectId: UUID;
@@ -52,6 +58,7 @@ export const NewInspectionFormCard = ({
   const [resetSelectComponent, setResetSelectComponent] = useState(+new Date());
   const [formTypeValues, setFormTypeValues] = useState<Record<UUID, string>>();
   const [isFilled, setIsFilled] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const [file, setFile] = useState<File | null>(null);
 
@@ -79,13 +86,115 @@ export const NewInspectionFormCard = ({
     }
   }, [selectedFormTypeId]);
 
+  // only for checking if form is filled.. not realy elegant
+
+  useEffect(() => {
+    checkIsFilled();
+  }, [formTypeValues]);
+
+  useEffect(() => {
+    if (file) {
+      checkIsFilled();
+    } else {
+      setIsFilled(false);
+    }
+  }, [file]);
+
+  const checkIsFilled = (): boolean => {
+    if (!formTypeValues) return false;
+    if (Object.entries(formTypeValues).length === formTypeProps.length) {
+      let tempIsFilled = true;
+      Object.entries(formTypeValues).forEach(([key, value]) => {
+        if (value.length < 1) {
+          setIsFilled(false);
+          tempIsFilled = false;
+          return;
+        }
+      });
+      if (file && tempIsFilled) {
+        setIsFilled(true);
+        return true;
+      }
+    }
+    return false;
+  };
+  // ------------------------------
+
   const handleInputChange = (propertyId: string, value: string) => {
     setFormTypeValues((prev) => ({ ...prev, [propertyId]: value }));
   };
 
-  const handleCreateInspectionForm = () => {
-    console.log("plan", formTypeValues);
-    console.log("file", file?.name);
+  const getAnnotationsFromPDF = async (
+    annotatedFile: File
+  ): Promise<AnnotationsApiResponse> => {
+    const form = new FormData();
+    form.append("file", annotatedFile);
+
+    // Extract annotations from the file using own api
+    const response = await fetch("/api/pdf/extract-annotations", {
+      method: "POST",
+      body: form,
+    });
+
+    const data: AnnotationsApiResponse = await response.json();
+    return data;
+  };
+
+  function hasDuplicateAnnotations(annotations: AnnotationData[]): boolean {
+    const seenContents: Set<string> = new Set();
+
+    for (const annotation of annotations) {
+      if (seenContents.has(annotation.contents)) {
+        // If the contents have been seen before, it's a duplicate
+        return true;
+      }
+      seenContents.add(annotation.contents);
+    }
+
+    // No duplicates found
+    return false;
+  }
+
+  const handleCreateInspectionForm = async () => {
+    if (!file || !selectedFormTypeId || !formTypeValues) return;
+
+    const annotationsData = await getAnnotationsFromPDF(file);
+    console.log("annotations", annotationsData);
+    if (hasDuplicateAnnotations(annotationsData.annotations)) {
+      showNotification(
+        "Extract pdf annotations",
+        "Error: Duplicate annotations found",
+        "error"
+      );
+      setLoading(false);
+      return;
+    }
+
+    const { inspectionForm, inspectionFormError } = await createInspectionForm(
+      selectedFormTypeId,
+      objectId,
+      formTypeValues,
+      file,
+      annotationsData.annotations
+    );
+
+    if (inspectionFormError) {
+      showNotification(
+        "Create inspection form",
+        `Error: ${inspectionFormError.message} (${inspectionFormError.message})`,
+        "error"
+      );
+      setLoading(false);
+      return;
+    }
+
+    showNotification(
+      "Create inspection form",
+      `Successfully created inspection form with id '${inspectionForm.id}'`,
+      "info"
+    );
+    setLoading(false);
+    redirect(formBuilderLinks["inspectableObjects"].href + "/" + objectId);
   };
 
   function compare(
@@ -147,10 +256,23 @@ export const NewInspectionFormCard = ({
         )}
       </CardContent>
       <CardFooter className="flex justify-center">
-        {isFilled ? (
-          <Button onClick={() => handleCreateInspectionForm()}>Create</Button>
+        {loading ? (
+          <Spinner />
         ) : (
-          <Button variant="outline">Create</Button>
+          <>
+            {isFilled ? (
+              <Button
+                onClick={() => {
+                  setLoading(true);
+                  handleCreateInspectionForm();
+                }}
+              >
+                Create
+              </Button>
+            ) : (
+              <Button variant="outline">Create</Button>
+            )}
+          </>
         )}
       </CardFooter>
     </Card>

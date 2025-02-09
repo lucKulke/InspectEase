@@ -355,4 +355,31 @@ export class DBActionsFormBuilderFetch {
       inspectableObjectProfileFormTypePropsError: error as SupabaseError | null,
     };
   }
+  async fetchInspectableObjectInspectionForms(objectId: UUID): Promise<{
+    inspectableObjectProfileFormTypeProps:
+      | IInspectableObjectProfileFormTypePropertyResponse[]
+      | null;
+    inspectableObjectProfileFormTypePropsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_profile_form_type_property")
+      .select("*")
+      .eq("form_type_id", formTypeId);
+
+    console.log(
+      "fetch inspectable object profile form type props in db:",
+      data
+    );
+    if (error) {
+      console.error(
+        "fetch inspectable object profile form type props in db error: ",
+        error
+      );
+    }
+
+    return {
+      inspectableObjectProfileFormTypeProps: data ? data : [],
+      inspectableObjectProfileFormTypePropsError: error as SupabaseError | null,
+    };
+  }
 }

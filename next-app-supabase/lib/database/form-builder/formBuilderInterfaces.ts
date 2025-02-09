@@ -123,6 +123,59 @@ export interface IInspectableObjectResponse extends IInspectableObjectInsert {
 
 // -------------------
 
+// inspection form
+
+export interface IInspectableObjectInspectionFormInsert {
+  object_id: UUID;
+  form_type_id: UUID;
+}
+
+export interface IInspectableObjectInspectionFormResponse
+  extends IInspectableObjectInspectionFormInsert {
+  id: UUID;
+  created_at: Date | string;
+  updated_at: Date | string;
+  document_id: UUID;
+}
+
+// ---------------
+
+// inspection form property
+export interface IInspectableObjectInspectionFormPropertyInsert {
+  form_type_prop_id: UUID;
+  inspection_form_id: UUID;
+  value: string;
+}
+
+export interface IInspectableObjectInspectionFormPropertyResponse
+  extends IInspectableObjectInspectionFormPropertyInsert {
+  id: UUID;
+  created_at: Date | string;
+}
+
+// -----------------
+
+// inspection form annotations
+
+export interface IInspectableObjectInspectionFormAnnotationInsert {
+  inspection_form_id: UUID;
+  page: number;
+  type: string;
+  content: string;
+  x1: number;
+  x2: number;
+  y1: number;
+  y2: number;
+}
+
+export interface IInspectableObjectInspectionFormAnnotationResponse
+  extends IInspectableObjectInspectionFormAnnotationInsert {
+  id: UUID;
+  created_at: Date | string;
+}
+
+// --------------------
+
 export interface IInspectableObjectWithPropertiesAndProfileResponse
   extends IInspectableObjectResponse {
   inspectable_object_property: IInspectableObjectPropertyResponse[];

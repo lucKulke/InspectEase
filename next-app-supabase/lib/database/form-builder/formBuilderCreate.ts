@@ -1,6 +1,11 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
   IInspectableObjectInsert,
+  IInspectableObjectInspectionFormAnnotationInsert,
+  IInspectableObjectInspectionFormAnnotationResponse,
+  IInspectableObjectInspectionFormInsert,
+  IInspectableObjectInspectionFormPropertyInsert,
+  IInspectableObjectInspectionFormResponse,
   IInspectableObjectProfileFormPropertyInsert,
   IInspectableObjectProfileFormPropertyResponse,
   IInspectableObjectProfileFormTypeInsert,
@@ -175,7 +180,10 @@ export class DBActionsFormBuilderCreate {
       .insert([formTypeProp])
       .select();
 
-    console.log("create inspectable object profile form type propin db:", data);
+    console.log(
+      "create inspectable object profile form type prop in db:",
+      data
+    );
     if (error) {
       console.error(
         "create inspectable object profile form type prop in db error: ",
@@ -186,6 +194,93 @@ export class DBActionsFormBuilderCreate {
     return {
       inspectableObjectProfileFormTypeProp: data ? data[0] : null,
       inspectableObjectProfileFormTypePropError: error as SupabaseError | null,
+    };
+  }
+
+  async createInspectableObjectInspectionForm(
+    inspectionForm: IInspectableObjectInspectionFormInsert
+  ): Promise<{
+    inspectableObjectInspectionForm: IInspectableObjectInspectionFormResponse | null;
+    inspectableObjectInspectionFormError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_inspection_form")
+      .insert([inspectionForm])
+      .select();
+
+    console.log("create inspectable object inspection form in db:", data);
+    if (error) {
+      console.error(
+        "create inspectable object inspection form in db error: ",
+        error
+      );
+    }
+
+    return {
+      inspectableObjectInspectionForm: data ? data[0] : null,
+      inspectableObjectInspectionFormError: error as SupabaseError | null,
+    };
+  }
+
+  async createInspectableObjectInspectionFormProperties(
+    inspectionFormProperties: IInspectableObjectInspectionFormPropertyInsert[]
+  ): Promise<{
+    inspectableObjectInspectionFormProperties:
+      | IInspectableObjectInspectionFormPropertyInsert[]
+      | null;
+    inspectableObjectInspectionFormPropertiesError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_inspection_form_property")
+      .insert(inspectionFormProperties)
+      .select();
+
+    console.log(
+      "create inspectable object inspection form properties in db:",
+      data
+    );
+    if (error) {
+      console.error(
+        "create inspectable object inspection form properties in db error: ",
+        error
+      );
+    }
+
+    return {
+      inspectableObjectInspectionFormProperties: data,
+      inspectableObjectInspectionFormPropertiesError:
+        error as SupabaseError | null,
+    };
+  }
+
+  async createInspectableObjectInspectionFormAnnotations(
+    inspectionFormAnnotations: IInspectableObjectInspectionFormAnnotationInsert[]
+  ): Promise<{
+    inspectableObjectInspectionFormAnnotations:
+      | IInspectableObjectInspectionFormAnnotationResponse[]
+      | null;
+    inspectableObjectInspectionFormAnnotationsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_inspection_form_annotation")
+      .insert(inspectionFormAnnotations)
+      .select();
+
+    console.log(
+      "create inspectable object inspection form annotations in db:",
+      data
+    );
+    if (error) {
+      console.error(
+        "create inspectable object inspection form annotations in db error: ",
+        error
+      );
+    }
+
+    return {
+      inspectableObjectInspectionFormAnnotations: data,
+      inspectableObjectInspectionFormAnnotationsError:
+        error as SupabaseError | null,
     };
   }
 }
