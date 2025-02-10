@@ -206,3 +206,13 @@ export interface IInspectableObjectProfileWitFormTypes
   extends IInspectableObjectProfileResponse {
   inspectable_object_profile_form_type: IInspectableObjectProfileFormTypeResponse[];
 }
+
+export interface IInspectableObjectInspectionFormsWithProps
+  extends IInspectableObjectInspectionFormResponse {
+  inspectable_object_inspection_form_property: IInspectableObjectInspectionFormPropertyResponse[];
+}
+
+export interface IInspectableObjectProfileFormTypeWithProps
+  extends IInspectableObjectProfileFormTypeResponse {
+  inspectable_object_profile_form_type_property: IInspectableObjectProfileFormTypePropertyResponse[];
+}

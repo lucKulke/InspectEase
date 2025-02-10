@@ -63,12 +63,24 @@ export default async function ObjectPage({
   const {
     inspectableObjectInspectionForms,
     inspectableObjectInspectionFormsError,
-  } = await dbActions.fetchInspectableObjectInspectionForms(objectId);
+  } = await dbActions.fetchInspectableObjectInspectionFormsWithProps(objectId);
 
-  const {} = await dbActions.fetchInspectableObjectProfileFormTypes(
+  if (inspectableObjectInspectionFormsError)
+    return <ErrorHandler error={inspectableObjectInspectionFormsError} />;
+
+  const {
+    inspectableObjectProfileFormTypesWithProps,
+    inspectableObjectProfileFormTypesWithPropsError,
+  } = await dbActions.fetchInspectableObjectProfileFormTypesWithProps(
     inspectableObjectWithPropertiesAndProfile[0].inspectable_object_profile.id
   );
 
+  if (inspectableObjectProfileFormTypesWithPropsError)
+    return (
+      <ErrorHandler error={inspectableObjectProfileFormTypesWithPropsError} />
+    );
+
+  if (!inspectableObjectInspectionForms) return <div></div>;
   return (
     <div>
       <PageHeading>Object</PageHeading>
@@ -83,12 +95,16 @@ export default async function ObjectPage({
             formBuilderLinks["inspectableObjects"].href +
             "/" +
             objectId +
-            "/inspection-plans/create"
+            "/inspection-forms/create"
           }
         ></MainAddButton>
       </div>
-      <div className="flex justify-center mt-5">
-        <InspectionPlansTable></InspectionPlansTable>
+      <div className=" m-5">
+        <InspectionPlansTable
+          objectId={objectId}
+          inspectionFormsWithProps={inspectableObjectInspectionForms}
+          profileFormTypes={inspectableObjectProfileFormTypesWithProps}
+        ></InspectionPlansTable>
       </div>
     </div>
   );
