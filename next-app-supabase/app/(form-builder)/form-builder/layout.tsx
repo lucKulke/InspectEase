@@ -22,7 +22,7 @@ export default function FormBuilderLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <>
+    <div className="m-auto max-w-[1400px]">
       <MainNavBar
         icon={FormBuilderNavbarIcon()}
         links={formBuilderLinks}
@@ -30,6 +30,6 @@ export default function FormBuilderLayout({
       <div className="border-2 rounded-xl min-h-screen mt-4 dark:border-slate-500 border-black p-4">
         {children}
       </div>
-    </>
+    </div>
   );
 }

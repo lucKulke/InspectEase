@@ -26,7 +26,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   IInspectableObjectInspectionFormResponse,
-  IInspectableObjectInspectionFormsWithProps,
+  IInspectableObjectInspectionFormWithProps,
   IInspectableObjectProfileFormTypeResponse,
   IInspectableObjectProfileFormTypeWithProps,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
@@ -38,7 +38,7 @@ import { UUID } from "crypto";
 
 interface InspectionPlanTableProps {
   objectId: UUID;
-  inspectionFormsWithProps: IInspectableObjectInspectionFormsWithProps[];
+  inspectionFormsWithProps: IInspectableObjectInspectionFormWithProps[];
   profileFormTypes: IInspectableObjectProfileFormTypeWithProps[];
 }
 
@@ -78,20 +78,14 @@ export const InspectionPlansTable = ({
                     <TableRow key={inspectionForm.id}>
                       {inspectionForm.inspectable_object_inspection_form_property.map(
                         (inspectionFormProp) => (
-                          <TableCell>{inspectionFormProp.value}</TableCell>
+                          <TableCell key={inspectionFormProp.id}>
+                            {inspectionFormProp.value}
+                          </TableCell>
                         )
                       )}
                       <TableCell>
                         <div className="flex justify-end">
-                          <Link
-                            href={
-                              formBuilderLinks["inspectableObjects"].href +
-                              "/" +
-                              objectId +
-                              "/inspection-forms/" +
-                              inspectionForm.id
-                            }
-                          >
+                          <Link href={"/form-editor/" + inspectionForm.id}>
                             <Cog></Cog>
                           </Link>
                         </div>

@@ -18,7 +18,7 @@ export default function Home() {
         </button>
       </form>
       <h1 className="text-4xl font-bold text-center mb-8 text-gray-800 dark:text-gray-100">
-        Welcome to FormCraft
+        Welcome to InspectEase
       </h1>
       <p className="text-xl text-center mb-12 text-gray-600 dark:text-gray-300">
         Choose a tool to get started

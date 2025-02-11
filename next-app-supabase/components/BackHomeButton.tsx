@@ -2,30 +2,20 @@
 import React, { useEffect } from "react";
 import Link from "next/link";
 import { redirect, usePathname } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
+import { Wrench } from "lucide-react";
+//import { createClient } from "@/utils/supabase/client";
 
 export const BackHomeButton = () => {
   const pathname = usePathname();
-  const supabase = createClient();
-
-  const fetchCurrentUser = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      redirect("/login");
-    }
-  };
-
-  useEffect(() => {
-    fetchCurrentUser();
-  }, []);
 
   return (
     <div className="flex justify-between">
       <Link href="/">
-        {pathname !== "/" && <p className="text-slate-600">Back Home</p>}
+        {pathname !== "/" && (
+          <div className="fixed top-4 left-4 p-2 rounded-full bg-gray-200 dark:bg-gray-800 transition-colors duration-200">
+            <Wrench className="w-5 h-5"></Wrench>
+          </div>
+        )}
       </Link>
     </div>
   );

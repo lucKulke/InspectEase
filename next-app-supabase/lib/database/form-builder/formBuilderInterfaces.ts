@@ -207,7 +207,7 @@ export interface IInspectableObjectProfileWitFormTypes
   inspectable_object_profile_form_type: IInspectableObjectProfileFormTypeResponse[];
 }
 
-export interface IInspectableObjectInspectionFormsWithProps
+export interface IInspectableObjectInspectionFormWithProps
   extends IInspectableObjectInspectionFormResponse {
   inspectable_object_inspection_form_property: IInspectableObjectInspectionFormPropertyResponse[];
 }
