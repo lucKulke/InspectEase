@@ -1,9 +1,13 @@
 import React from "react";
 
-export const PDFViewer = () => {
+interface PDFViewerProps {
+  pdfUrl: string;
+}
+
+export const PDFViewer = ({ pdfUrl }: PDFViewerProps) => {
   return (
     <iframe
-      src="/annotated.pdf" // Replace with your actual PDF path
+      src={pdfUrl} // Replace with your actual PDF path
       className="w-full h-full"
     />
   );

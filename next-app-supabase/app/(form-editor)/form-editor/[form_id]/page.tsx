@@ -6,6 +6,9 @@ import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuild
 import { ErrorHandler } from "@/components/ErrorHandler";
 import { redirect } from "next/navigation";
 import { IInspectableObjectInspectionFormPropertyResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
+import { EditorSection } from "./EditorSection";
+import { TabsContent } from "@/components/ui/tabs";
+import { DBActionsBucket } from "@/lib/database/bucket";
 
 export default async function FormEditorPage({
   params,
@@ -15,7 +18,9 @@ export default async function FormEditorPage({
   const formId = (await params).form_id;
 
   const supabase = await createClient("form_builder");
+  const supabaseStorage = await createClient();
   const dbActions = new DBActionsFormBuilderFetch(supabase);
+  const storageActions = new DBActionsBucket(supabaseStorage);
 
   const {
     inspectableObjectInspectionFormWithProps,
@@ -47,6 +52,11 @@ export default async function FormEditorPage({
     redirect("/error");
   }
 
+  const { bucketResponse, bucketError } =
+    await storageActions.downloadDocumentViaPublicUrl(
+      inspectableObjectInspectionFormWithProps.document_id
+    );
+
   const formMetadata: Record<
     UUID,
     IInspectableObjectInspectionFormPropertyResponse
@@ -66,7 +76,16 @@ export default async function FormEditorPage({
           profileFormTypeWithProps={inspectableObjectProfileFormTypeWithProps}
         ></FormMetadataCard>
       </div>
-      <div>test</div>
+      <div>
+        <EditorSection>
+          <TabsContent value="PDF" className="h-screen pt-7 pl-16 pr-16  ">
+            {bucketResponse && (
+              <PDFViewer pdfUrl={bucketResponse.signedUrl}></PDFViewer>
+            )}
+          </TabsContent>
+          <TabsContent value="Editor">test</TabsContent>
+        </EditorSection>
+      </div>
       {/* <PDFViewer></PDFViewer> */}
     </div>
   );
