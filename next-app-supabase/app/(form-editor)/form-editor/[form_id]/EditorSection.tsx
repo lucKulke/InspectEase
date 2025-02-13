@@ -16,7 +16,7 @@ export const EditorSection = ({ children }: EditorSectionProps) => {
         <div className="flex justify-center">
           <TabsList className="grid grid-cols-2 w-1/2">
             <TabsTrigger value="Editor">Editor</TabsTrigger>
-            <TabsTrigger value="PDF">PDF</TabsTrigger>
+            <TabsTrigger value="Document">Document (PDF)</TabsTrigger>
           </TabsList>
         </div>
         {children}

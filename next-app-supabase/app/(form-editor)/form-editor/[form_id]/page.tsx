@@ -9,6 +9,7 @@ import { IInspectableObjectInspectionFormPropertyResponse } from "@/lib/database
 import { EditorSection } from "./EditorSection";
 import { TabsContent } from "@/components/ui/tabs";
 import { DBActionsBucket } from "@/lib/database/bucket";
+import { Editor } from "./Editor";
 
 export default async function FormEditorPage({
   params,
@@ -78,12 +79,14 @@ export default async function FormEditorPage({
       </div>
       <div>
         <EditorSection>
-          <TabsContent value="PDF" className="h-screen pt-7 pl-16 pr-16  ">
+          <TabsContent value="Document" className="h-screen pt-7 pl-16 pr-16  ">
             {bucketResponse && (
               <PDFViewer pdfUrl={bucketResponse.signedUrl}></PDFViewer>
             )}
           </TabsContent>
-          <TabsContent value="Editor">test</TabsContent>
+          <TabsContent value="Editor">
+            <Editor></Editor>
+          </TabsContent>
         </EditorSection>
       </div>
       {/* <PDFViewer></PDFViewer> */}
