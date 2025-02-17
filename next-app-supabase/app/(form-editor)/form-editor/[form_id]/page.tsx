@@ -9,7 +9,7 @@ import { IInspectableObjectInspectionFormPropertyResponse } from "@/lib/database
 import { EditorSection } from "./EditorSection";
 import { TabsContent } from "@/components/ui/tabs";
 import { DBActionsBucket } from "@/lib/database/bucket";
-import { Editor } from "./Editor";
+import { MainForm } from "./Editor/MainForm";
 
 export default async function FormEditorPage({
   params,
@@ -85,7 +85,7 @@ export default async function FormEditorPage({
             )}
           </TabsContent>
           <TabsContent value="Editor">
-            <Editor></Editor>
+            <MainForm></MainForm>
           </TabsContent>
         </EditorSection>
       </div>

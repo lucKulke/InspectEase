@@ -2,7 +2,6 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { PDFViewer } from "@/components/PDFViewer";
 import React from "react";
 
 interface EditorSectionProps {
