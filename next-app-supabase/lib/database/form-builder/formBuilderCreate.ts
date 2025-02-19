@@ -4,6 +4,8 @@ import {
   IInspectableObjectInspectionFormAnnotationInsert,
   IInspectableObjectInspectionFormAnnotationResponse,
   IInspectableObjectInspectionFormInsert,
+  IInspectableObjectInspectionFormMainSectionInsert,
+  IInspectableObjectInspectionFormMainSectionResponse,
   IInspectableObjectInspectionFormPropertyInsert,
   IInspectableObjectInspectionFormResponse,
   IInspectableObjectProfileFormPropertyInsert,
@@ -280,6 +282,35 @@ export class DBActionsFormBuilderCreate {
     return {
       inspectableObjectInspectionFormAnnotations: data,
       inspectableObjectInspectionFormAnnotationsError:
+        error as SupabaseError | null,
+    };
+  }
+
+  async createInspectableObjectInspectionFormMainSection(
+    inspectionFormMainSection: IInspectableObjectInspectionFormMainSectionInsert
+  ): Promise<{
+    inspectableObjectInspectionFormMainSection: IInspectableObjectInspectionFormMainSectionResponse | null;
+    inspectableObjectInspectionFormMainSectionError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_inspection_form_main_section")
+      .insert(inspectionFormMainSection)
+      .select();
+
+    console.log(
+      "create inspectable object inspection form main section in db:",
+      data
+    );
+    if (error) {
+      console.error(
+        "create inspectable object inspection form main section in db error: ",
+        error
+      );
+    }
+
+    return {
+      inspectableObjectInspectionFormMainSection: data ? data[0] : null,
+      inspectableObjectInspectionFormMainSectionError:
         error as SupabaseError | null,
     };
   }

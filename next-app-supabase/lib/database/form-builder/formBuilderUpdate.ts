@@ -1,5 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  IInspectableObjectInspectionFormMainSectionInsert,
+  IInspectableObjectInspectionFormMainSectionResponse,
   IInspectableObjectProfileFormPropertyResponse,
   IInspectableObjectProfileFormTypePropertyInsert,
   IInspectableObjectProfileFormTypePropertyResponse,
@@ -143,6 +145,35 @@ export class DBActionsFormBuilderUpdate {
 
     return {
       updatedInspectableObjectProfileFormTypeProperty: data ? data[0] : null,
+      updatedInspectableObjectProfileFormTypePropertyError:
+        error as SupabaseError | null,
+    };
+  }
+
+  async updateInspectableObjectInspectionFormMainSection(
+    mainSections: IInspectableObjectInspectionFormMainSectionResponse[]
+  ): Promise<{
+    updatedInspectableObjectInspectionForm: IInspectableObjectPropertyResponse | null;
+    updatedInspectableObjectProfileFormTypePropertyError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_inspection_form_main_section")
+      .upsert(mainSections)
+      .select();
+
+    console.log(
+      "update inspectable object inspection form main sections in db:",
+      data
+    );
+    if (error) {
+      console.error(
+        "update inspectable object inspection form main sections in db error: ",
+        error
+      );
+    }
+
+    return {
+      updatedInspectableObjectInspectionForm: data ? data[0] : null,
       updatedInspectableObjectProfileFormTypePropertyError:
         error as SupabaseError | null,
     };

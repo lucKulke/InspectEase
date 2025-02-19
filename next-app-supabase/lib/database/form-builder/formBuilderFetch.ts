@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormResponse,
   IInspectableObjectInspectionFormWithProps,
   IInspectableObjectProfileFormPropertyResponse,
@@ -533,6 +534,43 @@ export class DBActionsFormBuilderFetch {
     return {
       inspectableObjectProfileFormTypesWithProps: data ? data : [],
       inspectableObjectProfileFormTypesWithPropsError:
+        error as SupabaseError | null,
+    };
+  }
+
+  async fetchInspectableObjectInspectionFormMainSectionsWithSubSections(
+    formId: UUID
+  ): Promise<{
+    inspectableObjectInspectionFormMainSectionsWithSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
+
+    inspectableObjectInspectionFormMainSectionsWithSubSectionsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_inspection_form_main_section")
+      .select(
+        `
+        *,
+        inspectable_object_inspection_form_sub_section(*)
+        `
+      )
+      .eq("form_id", formId);
+
+    console.log(
+      "fetch inspectable object inspection form main sections with sub sections in db:",
+      data
+    );
+    if (error) {
+      console.error(
+        "fetch inspectable object inspection form main sections with sub sections in db error: ",
+        error
+      );
+    }
+
+    return {
+      inspectableObjectInspectionFormMainSectionsWithSubSections: data
+        ? data
+        : [],
+      inspectableObjectInspectionFormMainSectionsWithSubSectionsError:
         error as SupabaseError | null,
     };
   }

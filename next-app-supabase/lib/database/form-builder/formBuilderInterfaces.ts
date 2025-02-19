@@ -176,6 +176,40 @@ export interface IInspectableObjectInspectionFormAnnotationResponse
 
 // --------------------
 
+// inspection form main sections
+
+export interface IInspectableObjectInspectionFormMainSectionInsert {
+  name: string;
+  description: string;
+  order_number: number;
+  form_id: UUID;
+}
+
+export interface IInspectableObjectInspectionFormMainSectionResponse
+  extends IInspectableObjectInspectionFormMainSectionInsert {
+  id: UUID;
+  created_at: Date | string;
+}
+
+// ---------------------------
+
+// inspection form sub sections
+
+export interface IInspectableObjectInspectionFormSubSectionInsert {
+  name: string;
+  description: string;
+  order_number: number;
+  main_section_id: UUID;
+}
+
+export interface IInspectableObjectInspectionFormSubSectionResponse
+  extends IInspectableObjectInspectionFormSubSectionInsert {
+  id: UUID;
+  created_at: Date | string;
+}
+
+// ---------------------------
+
 export interface IInspectableObjectWithPropertiesAndProfileResponse
   extends IInspectableObjectResponse {
   inspectable_object_property: IInspectableObjectPropertyResponse[];
@@ -215,4 +249,9 @@ export interface IInspectableObjectInspectionFormWithProps
 export interface IInspectableObjectProfileFormTypeWithProps
   extends IInspectableObjectProfileFormTypeResponse {
   inspectable_object_profile_form_type_property: IInspectableObjectProfileFormTypePropertyResponse[];
+}
+
+export interface IInspectableObjectInspectionFormMainSectionWithSubSection
+  extends IInspectableObjectInspectionFormMainSectionResponse {
+  inspectable_object_inspection_form_sub_section: IInspectableObjectInspectionFormSubSectionResponse[];
 }

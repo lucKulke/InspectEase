@@ -9,7 +9,7 @@ import { IInspectableObjectInspectionFormPropertyResponse } from "@/lib/database
 import { EditorSection } from "./EditorSection";
 import { TabsContent } from "@/components/ui/tabs";
 import { DBActionsBucket } from "@/lib/database/bucket";
-import { MainForm } from "./Editor/MainForm";
+import { MainFormSection } from "./Editor/MainFormSection";
 
 export default async function FormEditorPage({
   params,
@@ -68,6 +68,21 @@ export default async function FormEditorPage({
     }
   );
 
+  const {
+    inspectableObjectInspectionFormMainSectionsWithSubSections,
+    inspectableObjectInspectionFormMainSectionsWithSubSectionsError,
+  } =
+    await dbActions.fetchInspectableObjectInspectionFormMainSectionsWithSubSections(
+      formId
+    );
+
+  if (inspectableObjectInspectionFormMainSectionsWithSubSectionsError)
+    return (
+      <ErrorHandler
+        error={inspectableObjectInspectionFormMainSectionsWithSubSectionsError}
+      ></ErrorHandler>
+    );
+
   return (
     <div className="mt-10">
       <div className="w-1/4">
@@ -85,7 +100,12 @@ export default async function FormEditorPage({
             )}
           </TabsContent>
           <TabsContent value="Editor">
-            <MainForm></MainForm>
+            <MainFormSection
+              formId={formId}
+              mainSectionsWithSubsections={
+                inspectableObjectInspectionFormMainSectionsWithSubSections
+              }
+            ></MainFormSection>
           </TabsContent>
         </EditorSection>
       </div>
