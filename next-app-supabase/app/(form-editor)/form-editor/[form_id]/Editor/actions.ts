@@ -4,9 +4,12 @@ import {
   IInspectableObjectInspectionFormMainSectionInsert,
   IInspectableObjectInspectionFormMainSectionResponse,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
+  IInspectableObjectInspectionFormSubSectionInsert,
+  IInspectableObjectInspectionFormSubSectionResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { DBActionsFormBuilderUpdate } from "@/lib/database/form-builder/formBuilderUpdate";
 import { createClient } from "@/utils/supabase/server";
+import { UUID } from "crypto";
 
 export async function createNewMainSection(
   mainSection: IInspectableObjectInspectionFormMainSectionInsert
@@ -19,10 +22,33 @@ export async function createNewMainSection(
   );
 }
 
+export async function createNewSubSection(
+  subSection: IInspectableObjectInspectionFormSubSectionInsert
+) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderCreate(supabase);
+
+  return await dbActions.createInspectableObjectInspectionFormSubSection(
+    subSection
+  );
+}
+
 export async function updateMainSectionOrder(
-  mainSections: IInspectableObjectInspectionFormMainSectionWithSubSection[]
+  mainSections: IInspectableObjectInspectionFormMainSectionResponse[]
 ) {
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderUpdate(supabase);
-  return await dbActions.up(mainSections);
+  return await dbActions.updateInspectableObjectInspectionFormMainSection(
+    mainSections
+  );
+}
+
+export async function updateSubSectionOrder(
+  subSections: IInspectableObjectInspectionFormSubSectionResponse[]
+) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderUpdate(supabase);
+  return await dbActions.updateInspectableObjectInspectionFormSubSection(
+    subSections
+  );
 }

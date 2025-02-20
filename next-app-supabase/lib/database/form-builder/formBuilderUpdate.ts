@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import {
   IInspectableObjectInspectionFormMainSectionInsert,
   IInspectableObjectInspectionFormMainSectionResponse,
+  IInspectableObjectInspectionFormSubSectionResponse,
   IInspectableObjectProfileFormPropertyResponse,
   IInspectableObjectProfileFormTypePropertyInsert,
   IInspectableObjectProfileFormTypePropertyResponse,
@@ -153,8 +154,9 @@ export class DBActionsFormBuilderUpdate {
   async updateInspectableObjectInspectionFormMainSection(
     mainSections: IInspectableObjectInspectionFormMainSectionResponse[]
   ): Promise<{
-    updatedInspectableObjectInspectionForm: IInspectableObjectPropertyResponse | null;
-    updatedInspectableObjectProfileFormTypePropertyError: SupabaseError | null;
+    updatedInspectableObjectInspectionFormMainSections: IInspectableObjectInspectionFormMainSectionResponse[];
+
+    updatedInspectableObjectInspectionFormMainSectionsError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("inspectable_object_inspection_form_main_section")
@@ -173,8 +175,38 @@ export class DBActionsFormBuilderUpdate {
     }
 
     return {
-      updatedInspectableObjectInspectionForm: data ? data[0] : null,
-      updatedInspectableObjectProfileFormTypePropertyError:
+      updatedInspectableObjectInspectionFormMainSections: data ? data : [],
+      updatedInspectableObjectInspectionFormMainSectionsError:
+        error as SupabaseError | null,
+    };
+  }
+
+  async updateInspectableObjectInspectionFormSubSection(
+    subSections: IInspectableObjectInspectionFormSubSectionResponse[]
+  ): Promise<{
+    updatedInspectableObjectInspectionFormSubSections: IInspectableObjectInspectionFormSubSectionResponse[];
+
+    updatedInspectableObjectInspectionFormSubSectionsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_inspection_form_sub_section")
+      .upsert(subSections)
+      .select();
+
+    console.log(
+      "update inspectable object inspection form sub sections in db:",
+      data
+    );
+    if (error) {
+      console.error(
+        "update inspectable object inspection form sub sections in db error: ",
+        error
+      );
+    }
+
+    return {
+      updatedInspectableObjectInspectionFormSubSections: data ? data : [],
+      updatedInspectableObjectInspectionFormSubSectionsError:
         error as SupabaseError | null,
     };
   }

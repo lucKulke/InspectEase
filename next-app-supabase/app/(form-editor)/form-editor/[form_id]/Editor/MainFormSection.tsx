@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { FormSideBar } from "./SideBar";
+import { FormSideBar } from "./sidebar/SideBar";
 
 import { ErrorHandler } from "@/components/ErrorHandler";
 import { error } from "console";

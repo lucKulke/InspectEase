@@ -22,13 +22,21 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
+  IInspectableObjectInspectionFormMainSectionResponse,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
+  IInspectableObjectInspectionFormSubSectionInsert,
   IInspectableObjectInspectionFormSubSectionResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import React, { useState } from "react";
-import { createNewMainSection } from "./actions";
+import {
+  createNewMainSection,
+  createNewSubSection,
+  updateMainSectionOrder,
+} from "../actions";
 import { UUID } from "crypto";
 import { Ellipsis, Scale, Trash2 } from "lucide-react";
+import { useNotification } from "@/app/context/NotificationContext";
+import { SubSections } from "./SubSections";
 
 // Helper function to update order numbers
 
@@ -57,12 +65,25 @@ export const FormSideBar = ({
   mainSubSections,
   setMainSubSections,
 }: FormSideBarProps) => {
+  const { showNotification } = useNotification();
+
   const [openCreateMainSectionDialog, setOpenCreateMainSectionDialog] =
     useState<boolean>(false);
-
   const [newMainSectionName, setNewMainSectionName] = useState<string>("");
   const [newMainSectionDescription, setNewMainSectionDescription] =
     useState<string>("");
+
+  const [openCreateSubDialog, setOpenCreateSubSectionDialog] =
+    useState<boolean>(false);
+  const [newSubSectionName, setNewSubSectionName] = useState<string>("");
+  const [newSubSectionDescription, setNewSubSectionDescription] =
+    useState<string>("");
+  const [newSubSectionOrderNumber, setNewSubSectionOrderNumber] =
+    useState<number>(0);
+
+  const [selectedMainSection, setSelectedMainSection] = useState<string>("");
+
+  // Main section functions
 
   const handleCreateMainSection = async (name: string, description: string) => {
     const {
@@ -72,7 +93,7 @@ export const FormSideBar = ({
       name: name,
       description: description,
       form_id: formId,
-      order_number: 2,
+      order_number: mainSubSections.length + 1,
     });
     if (inspectableObjectInspectionFormMainSection) {
       const newMainSubSection: IInspectableObjectInspectionFormMainSectionWithSubSection =
@@ -90,20 +111,30 @@ export const FormSideBar = ({
     }
   };
 
-  // Main section functions
-
   const updateMainSectionOrderInDB = async (
     updatedItems: IInspectableObjectInspectionFormMainSectionWithSubSection[]
   ) => {
+    const updatedMainSections: IInspectableObjectInspectionFormMainSectionResponse[] =
+      [];
+    for (let i = 0; i < updatedItems.length; i++) {
+      updatedMainSections.push({
+        id: updatedItems[i].id,
+        name: updatedItems[i].name,
+        description: updatedItems[i].description,
+        created_at: updatedItems[i].created_at,
+        form_id: updatedItems[i].form_id,
+        order_number: updatedItems[i].order_number,
+      });
+    }
     const {
-      updatedInspectableObjectProfileObjPropertys,
-      updatedInspectableObjectProfileObjPropertysError,
-    } = await updateMainSectionOrderInDB(updatedItems);
+      updatedInspectableObjectInspectionFormMainSections,
+      updatedInspectableObjectInspectionFormMainSectionsError,
+    } = await updateMainSectionOrder(updatedMainSections);
 
-    if (updatedInspectableObjectProfileObjPropertysError) {
+    if (updatedInspectableObjectInspectionFormMainSectionsError) {
       showNotification(
-        "Obj property order",
-        `Error: ${updatedInspectableObjectProfileObjPropertysError.message} (${updatedInspectableObjectProfileObjPropertysError.code})`,
+        "Main section order",
+        `Error: ${updatedInspectableObjectInspectionFormMainSectionsError.message} (${updatedInspectableObjectInspectionFormMainSectionsError.code})`,
         "error"
       );
     }
@@ -139,17 +170,41 @@ export const FormSideBar = ({
     return 0;
   }
   // ---------------------------
+  const handleCreateSubSection = async (
+    newSubSection: IInspectableObjectInspectionFormSubSectionInsert
+  ) => {
+    const {
+      inspectableObjectInspectionFormSubSection,
+      inspectableObjectInspectionFormSubSectionError,
+    } = await createNewSubSection(newSubSection);
 
-  function compareSubSections(
-    a: IInspectableObjectInspectionFormSubSectionResponse,
-    b: IInspectableObjectInspectionFormSubSectionResponse
-  ) {
-    if (a.order_number < b.order_number) return -1;
+    if (inspectableObjectInspectionFormSubSectionError) {
+      showNotification(
+        "Create sub section",
+        `Error: ${inspectableObjectInspectionFormSubSectionError.message} (${inspectableObjectInspectionFormSubSectionError.code})`,
+        "error"
+      );
+    }
 
-    if (a.order_number > b.order_number) return 1;
+    if (inspectableObjectInspectionFormSubSection) {
+      const copyOfMainSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[] =
+        [...mainSubSections];
 
-    return 0;
-  }
+      for (let i = 0; i < copyOfMainSubSections.length; i++) {
+        const mainWithSubSections = copyOfMainSubSections[i];
+        if (
+          mainWithSubSections.id ===
+          inspectableObjectInspectionFormSubSection.main_section_id
+        ) {
+          mainWithSubSections.inspectable_object_inspection_form_sub_section.push(
+            inspectableObjectInspectionFormSubSection
+          );
+          break;
+        }
+      }
+      setMainSubSections(copyOfMainSubSections);
+    }
+  };
 
   return (
     <div className="w-64 bg-gray-800 text-white p-4 overflow-y-auto">
@@ -163,17 +218,15 @@ export const FormSideBar = ({
           <Reorder.Item
             key={mainSubSection.id}
             value={mainSubSection}
-            className="items-center justify-between bg-white border p-4 rounded-md shadow cursor-grab "
+            className=" bg-white border p-4 rounded-md shadow cursor-grab "
             dragConstraints={{ top: 0, bottom: 0 }}
           >
-            <div className="flex items-center space-x-4">
+            <div className="flex justify-between">
               <span className="text-gray-500 font-bold w-6">
                 {mainSubSection.order_number}.
               </span>
-              <span>{mainSubSection.name}</span>
-              <p className="text-sm text-slate-600">
-                {mainSubSection.description}
-              </p>
+
+              <p className="text-sm text-slate-600">{mainSubSection.name}</p>
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger>
                   <Ellipsis className="text-slate-500 "></Ellipsis>
@@ -181,7 +234,19 @@ export const FormSideBar = ({
                 <DropdownMenuContent>
                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSelectedMainSection(mainSubSection.id);
+                      setNewSubSectionOrderNumber(
+                        mainSubSection
+                          .inspectable_object_inspection_form_sub_section
+                          .length + 1
+                      );
+                      setOpenCreateSubSectionDialog(true);
+                    }}
+                  >
+                    create sub section
+                  </DropdownMenuItem>
                   <DropdownMenuItem className="text-red-600" onClick={() => {}}>
                     delete <Trash2></Trash2>
                   </DropdownMenuItem>
@@ -189,52 +254,9 @@ export const FormSideBar = ({
               </DropdownMenu>
             </div>
             <div>
-              <Reorder.Group
-                axis="y"
-                values={
-                  mainSubSection.inspectable_object_inspection_form_sub_section
-                }
-                onReorder={() => {}}
-                className="space-y-2 "
-              >
-                {mainSubSection.inspectable_object_inspection_form_sub_section
-                  .sort(compareSubSections)
-                  .map((subSection) => (
-                    <Reorder.Item
-                      key={subSection.id}
-                      value={subSection}
-                      className="flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-grab "
-                      dragConstraints={{ top: 0, bottom: 0 }}
-                    >
-                      <div className="flex items-center space-x-4">
-                        <span className="text-gray-500 font-bold w-6">
-                          {subSection.order_number}.
-                        </span>
-                        <span>{subSection.name}</span>
-                        <p className="text-sm text-slate-600">
-                          {subSection.description}
-                        </p>
-                      </div>
-
-                      <DropdownMenu modal={false}>
-                        <DropdownMenuTrigger>
-                          <Ellipsis className="text-slate-500 "></Ellipsis>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => {}}
-                          >
-                            delete <Trash2></Trash2>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </Reorder.Item>
-                  ))}
-              </Reorder.Group>
+              <SubSections
+                mainSectionWithSubsections={mainSubSection}
+              ></SubSections>
             </div>
           </Reorder.Item>
         ))}
@@ -288,6 +310,63 @@ export const FormSideBar = ({
                     newMainSectionName,
                     newMainSectionDescription
                   );
+                }}
+              >
+                Save changes
+              </Button>
+            ) : (
+              <Button disabled variant="outline">
+                Save changes
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={openCreateSubDialog}
+        onOpenChange={setOpenCreateSubSectionDialog}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create</DialogTitle>
+            <DialogDescription>Create new sub section</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="createSubSectionName" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="createSubSectionName"
+                value={newSubSectionName} // Controlled input
+                onChange={(e) => setNewSubSectionName(e.target.value)} // Update state on input change
+                className="col-span-3"
+              />
+              <Label
+                htmlFor="createSubSectionDescription"
+                className="text-right"
+              >
+                Description
+              </Label>
+              <Input
+                id="createSubSectionDescription"
+                value={newSubSectionDescription} // Controlled input
+                onChange={(e) => setNewSubSectionDescription(e.target.value)} // Update state on input change
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            {newSubSectionName.length > 3 ? (
+              <Button
+                onClick={() => {
+                  handleCreateSubSection({
+                    name: newSubSectionName,
+                    description: newSubSectionDescription,
+                    main_section_id: selectedMainSection as UUID,
+                    order_number: newSubSectionOrderNumber,
+                  });
                 }}
               >
                 Save changes
