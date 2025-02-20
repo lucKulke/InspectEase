@@ -6,13 +6,14 @@ import { ErrorHandler } from "@/components/ErrorHandler";
 import { error } from "console";
 import { UUID } from "crypto";
 import { IInspectableObjectInspectionFormMainSectionWithSubSection } from "@/lib/database/form-builder/formBuilderInterfaces";
+import { MainContent } from "./main-content/MainContent";
 
 interface MainFormSectionProps {
   formId: UUID;
   mainSectionsWithSubsections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
 }
 
-export const MainFormSection = ({
+export const FormSection = ({
   formId,
   mainSectionsWithSubsections,
 }: MainFormSectionProps) => {
@@ -28,7 +29,9 @@ export const MainFormSection = ({
           setMainSubSections={setMainSubSections}
           mainSubSections={mainSubSections}
         ></FormSideBar>
-        <div className="flex-1 bg-gray-100 p-4 overflow-y-auto">Editor</div>
+        <div className="flex-1 bg-gray-100 p-4 overflow-y-auto">
+          <MainContent mainSubSections={mainSubSections}></MainContent>
+        </div>
       </div>
     </div>
   );

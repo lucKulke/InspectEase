@@ -1,14 +1,12 @@
 import React, { useState } from "react";
 import { Reorder } from "framer-motion";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -103,7 +101,9 @@ export const SubSections = ({
       axis="y"
       values={sections}
       onReorder={handleSubSectionReorder}
-      className="space-y-2 border-2 p-2 rounded-xl cursor-default "
+      className={`space-y-2  p-2 ${
+        sections.length > 0 && "border-2 rounded-xl"
+      } cursor-default `}
     >
       {sections.sort(compareSubSections).map((subSection) => (
         <Reorder.Item
@@ -116,9 +116,16 @@ export const SubSections = ({
             {subSection.order_number}.
           </span>
 
-          <p className="text-sm text-slate-600 cursor-pointer">
-            {subSection.name}
-          </p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <p className="text-slate-600 font-bold">{subSection.name}</p>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{subSection.description}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger>

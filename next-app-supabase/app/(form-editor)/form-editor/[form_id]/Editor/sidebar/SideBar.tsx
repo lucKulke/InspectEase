@@ -18,6 +18,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -83,8 +90,6 @@ export const FormSideBar = ({
 
   const [selectedMainSection, setSelectedMainSection] = useState<string>("");
 
-  // Main section functions
-
   const handleCreateMainSection = async (name: string, description: string) => {
     const {
       inspectableObjectInspectionFormMainSection,
@@ -95,7 +100,14 @@ export const FormSideBar = ({
       form_id: formId,
       order_number: mainSubSections.length + 1,
     });
-    if (inspectableObjectInspectionFormMainSection) {
+
+    if (inspectableObjectInspectionFormMainSectionError) {
+      showNotification(
+        "Create main section",
+        `Error: ${inspectableObjectInspectionFormMainSectionError.message} (${inspectableObjectInspectionFormMainSectionError.code})`,
+        "error"
+      );
+    } else if (inspectableObjectInspectionFormMainSection) {
       const newMainSubSection: IInspectableObjectInspectionFormMainSectionWithSubSection =
         {
           id: inspectableObjectInspectionFormMainSection.id,
@@ -108,6 +120,11 @@ export const FormSideBar = ({
         };
       inspectableObjectInspectionFormMainSection;
       setMainSubSections((prev) => [...prev, newMainSubSection]);
+      showNotification(
+        "Create main section",
+        `Successfully created new main section with id '${inspectableObjectInspectionFormMainSection.id}'`,
+        "info"
+      );
     }
   };
 
@@ -169,7 +186,7 @@ export const FormSideBar = ({
 
     return 0;
   }
-  // ---------------------------
+
   const handleCreateSubSection = async (
     newSubSection: IInspectableObjectInspectionFormSubSectionInsert
   ) => {
@@ -184,9 +201,7 @@ export const FormSideBar = ({
         `Error: ${inspectableObjectInspectionFormSubSectionError.message} (${inspectableObjectInspectionFormSubSectionError.code})`,
         "error"
       );
-    }
-
-    if (inspectableObjectInspectionFormSubSection) {
+    } else if (inspectableObjectInspectionFormSubSection) {
       const copyOfMainSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[] =
         [...mainSubSections];
 
@@ -203,6 +218,11 @@ export const FormSideBar = ({
         }
       }
       setMainSubSections(copyOfMainSubSections);
+      showNotification(
+        "Create sub section",
+        `Successfully created new sub section with id'${inspectableObjectInspectionFormSubSection.id}'`,
+        "info"
+      );
     }
   };
 
@@ -226,7 +246,18 @@ export const FormSideBar = ({
                 {mainSubSection.order_number}.
               </span>
 
-              <p className="text-sm text-slate-600">{mainSubSection.name}</p>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <p className="text-slate-600 font-bold">
+                      {mainSubSection.name}
+                    </p>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{mainSubSection.description}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger>
                   <Ellipsis className="text-slate-500 "></Ellipsis>
