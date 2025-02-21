@@ -39,11 +39,11 @@ import {
   createNewMainSection,
   createNewSubSection,
   updateMainSectionOrder,
+  updateSubSectionOrder,
 } from "../actions";
 import { UUID } from "crypto";
 import { Ellipsis, Scale, Trash2 } from "lucide-react";
 import { useNotification } from "@/app/context/NotificationContext";
-import { SubSections } from "./SubSections";
 
 // Helper function to update order numbers
 
@@ -226,6 +226,79 @@ export const FormSideBar = ({
     }
   };
 
+  // Sub section functions
+
+  const updateSubSectionOrderInDB = async (
+    updatedItems: IInspectableObjectInspectionFormSubSectionResponse[]
+  ) => {
+    const {
+      updatedInspectableObjectInspectionFormSubSections,
+      updatedInspectableObjectInspectionFormSubSectionsError,
+    } = await updateSubSectionOrder(updatedItems);
+
+    if (updatedInspectableObjectInspectionFormSubSectionsError) {
+      showNotification(
+        "Sub section order",
+        `Error: ${updatedInspectableObjectInspectionFormSubSectionsError.message} (${updatedInspectableObjectInspectionFormSubSectionsError.code})`,
+        "error"
+      );
+    }
+  };
+
+  const debouncedSubSectionUpdate = debounce(updateSubSectionOrderInDB, 500);
+
+  const reorderSubSections = (
+    newOrder: IInspectableObjectInspectionFormSubSectionResponse[],
+    currentMainSection: UUID
+  ) => {
+    const copyOfMainSectionsWithSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[] =
+      [...mainSubSections];
+
+    const orderdItems = newOrder.map((item, index) => ({
+      ...item,
+      order_number: index + 1,
+    }));
+
+    for (let i = 0; i < copyOfMainSectionsWithSubSections.length; i++) {
+      if (copyOfMainSectionsWithSubSections[i].id === currentMainSection) {
+        copyOfMainSectionsWithSubSections[
+          i
+        ].inspectable_object_inspection_form_sub_section = orderdItems;
+        break;
+      }
+    }
+
+    return {
+      updatedMainSubSections: copyOfMainSectionsWithSubSections,
+      updatedSubSections: orderdItems,
+    };
+  };
+
+  const handleSubSectionReorder = (
+    newOrder: IInspectableObjectInspectionFormSubSectionResponse[]
+  ) => {
+    const currentMainSection = newOrder[0].main_section_id;
+
+    const { updatedMainSubSections, updatedSubSections } = reorderSubSections(
+      newOrder,
+      currentMainSection
+    );
+
+    setMainSubSections(updatedMainSubSections);
+    debouncedSubSectionUpdate(updatedSubSections);
+  };
+
+  function compareSubSections(
+    a: IInspectableObjectInspectionFormSubSectionResponse,
+    b: IInspectableObjectInspectionFormSubSectionResponse
+  ) {
+    if (a.order_number < b.order_number) return -1;
+
+    if (a.order_number > b.order_number) return 1;
+
+    return 0;
+  }
+
   return (
     <div className="w-64 bg-gray-800 text-white p-4 overflow-y-auto">
       <Reorder.Group
@@ -285,14 +358,68 @@ export const FormSideBar = ({
               </DropdownMenu>
             </div>
             <div>
-              <SubSections
-                mainSectionWithSubsections={mainSubSection}
-              ></SubSections>
+              <Reorder.Group
+                axis="y"
+                values={
+                  mainSubSection.inspectable_object_inspection_form_sub_section
+                }
+                onReorder={handleSubSectionReorder}
+                className={`space-y-2  p-2 ${
+                  mainSubSection.inspectable_object_inspection_form_sub_section
+                    .length > 0 && "border-2 rounded-xl"
+                } cursor-default `}
+              >
+                {mainSubSection.inspectable_object_inspection_form_sub_section
+                  .sort(compareSubSections)
+                  .map((subSection) => (
+                    <Reorder.Item
+                      key={subSection.id}
+                      value={subSection}
+                      className="flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-grab "
+                      dragConstraints={{ top: 0, bottom: 0 }}
+                    >
+                      <span className="text-gray-500 font-bold w-6">
+                        {subSection.order_number}.
+                      </span>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <p className="text-slate-600 font-bold">
+                              {subSection.name}
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{subSection.description}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <DropdownMenu modal={false}>
+                        <DropdownMenuTrigger>
+                          <Ellipsis className="text-slate-500 "></Ellipsis>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => {}}
+                          >
+                            delete <Trash2></Trash2>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </Reorder.Item>
+                  ))}
+              </Reorder.Group>
             </div>
           </Reorder.Item>
         ))}
       </Reorder.Group>
       <Button
+        className="mt-2"
         onClick={() => {
           setOpenCreateMainSectionDialog(true);
         }}
