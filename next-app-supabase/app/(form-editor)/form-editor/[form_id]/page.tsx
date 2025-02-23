@@ -10,6 +10,9 @@ import { EditorSection } from "./EditorSection";
 import { TabsContent } from "@/components/ui/tabs";
 import { DBActionsBucket } from "@/lib/database/bucket";
 import { FormSection } from "./Editor/FormSection";
+import Link from "next/link";
+import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
+import { ArrowBigLeft } from "lucide-react";
 
 export default async function FormEditorPage({
   params,
@@ -85,6 +88,18 @@ export default async function FormEditorPage({
 
   return (
     <div className="mt-10">
+      <div>
+        <Link
+          className="flex items-center mb-2"
+          href={
+            formBuilderLinks["inspectableObjects"].href +
+            "/" +
+            inspectableObjectInspectionFormWithProps.object_id
+          }
+        >
+          <ArrowBigLeft /> Back
+        </Link>
+      </div>
       <div className="w-1/4">
         <FormMetadataCard
           formId={formId}
