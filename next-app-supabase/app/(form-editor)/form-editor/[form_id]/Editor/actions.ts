@@ -1,5 +1,6 @@
 "use server";
 import { DBActionsFormBuilderCreate } from "@/lib/database/form-builder/formBuilderCreate";
+import { DBActionsFormBuilderDelete } from "@/lib/database/form-builder/formBuilderDelete";
 import {
   IInspectableObjectInspectionFormMainSectionInsert,
   IInspectableObjectInspectionFormMainSectionResponse,
@@ -22,6 +23,13 @@ export async function createNewMainSection(
   );
 }
 
+export async function deleteMainSection(subSectionId: UUID) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderDelete(supabase);
+
+  return await dbActions.deleteInspectionFormMainSection(subSectionId);
+}
+
 export async function createNewSubSection(
   subSection: IInspectableObjectInspectionFormSubSectionInsert
 ) {
@@ -31,6 +39,13 @@ export async function createNewSubSection(
   return await dbActions.createInspectableObjectInspectionFormSubSection(
     subSection
   );
+}
+
+export async function deleteSubSection(subSectionId: UUID) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderDelete(supabase);
+
+  return await dbActions.deleteInspectionFormSubSection(subSectionId);
 }
 
 export async function updateMainSectionOrder(

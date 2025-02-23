@@ -1,5 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  IInspectableObjectInspectionFormSubSectionInsert,
+  IInspectableObjectInspectionFormSubSectionResponse,
   IInspectableObjectProfileFormPropertyResponse,
   IInspectableObjectProfileFormTypeInsert,
   IInspectableObjectProfileFormTypePropertyResponse,
@@ -156,6 +158,61 @@ export class DBActionsFormBuilderDelete {
     return {
       inspectableObject: data ? data[0] : null,
       inspectableObjectError: error as SupabaseError | null,
+    };
+  }
+
+  async deleteInspectionFormSubSection(subSectionId: UUID): Promise<{
+    inspectableObjectInspectionFormSubSection: IInspectableObjectInspectionFormSubSectionResponse | null;
+    inspectableObjectInspectionFormSubSectionError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_inspection_form_sub_section")
+      .delete()
+      .eq("id", subSectionId)
+      .select();
+
+    console.log(
+      "delete inspectable object inspection form sub section in db:",
+      data
+    );
+    if (error) {
+      console.error(
+        "delete inspectable object inspection form sub section in db error:",
+        error
+      );
+    }
+
+    return {
+      inspectableObjectInspectionFormSubSection: data ? data[0] : null,
+      inspectableObjectInspectionFormSubSectionError:
+        error as SupabaseError | null,
+    };
+  }
+  async deleteInspectionFormMainSection(mainSectionId: UUID): Promise<{
+    inspectableObjectInspectionFormMainSection: IInspectableObjectInspectionFormSubSectionResponse | null;
+    inspectableObjectInspectionFormMainSectionError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_inspection_form_main_section")
+      .delete()
+      .eq("id", mainSectionId)
+      .select();
+
+    console.log(
+      "delete inspectable object inspection form main section in db:",
+      data
+    );
+    if (error) {
+      console.error(
+        "delete inspectable object inspection form main section in db error:",
+        error
+      );
+    }
+
+    return {
+      inspectableObjectInspectionFormMainSection: data ? data[0] : null,
+      inspectableObjectInspectionFormMainSectionError:
+        error as SupabaseError | null,
     };
   }
 }

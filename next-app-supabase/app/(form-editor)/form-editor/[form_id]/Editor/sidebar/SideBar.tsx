@@ -38,6 +38,8 @@ import React, { useState } from "react";
 import {
   createNewMainSection,
   createNewSubSection,
+  deleteMainSection,
+  deleteSubSection,
   updateMainSectionOrder,
   updateSubSectionOrder,
 } from "../actions";
@@ -128,6 +130,33 @@ export const FormSideBar = ({
     }
   };
 
+  const handleDeleteMainSection = async (mainSectionId: UUID) => {
+    const {
+      inspectableObjectInspectionFormMainSection,
+      inspectableObjectInspectionFormMainSectionError,
+    } = await deleteMainSection(mainSectionId);
+
+    if (inspectableObjectInspectionFormMainSectionError) {
+      showNotification(
+        "Delete main section",
+        `Error: ${inspectableObjectInspectionFormMainSectionError.message} (${inspectableObjectInspectionFormMainSectionError.code})`,
+        "error"
+      );
+    } else if (inspectableObjectInspectionFormMainSection) {
+      const copyOfMainSubSections = mainSubSections.filter(
+        (mainSubSection) =>
+          mainSubSection.id !== inspectableObjectInspectionFormMainSection.id
+      );
+
+      setMainSubSections(copyOfMainSubSections);
+      showNotification(
+        "Delete main section",
+        `Successfully deleted new main section with id '${inspectableObjectInspectionFormMainSection.id}'`,
+        "info"
+      );
+    }
+  };
+
   const updateMainSectionOrderInDB = async (
     updatedItems: IInspectableObjectInspectionFormMainSectionWithSubSection[]
   ) => {
@@ -187,6 +216,8 @@ export const FormSideBar = ({
     return 0;
   }
 
+  // Sub section functions
+
   const handleCreateSubSection = async (
     newSubSection: IInspectableObjectInspectionFormSubSectionInsert
   ) => {
@@ -226,7 +257,43 @@ export const FormSideBar = ({
     }
   };
 
-  // Sub section functions
+  const handleDeleteSubSection = async (subSectionId: UUID) => {
+    const {
+      inspectableObjectInspectionFormSubSection,
+      inspectableObjectInspectionFormSubSectionError,
+    } = await deleteSubSection(subSectionId);
+    if (inspectableObjectInspectionFormSubSectionError) {
+      showNotification(
+        "Delete sub section",
+        `Error: ${inspectableObjectInspectionFormSubSectionError.message} (${inspectableObjectInspectionFormSubSectionError.code})`,
+        "error"
+      );
+    } else if (inspectableObjectInspectionFormSubSection) {
+      const copyOfMainSubSections = [...mainSubSections];
+      for (let index = 0; index < copyOfMainSubSections.length; index++) {
+        if (
+          copyOfMainSubSections[index].id ===
+          inspectableObjectInspectionFormSubSection.main_section_id
+        ) {
+          copyOfMainSubSections[
+            index
+          ].inspectable_object_inspection_form_sub_section =
+            copyOfMainSubSections[
+              index
+            ].inspectable_object_inspection_form_sub_section.filter(
+              (sub) => sub.id !== inspectableObjectInspectionFormSubSection.id
+            );
+        }
+      }
+
+      setMainSubSections(copyOfMainSubSections);
+      showNotification(
+        "Delete sub section",
+        `Successfully deleted subsection with id '${inspectableObjectInspectionFormSubSection.id}'`,
+        "info"
+      );
+    }
+  };
 
   const updateSubSectionOrderInDB = async (
     updatedItems: IInspectableObjectInspectionFormSubSectionResponse[]
@@ -351,7 +418,12 @@ export const FormSideBar = ({
                   >
                     create sub section
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="text-red-600" onClick={() => {}}>
+                  <DropdownMenuItem
+                    className="text-red-600"
+                    onClick={() => {
+                      handleDeleteMainSection(mainSubSection.id);
+                    }}
+                  >
                     delete <Trash2></Trash2>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -405,7 +477,9 @@ export const FormSideBar = ({
 
                           <DropdownMenuItem
                             className="text-red-600"
-                            onClick={() => {}}
+                            onClick={() => {
+                              handleDeleteSubSection(subSection.id);
+                            }}
                           >
                             delete <Trash2></Trash2>
                           </DropdownMenuItem>
