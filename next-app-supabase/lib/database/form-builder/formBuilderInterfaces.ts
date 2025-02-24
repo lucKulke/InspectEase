@@ -210,6 +210,95 @@ export interface IInspectableObjectInspectionFormSubSectionResponse
 
 // ---------------------------
 
+// inspection form multiple choice field
+export interface IInspectableObjectInspectionFormMultipleChoiceFieldInsert {
+  name: string;
+  description: string;
+  order_number: number;
+  group_id: UUID;
+}
+
+export interface IInspectableObjectInspectionFormMultipleChoiceFieldResponse
+  extends IInspectableObjectInspectionFormMultipleChoiceFieldInsert {
+  id: UUID;
+  created_at: Date | string;
+}
+
+// -------------------------
+
+// inspection form multiple choice group
+export interface IInspectableObjectInspectionFormMultipleChoiceGroupInsert {
+  sub_section_id: UUID;
+}
+
+export interface IInspectableObjectInspectionFormMultipleChoiceGroupResponse
+  extends IInspectableObjectInspectionFormMultipleChoiceGroupInsert {
+  id: UUID;
+  created_at: Date | string;
+}
+
+// -------------------------
+
+// inspection form single choice field
+export interface IInspectableObjectInspectionFormSingleChoiceFieldInsert {
+  name: string;
+  description: string;
+  order_number: number;
+  group_id: UUID;
+}
+
+export interface IInspectableObjectInspectionFormSingleChoiceFieldResponse
+  extends IInspectableObjectInspectionFormSingleChoiceFieldInsert {
+  id: UUID;
+  created_at: Date | string;
+}
+
+// -------------------------
+
+// inspection form single choice group
+export interface IInspectableObjectInspectionFormSingleChoiceGroupInsert {
+  sub_section_id: UUID;
+}
+
+export interface IInspectableObjectInspectionFormSingleChoiceGroupResponse
+  extends IInspectableObjectInspectionFormSingleChoiceGroupInsert {
+  id: UUID;
+  created_at: Date | string;
+}
+
+// -------------------------
+
+// inspection form text input field
+export interface IInspectableObjectInspectionFormTextInputFieldInsert {
+  name: string;
+  description: string;
+  order_number: number;
+  group_id: UUID;
+  nullable: boolean;
+  training_id: UUID;
+}
+
+export interface IInspectableObjectInspectionFormTextInputFieldResponse
+  extends IInspectableObjectInspectionFormTextInputFieldInsert {
+  id: UUID;
+  created_at: Date | string;
+}
+
+// -------------------------
+
+// inspection form text input group
+export interface IInspectableObjectInspectionFormTextInputGroupInsert {
+  sub_section_id: UUID;
+}
+
+export interface IInspectableObjectInspectionFormTextInputGroupResponse
+  extends IInspectableObjectInspectionFormTextInputGroupInsert {
+  id: UUID;
+  created_at: Date | string;
+}
+
+// -------------------------
+
 export interface IInspectableObjectWithPropertiesAndProfileResponse
   extends IInspectableObjectResponse {
   inspectable_object_property: IInspectableObjectPropertyResponse[];
@@ -254,4 +343,19 @@ export interface IInspectableObjectProfileFormTypeWithProps
 export interface IInspectableObjectInspectionFormMainSectionWithSubSection
   extends IInspectableObjectInspectionFormMainSectionResponse {
   inspectable_object_inspection_form_sub_section: IInspectableObjectInspectionFormSubSectionResponse[];
+}
+
+export interface IInspectableObjectInspectionFormMultipleChoiceGroupWithFields
+  extends IInspectableObjectInspectionFormMultipleChoiceGroupResponse {
+  fields: IInspectableObjectInspectionFormMultipleChoiceFieldResponse[];
+}
+
+export interface IInspectableObjectInspectionFormSingleChoiceGroupWithFields
+  extends IInspectableObjectInspectionFormSingleChoiceGroupResponse {
+  fields: IInspectableObjectInspectionFormSingleChoiceFieldResponse[];
+}
+
+export interface IInspectableObjectInspectionFormTextInputGroupWithFields
+  extends IInspectableObjectInspectionFormTextInputGroupResponse {
+  fields: IInspectableObjectInspectionFormTextInputFieldResponse[];
 }
