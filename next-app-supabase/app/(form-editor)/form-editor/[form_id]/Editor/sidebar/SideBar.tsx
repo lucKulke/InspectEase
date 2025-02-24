@@ -40,12 +40,15 @@ import {
   createNewSubSection,
   deleteMainSection,
   deleteSubSection,
+  updateMainSection,
   updateMainSectionOrder,
+  updateSubSection,
   updateSubSectionOrder,
 } from "../actions";
 import { UUID } from "crypto";
 import { Ellipsis, Scale, Trash2 } from "lucide-react";
 import { useNotification } from "@/app/context/NotificationContext";
+import { deserialize } from "v8";
 
 // Helper function to update order numbers
 
@@ -78,19 +81,73 @@ export const FormSideBar = ({
 
   const [openCreateMainSectionDialog, setOpenCreateMainSectionDialog] =
     useState<boolean>(false);
+  const [openUpdateMainSectionDialog, setOpenUpdateMainSectionDialog] =
+    useState<boolean>(false);
   const [newMainSectionName, setNewMainSectionName] = useState<string>("");
   const [newMainSectionDescription, setNewMainSectionDescription] =
     useState<string>("");
 
-  const [openCreateSubDialog, setOpenCreateSubSectionDialog] =
+  const [openCreateSubSectionDialog, setOpenCreateSubSectionDialog] =
+    useState<boolean>(false);
+  const [openUpdateSubSectionDialog, setOpenUpdateSubSectionDialog] =
     useState<boolean>(false);
   const [newSubSectionName, setNewSubSectionName] = useState<string>("");
   const [newSubSectionDescription, setNewSubSectionDescription] =
     useState<string>("");
-  const [newSubSectionOrderNumber, setNewSubSectionOrderNumber] =
-    useState<number>(0);
 
-  const [selectedMainSection, setSelectedMainSection] = useState<string>("");
+  const [selectedSubSection, setSelectedSubSection] =
+    useState<IInspectableObjectInspectionFormSubSectionResponse>();
+
+  const [selectedMainSection, setSelectedMainSection] =
+    useState<IInspectableObjectInspectionFormMainSectionResponse>();
+
+  const updateMainSectionOrderInDB = async (
+    updatedItems: IInspectableObjectInspectionFormMainSectionWithSubSection[]
+  ) => {
+    const updatedMainSections: IInspectableObjectInspectionFormMainSectionResponse[] =
+      [];
+    for (let i = 0; i < updatedItems.length; i++) {
+      updatedMainSections.push({
+        id: updatedItems[i].id,
+        name: updatedItems[i].name,
+        description: updatedItems[i].description,
+        created_at: updatedItems[i].created_at,
+        form_id: updatedItems[i].form_id,
+        order_number: updatedItems[i].order_number,
+      });
+    }
+    const {
+      updatedInspectableObjectInspectionFormMainSections,
+      updatedInspectableObjectInspectionFormMainSectionsError,
+    } = await updateMainSectionOrder(updatedMainSections);
+
+    if (updatedInspectableObjectInspectionFormMainSectionsError) {
+      showNotification(
+        "Main section order",
+        `Error: ${updatedInspectableObjectInspectionFormMainSectionsError.message} (${updatedInspectableObjectInspectionFormMainSectionsError.code})`,
+        "error"
+      );
+    }
+  };
+
+  const debouncedMainSectionUpdate = debounce(updateMainSectionOrderInDB, 500);
+
+  const reorderItems = (
+    newOrder: IInspectableObjectInspectionFormMainSectionWithSubSection[]
+  ) => {
+    return newOrder.map((item, index) => ({
+      ...item,
+      order_number: index + 1,
+    }));
+  };
+
+  const handleMainSectionReorder = (
+    newOrder: IInspectableObjectInspectionFormMainSectionWithSubSection[]
+  ) => {
+    const updatedItems = reorderItems(newOrder);
+    setMainSubSections(updatedItems);
+    debouncedMainSectionUpdate(updatedItems);
+  };
 
   const handleCreateMainSection = async (name: string, description: string) => {
     const {
@@ -148,7 +205,8 @@ export const FormSideBar = ({
           mainSubSection.id !== inspectableObjectInspectionFormMainSection.id
       );
 
-      setMainSubSections(copyOfMainSubSections);
+      handleMainSectionReorder(copyOfMainSubSections);
+
       showNotification(
         "Delete main section",
         `Successfully deleted new main section with id '${inspectableObjectInspectionFormMainSection.id}'`,
@@ -157,52 +215,42 @@ export const FormSideBar = ({
     }
   };
 
-  const updateMainSectionOrderInDB = async (
-    updatedItems: IInspectableObjectInspectionFormMainSectionWithSubSection[]
+  const handleUpdateMainSection = async (
+    mainSection: IInspectableObjectInspectionFormMainSectionResponse,
+    newName: string,
+    newDescription: string
   ) => {
-    const updatedMainSections: IInspectableObjectInspectionFormMainSectionResponse[] =
-      [];
-    for (let i = 0; i < updatedItems.length; i++) {
-      updatedMainSections.push({
-        id: updatedItems[i].id,
-        name: updatedItems[i].name,
-        description: updatedItems[i].description,
-        created_at: updatedItems[i].created_at,
-        form_id: updatedItems[i].form_id,
-        order_number: updatedItems[i].order_number,
-      });
-    }
+    console.log("update main section");
     const {
-      updatedInspectableObjectInspectionFormMainSections,
-      updatedInspectableObjectInspectionFormMainSectionsError,
-    } = await updateMainSectionOrder(updatedMainSections);
+      updatedInspectableObjectInspectionFormMainSection,
+      updatedInspectableObjectInspectionFormMainSectionError,
+    } = await updateMainSection(mainSection.id, newName, newDescription);
 
-    if (updatedInspectableObjectInspectionFormMainSectionsError) {
+    if (updatedInspectableObjectInspectionFormMainSectionError) {
       showNotification(
-        "Main section order",
-        `Error: ${updatedInspectableObjectInspectionFormMainSectionsError.message} (${updatedInspectableObjectInspectionFormMainSectionsError.code})`,
+        "Update main section",
+        `Error: ${updatedInspectableObjectInspectionFormMainSectionError.message} (${updatedInspectableObjectInspectionFormMainSectionError.code})`,
         "error"
       );
+    } else if (updatedInspectableObjectInspectionFormMainSection) {
+      const copyOfMainSectionsWithSubSections = mainSubSections.map(
+        (mainSubSection) =>
+          mainSubSection.id ===
+          updatedInspectableObjectInspectionFormMainSection.id
+            ? { ...mainSubSection, name: newName, description: newDescription }
+            : mainSubSection
+      );
+
+      setMainSubSections(copyOfMainSectionsWithSubSections);
+      setNewMainSectionName("");
+      setNewMainSectionDescription("");
+      setOpenUpdateMainSectionDialog(false);
+      showNotification(
+        "Update main section",
+        `Successfully updated main section with id '${updatedInspectableObjectInspectionFormMainSection.id}'`,
+        "info"
+      );
     }
-  };
-
-  const debouncedMainSectionUpdate = debounce(updateMainSectionOrderInDB, 500);
-
-  const reorderItems = (
-    newOrder: IInspectableObjectInspectionFormMainSectionWithSubSection[]
-  ) => {
-    return newOrder.map((item, index) => ({
-      ...item,
-      order_number: index + 1,
-    }));
-  };
-
-  const handleMainSectionReorder = (
-    newOrder: IInspectableObjectInspectionFormMainSectionWithSubSection[]
-  ) => {
-    const updatedItems = reorderItems(newOrder);
-    setMainSubSections(updatedItems);
-    debouncedMainSectionUpdate(updatedItems);
   };
 
   function compareMainSections(
@@ -217,83 +265,6 @@ export const FormSideBar = ({
   }
 
   // Sub section functions
-
-  const handleCreateSubSection = async (
-    newSubSection: IInspectableObjectInspectionFormSubSectionInsert
-  ) => {
-    const {
-      inspectableObjectInspectionFormSubSection,
-      inspectableObjectInspectionFormSubSectionError,
-    } = await createNewSubSection(newSubSection);
-
-    if (inspectableObjectInspectionFormSubSectionError) {
-      showNotification(
-        "Create sub section",
-        `Error: ${inspectableObjectInspectionFormSubSectionError.message} (${inspectableObjectInspectionFormSubSectionError.code})`,
-        "error"
-      );
-    } else if (inspectableObjectInspectionFormSubSection) {
-      const copyOfMainSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[] =
-        [...mainSubSections];
-
-      for (let i = 0; i < copyOfMainSubSections.length; i++) {
-        const mainWithSubSections = copyOfMainSubSections[i];
-        if (
-          mainWithSubSections.id ===
-          inspectableObjectInspectionFormSubSection.main_section_id
-        ) {
-          mainWithSubSections.inspectable_object_inspection_form_sub_section.push(
-            inspectableObjectInspectionFormSubSection
-          );
-          break;
-        }
-      }
-      setMainSubSections(copyOfMainSubSections);
-      showNotification(
-        "Create sub section",
-        `Successfully created new sub section with id'${inspectableObjectInspectionFormSubSection.id}'`,
-        "info"
-      );
-    }
-  };
-
-  const handleDeleteSubSection = async (subSectionId: UUID) => {
-    const {
-      inspectableObjectInspectionFormSubSection,
-      inspectableObjectInspectionFormSubSectionError,
-    } = await deleteSubSection(subSectionId);
-    if (inspectableObjectInspectionFormSubSectionError) {
-      showNotification(
-        "Delete sub section",
-        `Error: ${inspectableObjectInspectionFormSubSectionError.message} (${inspectableObjectInspectionFormSubSectionError.code})`,
-        "error"
-      );
-    } else if (inspectableObjectInspectionFormSubSection) {
-      const copyOfMainSubSections = [...mainSubSections];
-      for (let index = 0; index < copyOfMainSubSections.length; index++) {
-        if (
-          copyOfMainSubSections[index].id ===
-          inspectableObjectInspectionFormSubSection.main_section_id
-        ) {
-          copyOfMainSubSections[
-            index
-          ].inspectable_object_inspection_form_sub_section =
-            copyOfMainSubSections[
-              index
-            ].inspectable_object_inspection_form_sub_section.filter(
-              (sub) => sub.id !== inspectableObjectInspectionFormSubSection.id
-            );
-        }
-      }
-
-      setMainSubSections(copyOfMainSubSections);
-      showNotification(
-        "Delete sub section",
-        `Successfully deleted subsection with id '${inspectableObjectInspectionFormSubSection.id}'`,
-        "info"
-      );
-    }
-  };
 
   const updateSubSectionOrderInDB = async (
     updatedItems: IInspectableObjectInspectionFormSubSectionResponse[]
@@ -355,6 +326,139 @@ export const FormSideBar = ({
     debouncedSubSectionUpdate(updatedSubSections);
   };
 
+  const handleCreateSubSection = async (
+    newSubSection: IInspectableObjectInspectionFormSubSectionInsert
+  ) => {
+    const {
+      inspectableObjectInspectionFormSubSection,
+      inspectableObjectInspectionFormSubSectionError,
+    } = await createNewSubSection(newSubSection);
+
+    if (inspectableObjectInspectionFormSubSectionError) {
+      showNotification(
+        "Create sub section",
+        `Error: ${inspectableObjectInspectionFormSubSectionError.message} (${inspectableObjectInspectionFormSubSectionError.code})`,
+        "error"
+      );
+    } else if (inspectableObjectInspectionFormSubSection) {
+      const copyOfMainSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[] =
+        [...mainSubSections];
+
+      for (let i = 0; i < copyOfMainSubSections.length; i++) {
+        const mainWithSubSections = copyOfMainSubSections[i];
+        if (
+          mainWithSubSections.id ===
+          inspectableObjectInspectionFormSubSection.main_section_id
+        ) {
+          mainWithSubSections.inspectable_object_inspection_form_sub_section.push(
+            inspectableObjectInspectionFormSubSection
+          );
+          break;
+        }
+      }
+
+      setMainSubSections(copyOfMainSubSections);
+      setNewSubSectionName("");
+      setNewSubSectionDescription("");
+      setOpenUpdateSubSectionDialog(false);
+      showNotification(
+        "Create sub section",
+        `Successfully created new sub section with id'${inspectableObjectInspectionFormSubSection.id}'`,
+        "info"
+      );
+    }
+  };
+
+  const handleDeleteSubSection = async (subSectionId: UUID) => {
+    const {
+      inspectableObjectInspectionFormSubSection,
+      inspectableObjectInspectionFormSubSectionError,
+    } = await deleteSubSection(subSectionId);
+    if (inspectableObjectInspectionFormSubSectionError) {
+      showNotification(
+        "Delete sub section",
+        `Error: ${inspectableObjectInspectionFormSubSectionError.message} (${inspectableObjectInspectionFormSubSectionError.code})`,
+        "error"
+      );
+    } else if (inspectableObjectInspectionFormSubSection) {
+      const copyOfMainSubSections = [...mainSubSections];
+      for (let index = 0; index < copyOfMainSubSections.length; index++) {
+        if (
+          copyOfMainSubSections[index].id ===
+          inspectableObjectInspectionFormSubSection.main_section_id
+        ) {
+          const newSubSectionList = copyOfMainSubSections[
+            index
+          ].inspectable_object_inspection_form_sub_section.filter(
+            (sub) => sub.id !== inspectableObjectInspectionFormSubSection.id
+          );
+          const { updatedMainSubSections, updatedSubSections } =
+            reorderSubSections(
+              newSubSectionList,
+              inspectableObjectInspectionFormSubSection.main_section_id
+            );
+          setMainSubSections(updatedMainSubSections);
+          debouncedSubSectionUpdate(updatedSubSections);
+          break;
+        }
+      }
+
+      showNotification(
+        "Delete sub section",
+        `Successfully deleted subsection with id '${inspectableObjectInspectionFormSubSection.id}'`,
+        "info"
+      );
+    }
+  };
+
+  const handleUpdateSubSection = async (
+    subSection: IInspectableObjectInspectionFormSubSectionResponse,
+    newName: string,
+    newDescription: string
+  ) => {
+    const {
+      updatedInspectableObjectInspectionFormSubSection,
+      updatedInspectableObjectInspectionFormSubSectionError,
+    } = await updateSubSection(subSection.id, newName, newDescription);
+    if (updatedInspectableObjectInspectionFormSubSectionError) {
+      showNotification(
+        "Delete sub section",
+        `Error: ${updatedInspectableObjectInspectionFormSubSectionError.message} (${updatedInspectableObjectInspectionFormSubSectionError.code})`,
+        "error"
+      );
+    } else if (updatedInspectableObjectInspectionFormSubSection) {
+      const copyOfMainSubSections = [...mainSubSections];
+
+      for (let index = 0; index < copyOfMainSubSections.length; index++) {
+        if (
+          copyOfMainSubSections[index].id ===
+          updatedInspectableObjectInspectionFormSubSection.main_section_id
+        ) {
+          copyOfMainSubSections[
+            index
+          ].inspectable_object_inspection_form_sub_section =
+            copyOfMainSubSections[
+              index
+            ].inspectable_object_inspection_form_sub_section.map((sub) =>
+              sub.id === updatedInspectableObjectInspectionFormSubSection.id
+                ? { ...sub, name: newName, description: newDescription }
+                : sub
+            );
+        }
+      }
+
+      setMainSubSections(copyOfMainSubSections);
+      setNewSubSectionName("");
+      setNewSubSectionDescription("");
+      setOpenUpdateSubSectionDialog(false);
+      showNotification(
+        "Update sub section",
+        `Successfully updated subsection with id '${updatedInspectableObjectInspectionFormSubSection.id}'`,
+        "info"
+      );
+    }
+  };
+
   function compareSubSections(
     a: IInspectableObjectInspectionFormSubSectionResponse,
     b: IInspectableObjectInspectionFormSubSectionResponse
@@ -407,16 +511,21 @@ export const FormSideBar = ({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => {
-                      setSelectedMainSection(mainSubSection.id);
-                      setNewSubSectionOrderNumber(
-                        mainSubSection
-                          .inspectable_object_inspection_form_sub_section
-                          .length + 1
-                      );
+                      setSelectedMainSection(mainSubSection);
                       setOpenCreateSubSectionDialog(true);
                     }}
                   >
                     create sub section
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSelectedMainSection(mainSubSection);
+                      setNewMainSectionName(mainSubSection.name);
+                      setNewMainSectionDescription(mainSubSection.description);
+                      setOpenUpdateMainSectionDialog(true);
+                    }}
+                  >
+                    update
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-red-600"
@@ -474,7 +583,18 @@ export const FormSideBar = ({
                         <DropdownMenuContent>
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedSubSection(subSection);
+                              setNewSubSectionName(subSection.name);
+                              setNewSubSectionDescription(
+                                subSection.description
+                              );
+                              setOpenUpdateSubSectionDialog(true);
+                            }}
+                          >
+                            update
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-red-600"
                             onClick={() => {
@@ -556,7 +676,7 @@ export const FormSideBar = ({
       </Dialog>
 
       <Dialog
-        open={openCreateSubDialog}
+        open={openCreateSubSectionDialog}
         onOpenChange={setOpenCreateSubSectionDialog}
       >
         <DialogContent className="sm:max-w-[425px]">
@@ -593,12 +713,139 @@ export const FormSideBar = ({
             {newSubSectionName.length > 3 ? (
               <Button
                 onClick={() => {
+                  if (!selectedMainSection) return;
+                  let subSectionOrderNumber = 0;
+                  mainSubSections.forEach((mainSubSection) => {
+                    if (mainSubSection.id === selectedMainSection.id) {
+                      subSectionOrderNumber =
+                        mainSubSection
+                          .inspectable_object_inspection_form_sub_section
+                          .length + 1;
+                      return;
+                    }
+                  });
                   handleCreateSubSection({
                     name: newSubSectionName,
                     description: newSubSectionDescription,
-                    main_section_id: selectedMainSection as UUID,
-                    order_number: newSubSectionOrderNumber,
+                    main_section_id: selectedMainSection.id,
+                    order_number: subSectionOrderNumber,
                   });
+                }}
+              >
+                Save changes
+              </Button>
+            ) : (
+              <Button disabled variant="outline">
+                Save changes
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={openUpdateMainSectionDialog}
+        onOpenChange={setOpenUpdateMainSectionDialog}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Update</DialogTitle>
+            <DialogDescription>Update main section</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="updateMainSectionName" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="updateMainSectionName"
+                value={newMainSectionName}
+                onChange={(e) => setNewMainSectionName(e.target.value)}
+                className="col-span-3"
+              />
+              <Label
+                htmlFor="updateMainSectionDescription"
+                className="text-right"
+              >
+                Description
+              </Label>
+              <Input
+                id="updateMainSectionDescription"
+                value={newMainSectionDescription}
+                onChange={(e) => setNewMainSectionDescription(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            {newMainSectionName.length > 3 ? (
+              <Button
+                onClick={() => {
+                  if (selectedMainSection) {
+                    handleUpdateMainSection(
+                      selectedMainSection,
+                      newMainSectionName,
+                      newMainSectionDescription
+                    );
+                  }
+                }}
+              >
+                Save changes
+              </Button>
+            ) : (
+              <Button disabled variant="outline">
+                Save changes
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={openUpdateSubSectionDialog}
+        onOpenChange={setOpenUpdateSubSectionDialog}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Update</DialogTitle>
+            <DialogDescription>Update new sub section</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="updateSubSectionName" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="updateSubSectionName"
+                value={newSubSectionName} // Controlled input
+                onChange={(e) => setNewSubSectionName(e.target.value)} // Update state on input change
+                className="col-span-3"
+              />
+              <Label
+                htmlFor="updateSubSectionDescription"
+                className="text-right"
+              >
+                Description
+              </Label>
+              <Input
+                id="updateSubSectionDescription"
+                value={newSubSectionDescription} // Controlled input
+                onChange={(e) => setNewSubSectionDescription(e.target.value)} // Update state on input change
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            {newSubSectionName.length > 3 ? (
+              <Button
+                onClick={() => {
+                  if (selectedSubSection) {
+                    handleUpdateSubSection(
+                      selectedSubSection,
+                      newSubSectionName,
+                      newSubSectionDescription
+                    );
+                  }
                 }}
               >
                 Save changes

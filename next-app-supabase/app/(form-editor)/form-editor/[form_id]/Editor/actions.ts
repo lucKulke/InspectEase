@@ -53,7 +53,7 @@ export async function updateMainSectionOrder(
 ) {
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderUpdate(supabase);
-  return await dbActions.updateInspectableObjectInspectionFormMainSection(
+  return await dbActions.updateInspectableObjectInspectionFormMainSections(
     mainSections
   );
 }
@@ -63,7 +63,35 @@ export async function updateSubSectionOrder(
 ) {
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderUpdate(supabase);
-  return await dbActions.updateInspectableObjectInspectionFormSubSection(
+  return await dbActions.updateInspectableObjectInspectionFormSubSections(
     subSections
+  );
+}
+
+export async function updateSubSection(
+  subSectionId: UUID,
+  newName: string,
+  newDescription: string
+) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderUpdate(supabase);
+  return await dbActions.updateInspectableObjectInspectionFormSubSection(
+    subSectionId,
+    newName,
+    newDescription
+  );
+}
+
+export async function updateMainSection(
+  subSectionId: UUID,
+  newName: string,
+  newDescription: string
+) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderUpdate(supabase);
+  return await dbActions.updateInspectableObjectInspectionFormMainSection(
+    subSectionId,
+    newName,
+    newDescription
   );
 }
