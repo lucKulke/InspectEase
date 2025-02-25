@@ -23,6 +23,14 @@ import {
   IInspectableObjectPropertyInsert,
   IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
+  IMultipleChoiceFieldInsert,
+  IMultipleChoiceFieldResponse,
+  IMultipleChoiceGroupInsert,
+  IMultipleChoiceGroupResponse,
+  ISingleChoiceGroupInsert,
+  ISingleChoiceGroupResponse,
+  ITextInputGroupInsert,
+  ITextInputGroupResponse,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
@@ -343,6 +351,76 @@ export class DBActionsFormBuilderCreate {
       inspectableObjectInspectionFormSubSection: data ? data[0] : null,
       inspectableObjectInspectionFormSubSectionError:
         error as SupabaseError | null,
+    };
+  }
+
+  async createMultipleChoiceGroup(
+    multipleChoiceGroup: IMultipleChoiceGroupInsert
+  ): Promise<{
+    multipleChoiceGroupResponse: IMultipleChoiceGroupResponse | null;
+    multipleChoiceGroupResponseError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("multiple_choice_group")
+      .insert(multipleChoiceGroup).select(`
+        *,
+         multiple_choice_field(*)
+        `);
+
+    console.log("create multiple choice group in db:", data);
+    if (error) {
+      console.error("create multiple choice group in db error: ", error);
+    }
+
+    return {
+      multipleChoiceGroupResponse: data ? data[0] : null,
+      multipleChoiceGroupResponseError: error as SupabaseError | null,
+    };
+  }
+
+  async createSingleChoiceGroup(
+    singleChoiceGroup: ISingleChoiceGroupInsert
+  ): Promise<{
+    singleChoiceGroupResponse: ISingleChoiceGroupResponse | null;
+    singleChoiceGroupResponseError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("single_choice_group")
+      .insert(singleChoiceGroup).select(`
+        *,
+         single_choice_field(*)
+        `);
+
+    console.log("create single choice group in db:", data);
+    if (error) {
+      console.error("create single choice group in db error: ", error);
+    }
+
+    return {
+      singleChoiceGroupResponse: data ? data[0] : null,
+      singleChoiceGroupResponseError: error as SupabaseError | null,
+    };
+  }
+
+  async createTextInputGroup(textInputGroup: ITextInputGroupInsert): Promise<{
+    textInputGroupResponse: ITextInputGroupResponse | null;
+    textInputGroupResponseError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("text_input_group")
+      .insert(textInputGroup).select(`
+        *,
+         text_input_field(*)
+        `);
+
+    console.log("create text input group in db:", data);
+    if (error) {
+      console.error("create text input group in db error: ", error);
+    }
+
+    return {
+      textInputGroupResponse: data ? data[0] : null,
+      textInputGroupResponseError: error as SupabaseError | null,
     };
   }
 }

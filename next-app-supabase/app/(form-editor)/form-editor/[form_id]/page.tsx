@@ -87,7 +87,7 @@ export default async function FormEditorPage({
     );
 
   return (
-    <div className="mt-10">
+    <div className="mt-10 p-4">
       <div>
         <Link
           className="flex items-center mb-2"

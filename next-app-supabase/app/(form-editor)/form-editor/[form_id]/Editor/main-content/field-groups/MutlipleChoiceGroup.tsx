@@ -1,8 +1,8 @@
-import { IMultipleChoiceGroup } from "@/lib/database/form-builder/formBuilderInterfaces";
+import { IMultipleChoiceGroupResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
 import React, { useState } from "react";
 
 interface MultipleChoiceGroupProps {
-  groupData: IMultipleChoiceGroup;
+  groupData: IMultipleChoiceGroupResponse;
 }
 
 export const MultipleChoiceGroup = ({

@@ -9,6 +9,9 @@ import {
   IInspectableObjectProfileInsert,
   IInspectableObjectProfileResponse,
   IInspectableObjectResponse,
+  IMultipleChoiceGroupResponse,
+  ISingleChoiceGroupResponse,
+  ITextInputGroupResponse,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
@@ -213,6 +216,84 @@ export class DBActionsFormBuilderDelete {
       inspectableObjectInspectionFormMainSection: data ? data[0] : null,
       inspectableObjectInspectionFormMainSectionError:
         error as SupabaseError | null,
+    };
+  }
+
+  async deleteMultipleChoiceGroup(groupId: UUID): Promise<{
+    multipleChoiceGroupResponse: IMultipleChoiceGroupResponse | null;
+    multipleChoiceGroupResponseError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("multiple_choice_group")
+      .delete()
+      .eq("id", groupId)
+      .select(
+        `
+        *,
+        multiple_choice_field(*)
+        `
+      );
+
+    console.log("delete multiple choice group in db:", data);
+    if (error) {
+      console.error("delete multiple choice group in db error:", error);
+    }
+
+    return {
+      multipleChoiceGroupResponse: data ? data[0] : null,
+      multipleChoiceGroupResponseError: error as SupabaseError | null,
+    };
+  }
+
+  async deleteSingleChoiceGroup(groupId: UUID): Promise<{
+    singleChoiceGroupResponse: ISingleChoiceGroupResponse | null;
+    singleChoiceGroupResponseError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("single_choice_group")
+      .delete()
+      .eq("id", groupId)
+      .select(
+        `
+        *,
+        single_choice_field(*)
+        `
+      );
+
+    console.log("delete single choice group in db:", data);
+    if (error) {
+      console.error("delete single choice group in db error:", error);
+    }
+
+    return {
+      singleChoiceGroupResponse: data ? data[0] : null,
+      singleChoiceGroupResponseError: error as SupabaseError | null,
+    };
+  }
+
+  async deleteTextInputGroup(groupId: UUID): Promise<{
+    textInputGroupResponse: ITextInputGroupResponse | null;
+    textInputGroupResponseError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("text_input_group")
+      .delete()
+      .eq("id", groupId)
+      .select(
+        `
+        *,
+        text_input_field(*)
+        `
+      );
+
+    console.log("delete text input group in db:", data);
+    if (error) {
+      console.error("delete text input group in db error:", error);
+    }
+
+    return {
+      textInputGroupResponse: data ? data[0] : null,
+      textInputGroupResponseError: error as SupabaseError | null,
     };
   }
 }

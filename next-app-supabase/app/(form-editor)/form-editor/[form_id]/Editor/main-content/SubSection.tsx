@@ -2,10 +2,9 @@
 import {
   IInspectableObjectInspectionFormSubSectionResponse,
   IInspectableObjectInspectionFormTextInputGroupResponse,
-  IMultipleChoiceGroup,
-  ISingleChoiceField,
-  ISingleChoiceGroup,
-  ITextInputGroup,
+  IMultipleChoiceGroupResponse,
+  ISingleChoiceGroupResponse,
+  ITextInputGroupResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import React, { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
@@ -27,6 +26,14 @@ import { Spinner } from "@/components/Spinner";
 import { MultipleChoiceGroup } from "./field-groups/MutlipleChoiceGroup";
 import { SingleChoiceGroup } from "./field-groups/SingleChoiceGroup";
 import { TextInputGroup } from "./field-groups/TextInputGroup";
+import {
+  createMultipleChoiceGroup,
+  createSingleChoiceGroup,
+  createTextInputGroup,
+  deleteMultipleChoiceGroup,
+  deleteSingleChoiceGroup,
+  deleteTextInputGroup,
+} from "./actions";
 
 interface SubSectionProps {
   subSection: IInspectableObjectInspectionFormSubSectionResponse;
@@ -96,22 +103,149 @@ export const SubSection = ({ subSection }: SubSectionProps) => {
   ]);
 
   const [multipleChoiceGroup, setMultipleChoiceGroup] = useState<
-    IMultipleChoiceGroup | undefined
+    IMultipleChoiceGroupResponse | undefined
   >(
     subSection.multiple_choice_group
       ? subSection.multiple_choice_group[0]
       : undefined
   );
   const [singleChoiceGroup, setSingleChoiceGroup] = useState<
-    ISingleChoiceGroup | undefined
+    ISingleChoiceGroupResponse | undefined
   >(
     subSection.single_choice_group
       ? subSection.single_choice_group[0]
       : undefined
   );
   const [textInputGroup, setTextInputGroup] = useState<
-    ITextInputGroup | undefined
+    ITextInputGroupResponse | undefined
   >(subSection.text_input_group ? subSection.text_input_group[0] : undefined);
+
+  const createMulti = async () => {
+    console.log("create multiple choice group");
+    const { multipleChoiceGroupResponse, multipleChoiceGroupResponseError } =
+      await createMultipleChoiceGroup(subSection.id);
+    if (multipleChoiceGroupResponseError) {
+      showNotification(
+        "Add multiple choice group",
+        `Error: ${multipleChoiceGroupResponseError.message} (${multipleChoiceGroupResponseError.code})`,
+        "error"
+      );
+    } else if (multipleChoiceGroupResponse) {
+      setMultipleChoiceGroup(multipleChoiceGroupResponse);
+      showNotification(
+        "Add multiple choice group",
+        `Successfully added multiple choice group with id '${multipleChoiceGroupResponse.id}'`,
+        "info"
+      );
+    }
+  };
+
+  const deleteMulti = async () => {
+    console.log(
+      `delete multiple choice group with id '${multipleChoiceGroup?.id}'`
+    );
+    if (!multipleChoiceGroup) return;
+    const { multipleChoiceGroupResponse, multipleChoiceGroupResponseError } =
+      await deleteMultipleChoiceGroup(multipleChoiceGroup.id);
+    if (multipleChoiceGroupResponseError) {
+      showNotification(
+        "Delete multiple choice group",
+        `Error: ${multipleChoiceGroupResponseError.message} (${multipleChoiceGroupResponseError.code})`,
+        "error"
+      );
+    } else if (multipleChoiceGroupResponse) {
+      setMultipleChoiceGroup(undefined);
+      showNotification(
+        "Delete multiple choice group",
+        `Successfully deleted multiple choice group with id '${multipleChoiceGroupResponse.id}'`,
+        "info"
+      );
+    }
+  };
+
+  const createSingle = async () => {
+    console.log("create single choice group");
+    const { singleChoiceGroupResponse, singleChoiceGroupResponseError } =
+      await createSingleChoiceGroup(subSection.id);
+    if (singleChoiceGroupResponseError) {
+      showNotification(
+        "Add single choice group",
+        `Error: ${singleChoiceGroupResponseError.message} (${singleChoiceGroupResponseError.code})`,
+        "error"
+      );
+    } else if (singleChoiceGroupResponse) {
+      setSingleChoiceGroup(singleChoiceGroupResponse);
+      showNotification(
+        "Add single choice group",
+        `Successfully added multiple choice group with id '${singleChoiceGroupResponse.id}'`,
+        "info"
+      );
+    }
+  };
+
+  const deleteSingle = async () => {
+    console.log(
+      `delete single choice group with id '${singleChoiceGroup?.id}'`
+    );
+    if (!singleChoiceGroup) return;
+    const { singleChoiceGroupResponse, singleChoiceGroupResponseError } =
+      await deleteSingleChoiceGroup(singleChoiceGroup.id);
+    if (singleChoiceGroupResponseError) {
+      showNotification(
+        "Delete single choice group",
+        `Error: ${singleChoiceGroupResponseError.message} (${singleChoiceGroupResponseError.code})`,
+        "error"
+      );
+    } else if (singleChoiceGroupResponse) {
+      setSingleChoiceGroup(undefined);
+      showNotification(
+        "Delete single choice group",
+        `Successfully deleted single choice group with id '${singleChoiceGroupResponse.id}'`,
+        "info"
+      );
+    }
+  };
+
+  const createTextGr = async () => {
+    console.log("create text input group");
+    const { textInputGroupResponse, textInputGroupResponseError } =
+      await createTextInputGroup(subSection.id);
+    if (textInputGroupResponseError) {
+      showNotification(
+        "Add text input group",
+        `Error: ${textInputGroupResponseError.message} (${textInputGroupResponseError.code})`,
+        "error"
+      );
+    } else if (textInputGroupResponse) {
+      setTextInputGroup(textInputGroupResponse);
+      showNotification(
+        "Add text input group",
+        `Successfully added text input group with id '${textInputGroupResponse.id}'`,
+        "info"
+      );
+    }
+  };
+
+  const deleteTextGr = async () => {
+    console.log(`delete text input group with id '${textInputGroup?.id}'`);
+    if (!textInputGroup) return;
+    const { textInputGroupResponse, textInputGroupResponseError } =
+      await deleteTextInputGroup(textInputGroup.id);
+    if (textInputGroupResponseError) {
+      showNotification(
+        "Delete text input group",
+        `Error: ${textInputGroupResponseError.message} (${textInputGroupResponseError.code})`,
+        "error"
+      );
+    } else if (textInputGroupResponse) {
+      setSingleChoiceGroup(undefined);
+      showNotification(
+        "Delete text input group",
+        `Successfully deleted text input group with id '${textInputGroupResponse.id}'`,
+        "info"
+      );
+    }
+  };
 
   const handleChangeGroupState = async () => {
     setOpenGroupSelectDialog(false);
@@ -120,24 +254,24 @@ export const SubSection = ({ subSection }: SubSectionProps) => {
     const changedGroupState = somethingChanged as GroupState;
     if (changedGroupState.multi) {
       if (multipleChoiceGroupExists) {
-        console.log("create multip");
+        createMulti();
       } else {
-        console.log("delete multip");
+        deleteMulti();
       }
     }
     if (changedGroupState.single) {
       if (singleChoiceGroupExists) {
-        console.log("create single");
+        createSingle();
       } else {
-        console.log("delete single");
+        deleteSingle();
       }
     }
 
     if (changedGroupState.text) {
       if (textInputGroupExists) {
-        console.log("create text");
+        createTextGr();
       } else {
-        console.log("delete text");
+        deleteTextGr();
       }
     }
   };

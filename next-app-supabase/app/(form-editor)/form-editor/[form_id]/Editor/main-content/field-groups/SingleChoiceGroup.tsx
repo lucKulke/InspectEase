@@ -1,7 +1,7 @@
-import { ISingleChoiceGroup } from "@/lib/database/form-builder/formBuilderInterfaces";
+import { ISingleChoiceGroupResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
 
 interface SingleChoiceGroupProps {
-  groupData: ISingleChoiceGroup;
+  groupData: ISingleChoiceGroupResponse;
 }
 
 export const SingleChoiceGroup = ({ groupData }: SingleChoiceGroupProps) => {

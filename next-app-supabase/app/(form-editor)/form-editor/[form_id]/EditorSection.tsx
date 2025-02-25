@@ -10,7 +10,7 @@ interface EditorSectionProps {
 
 export const EditorSection = ({ children }: EditorSectionProps) => {
   return (
-    <div className="mt-6 h-screen">
+    <div className="mt-6 ">
       <Tabs defaultValue="Editor" className="w-full">
         <div className="flex justify-center">
           <TabsList className="grid grid-cols-2 w-1/2">

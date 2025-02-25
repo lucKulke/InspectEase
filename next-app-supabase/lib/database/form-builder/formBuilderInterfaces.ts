@@ -203,43 +203,63 @@ export interface IInspectableObjectInspectionFormSubSectionInsert {
 }
 
 // test ####
-export interface IMultipleChoiceGroup {
-  id: UUID;
-  created_at: Date | string;
+export interface IMultipleChoiceGroupInsert {
   sub_section_id: UUID;
-  multiple_choice_field: IMultipleChoiceField[];
 }
 
-export interface IMultipleChoiceField {
+export interface IMultipleChoiceGroupResponse
+  extends IMultipleChoiceGroupInsert {
   id: UUID;
   created_at: Date | string;
+  multiple_choice_field: IMultipleChoiceFieldResponse[];
+}
+
+export interface IMultipleChoiceFieldInsert {
   group_id: UUID;
 }
 
-export interface ISingleChoiceGroup {
+export interface IMultipleChoiceFieldResponse
+  extends IMultipleChoiceFieldInsert {
   id: UUID;
   created_at: Date | string;
-  sub_section_id: UUID;
-  single_choice_field: ISingleChoiceField[];
 }
 
-export interface ISingleChoiceField {
+export interface ISingleChoiceGroupInsert {
+  sub_section_id: UUID;
+}
+
+export interface ISingleChoiceGroupResponse extends ISingleChoiceGroupInsert {
   id: UUID;
   created_at: Date | string;
+  single_choice_field: ISingleChoiceFieldResponse[];
+}
+
+export interface ISingleChoiceFieldInsert {
   group_id: UUID;
 }
 
-export interface ITextInputGroup {
+export interface ISingleChoiceFieldResponse extends ISingleChoiceFieldInsert {
   id: UUID;
   created_at: Date | string;
-  sub_section_id: UUID;
-  text_input_field: ITextInputField[];
 }
 
-export interface ITextInputField {
+export interface ITextInputGroupInsert {
+  sub_section_id: UUID;
+}
+
+export interface ITextInputGroupResponse extends ITextInputGroupInsert {
   id: UUID;
   created_at: Date | string;
+  text_input_field: ITextInputFieldResponse[];
+}
+
+export interface ITextInputFieldInsert {
   group_id: UUID;
+}
+
+export interface ITextInputFieldResponse extends ITextInputFieldInsert {
+  id: UUID;
+  created_at: Date | string;
 }
 
 //
@@ -248,9 +268,9 @@ export interface IInspectableObjectInspectionFormSubSectionResponse
   extends IInspectableObjectInspectionFormSubSectionInsert {
   id: UUID;
   created_at: Date | string;
-  multiple_choice_group: IMultipleChoiceGroup[];
-  single_choice_group: ISingleChoiceGroup[];
-  text_input_group: ITextInputGroup[];
+  multiple_choice_group: IMultipleChoiceGroupResponse[];
+  single_choice_group: ISingleChoiceGroupResponse[];
+  text_input_group: ITextInputGroupResponse[];
 }
 
 export interface ISubSectionCore

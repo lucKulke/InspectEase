@@ -1,7 +1,7 @@
-import { ITextInputGroup } from "@/lib/database/form-builder/formBuilderInterfaces";
+import { ITextInputGroupResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
 
 interface TextInputGroupProps {
-  groupData: ITextInputGroup;
+  groupData: ITextInputGroupResponse;
 }
 
 export const TextInputGroup = ({ groupData }: TextInputGroupProps) => {
