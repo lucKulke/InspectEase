@@ -202,7 +202,58 @@ export interface IInspectableObjectInspectionFormSubSectionInsert {
   main_section_id: UUID;
 }
 
+// test ####
+export interface IMultipleChoiceGroup {
+  id: UUID;
+  created_at: Date | string;
+  sub_section_id: UUID;
+  multiple_choice_field: IMultipleChoiceField[];
+}
+
+export interface IMultipleChoiceField {
+  id: UUID;
+  created_at: Date | string;
+  group_id: UUID;
+}
+
+export interface ISingleChoiceGroup {
+  id: UUID;
+  created_at: Date | string;
+  sub_section_id: UUID;
+  single_choice_field: ISingleChoiceField[];
+}
+
+export interface ISingleChoiceField {
+  id: UUID;
+  created_at: Date | string;
+  group_id: UUID;
+}
+
+export interface ITextInputGroup {
+  id: UUID;
+  created_at: Date | string;
+  sub_section_id: UUID;
+  text_input_field: ITextInputField[];
+}
+
+export interface ITextInputField {
+  id: UUID;
+  created_at: Date | string;
+  group_id: UUID;
+}
+
+//
+
 export interface IInspectableObjectInspectionFormSubSectionResponse
+  extends IInspectableObjectInspectionFormSubSectionInsert {
+  id: UUID;
+  created_at: Date | string;
+  multiple_choice_group: IMultipleChoiceGroup[];
+  single_choice_group: ISingleChoiceGroup[];
+  text_input_group: ITextInputGroup[];
+}
+
+export interface ISubSectionCore
   extends IInspectableObjectInspectionFormSubSectionInsert {
   id: UUID;
   created_at: Date | string;
@@ -343,19 +394,4 @@ export interface IInspectableObjectProfileFormTypeWithProps
 export interface IInspectableObjectInspectionFormMainSectionWithSubSection
   extends IInspectableObjectInspectionFormMainSectionResponse {
   inspectable_object_inspection_form_sub_section: IInspectableObjectInspectionFormSubSectionResponse[];
-}
-
-export interface IInspectableObjectInspectionFormMultipleChoiceGroupWithFields
-  extends IInspectableObjectInspectionFormMultipleChoiceGroupResponse {
-  fields: IInspectableObjectInspectionFormMultipleChoiceFieldResponse[];
-}
-
-export interface IInspectableObjectInspectionFormSingleChoiceGroupWithFields
-  extends IInspectableObjectInspectionFormSingleChoiceGroupResponse {
-  fields: IInspectableObjectInspectionFormSingleChoiceFieldResponse[];
-}
-
-export interface IInspectableObjectInspectionFormTextInputGroupWithFields
-  extends IInspectableObjectInspectionFormTextInputGroupResponse {
-  fields: IInspectableObjectInspectionFormTextInputFieldResponse[];
 }

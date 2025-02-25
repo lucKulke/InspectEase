@@ -7,10 +7,12 @@ import {
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionInsert,
   IInspectableObjectInspectionFormSubSectionResponse,
+  ISubSectionCore,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { DBActionsFormBuilderUpdate } from "@/lib/database/form-builder/formBuilderUpdate";
 import { createClient } from "@/utils/supabase/server";
 import { UUID } from "crypto";
+import { deserialize } from "v8";
 
 export async function createNewMainSection(
   mainSection: IInspectableObjectInspectionFormMainSectionInsert
@@ -63,8 +65,23 @@ export async function updateSubSectionOrder(
 ) {
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderUpdate(supabase);
+
+  const onlySubSectionData: ISubSectionCore[] = subSections.map(
+    (subSection) => {
+      const subSectionData: ISubSectionCore = {
+        id: subSection.id,
+        name: subSection.name,
+        description: subSection.description,
+        order_number: subSection.order_number,
+        main_section_id: subSection.main_section_id,
+        created_at: subSection.created_at,
+      };
+      return subSectionData;
+    }
+  );
+
   return await dbActions.updateInspectableObjectInspectionFormSubSections(
-    subSections
+    onlySubSectionData
   );
 }
 

@@ -12,6 +12,7 @@ import {
   IInspectableObjectProfileResponse,
   IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
+  ISubSectionCore,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
@@ -183,7 +184,7 @@ export class DBActionsFormBuilderUpdate {
   }
 
   async updateInspectableObjectInspectionFormSubSections(
-    subSections: IInspectableObjectInspectionFormSubSectionResponse[]
+    subSections: ISubSectionCore[]
   ): Promise<{
     updatedInspectableObjectInspectionFormSubSections: IInspectableObjectInspectionFormSubSectionResponse[];
 
