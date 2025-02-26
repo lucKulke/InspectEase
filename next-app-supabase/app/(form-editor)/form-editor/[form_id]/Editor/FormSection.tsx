@@ -30,7 +30,10 @@ export const FormSection = ({
           mainSubSections={mainSubSections}
         ></FormSideBar>
         <div className="flex-1 bg-gray-100 p-4 overflow-y-auto">
-          <MainContent mainSubSections={mainSubSections}></MainContent>
+          <MainContent
+            mainSubSections={mainSubSections}
+            setMainSubSections={setMainSubSections}
+          ></MainContent>
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 "use client";
 import {
+  IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionResponse,
   IInspectableObjectInspectionFormTextInputGroupResponse,
   IMultipleChoiceGroupResponse,
@@ -37,6 +38,12 @@ import {
 
 interface SubSectionProps {
   subSection: IInspectableObjectInspectionFormSubSectionResponse;
+  setMainSubSections: React.Dispatch<
+    React.SetStateAction<
+      IInspectableObjectInspectionFormMainSectionWithSubSection[]
+    >
+  >;
+  mainSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
 }
 
 interface GroupState {
@@ -45,27 +52,57 @@ interface GroupState {
   text: boolean;
 }
 
-export const SubSection = ({ subSection }: SubSectionProps) => {
+export const SubSection = ({
+  subSection,
+  setMainSubSections,
+  mainSubSections,
+}: SubSectionProps) => {
   const { showNotification } = useNotification();
   const [openGroupSelectDialog, setOpenGroupSelectDialog] =
     useState<boolean>(false);
 
   const [multipleChoiceGroupExists, setMultipleChoiceGroupExists] =
     useState<boolean>(
-      subSection.multiple_choice_group.length > 0 ? true : false
+      subSection.multiple_choice_group
+        ? subSection.multiple_choice_group.length > 0
+          ? true
+          : false
+        : false
     );
 
   const [singleChoiceGroupExists, setSingleChoiceGroupExists] =
-    useState<boolean>(subSection.single_choice_group.length > 0 ? true : false);
+    useState<boolean>(
+      subSection.single_choice_group
+        ? subSection.single_choice_group.length > 0
+          ? true
+          : false
+        : false
+    );
 
   const [textInputGroupExists, setTextInputGroupExists] = useState<boolean>(
-    subSection.text_input_group.length > 0 ? true : false
+    subSection.text_input_group
+      ? subSection.text_input_group.length > 0
+        ? true
+        : false
+      : false
   );
 
   const [currentGroupState, setCurrentGroupState] = useState<GroupState>({
-    multi: subSection.multiple_choice_group.length > 0 ? true : false,
-    single: subSection.single_choice_group.length > 0 ? true : false,
-    text: subSection.text_input_group.length > 0 ? true : false,
+    multi: subSection.multiple_choice_group
+      ? subSection.multiple_choice_group.length > 0
+        ? true
+        : false
+      : false,
+    single: subSection.single_choice_group
+      ? subSection.single_choice_group.length > 0
+        ? true
+        : false
+      : false,
+    text: subSection.text_input_group
+      ? subSection.text_input_group.length > 0
+        ? true
+        : false
+      : false,
   });
 
   const [somethingChanged, setSomethingChanged] = useState<
@@ -132,6 +169,32 @@ export const SubSection = ({ subSection }: SubSectionProps) => {
       );
     } else if (multipleChoiceGroupResponse) {
       setMultipleChoiceGroup(multipleChoiceGroupResponse);
+
+      const copyOfMainSubSections = [...mainSubSections];
+      for (
+        let mainIndex = 0;
+        mainIndex < copyOfMainSubSections.length;
+        mainIndex++
+      ) {
+        if (
+          copyOfMainSubSections[mainIndex].id === subSection.main_section_id
+        ) {
+          for (
+            let subIndex = 0;
+            subIndex <
+            copyOfMainSubSections[mainIndex]
+              .inspectable_object_inspection_form_sub_section.length;
+            subIndex++
+          ) {
+            copyOfMainSubSections[
+              mainIndex
+            ].inspectable_object_inspection_form_sub_section[
+              subIndex
+            ].multiple_choice_group = [multipleChoiceGroupResponse];
+          }
+        }
+      }
+      setMainSubSections(copyOfMainSubSections);
       showNotification(
         "Add multiple choice group",
         `Successfully added multiple choice group with id '${multipleChoiceGroupResponse.id}'`,
@@ -255,23 +318,53 @@ export const SubSection = ({ subSection }: SubSectionProps) => {
     if (changedGroupState.multi) {
       if (multipleChoiceGroupExists) {
         createMulti();
+        setCurrentGroupState((prev) => {
+          prev.multi = true;
+          return prev;
+        });
+        setMultipleChoiceGroupExists(true);
       } else {
         deleteMulti();
+        setCurrentGroupState((prev) => {
+          prev.multi = false;
+          return prev;
+        });
+        setMultipleChoiceGroupExists(false);
       }
     }
     if (changedGroupState.single) {
       if (singleChoiceGroupExists) {
         createSingle();
+        setCurrentGroupState((prev) => {
+          prev.single = true;
+          return prev;
+        });
+        setSingleChoiceGroupExists(true);
       } else {
         deleteSingle();
+        setCurrentGroupState((prev) => {
+          prev.single = false;
+          return prev;
+        });
+        setSingleChoiceGroupExists(false);
       }
     }
 
     if (changedGroupState.text) {
       if (textInputGroupExists) {
         createTextGr();
+        setCurrentGroupState((prev) => {
+          prev.text = true;
+          return prev;
+        });
+        setTextInputGroupExists(true);
       } else {
         deleteTextGr();
+        setCurrentGroupState((prev) => {
+          prev.text = false;
+          return prev;
+        });
+        setTextInputGroupExists(false);
       }
     }
   };
@@ -282,15 +375,10 @@ export const SubSection = ({ subSection }: SubSectionProps) => {
         <p>{subSection.name}</p>
         <button
           onClick={() => {
-            setMultipleChoiceGroupExists(
-              subSection.multiple_choice_group.length > 0 ? true : false
-            );
-            setSingleChoiceGroupExists(
-              subSection.single_choice_group.length > 0 ? true : false
-            );
-            setTextInputGroupExists(
-              subSection.text_input_group.length > 0 ? true : false
-            );
+            setMultipleChoiceGroupExists(!!multipleChoiceGroup);
+            setSingleChoiceGroupExists(!!singleChoiceGroup);
+            setTextInputGroupExists(!!textInputGroup);
+            setSomethingChanged(checkIfSomethingChanged());
             setOpenGroupSelectDialog(true);
           }}
         >

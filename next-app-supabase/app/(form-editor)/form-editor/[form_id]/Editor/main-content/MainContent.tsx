@@ -6,33 +6,41 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface MainContentProps {
   mainSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
+  setMainSubSections: React.Dispatch<
+    React.SetStateAction<
+      IInspectableObjectInspectionFormMainSectionWithSubSection[]
+    >
+  >;
 }
 
-export const MainContent = ({ mainSubSections }: MainContentProps) => {
-  const [sections, setSections] = useState(mainSubSections);
-
-  useEffect(() => {
-    setSections(mainSubSections);
-  }, [mainSubSections]);
+export const MainContent = ({
+  mainSubSections,
+  setMainSubSections,
+}: MainContentProps) => {
+ 
 
   return (
     <div>
       <AnimatePresence mode="wait">
         <motion.ul
-          key={JSON.stringify(sections)} // Ensures re-animation on change
+          key={JSON.stringify(mainSubSections)} // Ensures re-animation on change
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {sections.map((mainSubSection) => (
+          {mainSubSections.map((mainSubSection) => (
             <li key={mainSubSection.id} className="group mt-2">
               <p className="group-hover:underline ">{mainSubSection.name}</p>
               <ul>
                 {mainSubSection.inspectable_object_inspection_form_sub_section.map(
                   (subSection) => (
                     <li key={subSection.id}>
-                      <SubSection subSection={subSection} />
+                      <SubSection
+                        subSection={subSection}
+                        setMainSubSections={setMainSubSections}
+                        mainSubSections={mainSubSections}
+                      />
                     </li>
                   )
                 )}
