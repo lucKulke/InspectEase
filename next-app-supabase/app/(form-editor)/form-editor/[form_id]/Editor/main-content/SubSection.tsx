@@ -94,12 +94,6 @@ export const SubSection = ({
     text: false,
   });
 
-  const [isLoading, setIsLoading] = useState<GroupState>({
-    multi: true,
-    single: true,
-    text: true,
-  });
-
   const [somethingChanged, setSomethingChanged] = useState<
     boolean | GroupState
   >(false);

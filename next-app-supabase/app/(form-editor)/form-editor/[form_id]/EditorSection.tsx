@@ -2,12 +2,12 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IInspectableObjectInspectionFormMainSectionWithSubSection } from "@/lib/database/form-builder/formBuilderInterfaces";
-
+import { motion, AnimatePresence } from "framer-motion";
 import React, { useState } from "react";
 import { FormSection } from "./Editor/FormSection";
 import { UUID } from "crypto";
 import { PDFViewer } from "@/components/PDFViewer";
-import { Trash2, Car } from "lucide-react";
+import { FileText, Blocks } from "lucide-react";
 
 interface EditorSectionProps {
   mainSubSection: IInspectableObjectInspectionFormMainSectionWithSubSection[];
@@ -22,7 +22,7 @@ export const EditorSection = ({
   bucketResponse,
   formId,
 }: EditorSectionProps) => {
-  const [activeTab, setActiveTab] = useState("Editor");
+  const [activeTab, setActiveTab] = useState<string>("Editor");
 
   const toggleTab = () => {
     setActiveTab((prevTab) => (prevTab === "Editor" ? "Document" : "Editor"));
@@ -49,11 +49,11 @@ export const EditorSection = ({
       )}
       <AnimatePresence mode="wait">
         <motion.ul
-          key={JSON.stringify(mainSubSections)} // Ensures re-animation on change
+          key={activeTab} // Ensures re-animation on change
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.2 }}
         >
           <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 flex items-center bg-gray-200 rounded-full p-2 shadow-lg">
             <button
@@ -64,7 +64,7 @@ export const EditorSection = ({
                   : "bg-transparent text-gray-500"
               }`}
             >
-              <Car className="text-xl" />
+              <Blocks className="text-xl" />
             </button>
             <button
               onClick={toggleTab}
@@ -74,7 +74,7 @@ export const EditorSection = ({
                   : "bg-transparent text-gray-500"
               }`}
             >
-              <Trash2 className="text-xl" />
+              <FileText className="text-xl" />
             </button>
           </div>
         </motion.ul>
