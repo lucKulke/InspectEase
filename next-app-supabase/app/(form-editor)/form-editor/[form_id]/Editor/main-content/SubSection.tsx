@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { UUID } from "crypto";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { useNotification } from "@/app/context/NotificationContext";
 import { Spinner } from "@/components/Spinner";
@@ -34,15 +35,15 @@ import {
   deleteMultipleChoiceGroup,
   deleteSingleChoiceGroup,
   deleteTextInputGroup,
+  fetchMultipleChoiceGroupWithFields,
+  fetchSingleChoiceGroupWithFields,
+  fetchTextInputGroupWithFields,
 } from "./actions";
+import { flushSync } from "react-dom";
 
 interface SubSectionProps {
   subSection: IInspectableObjectInspectionFormSubSectionResponse;
-  setMainSubSections: React.Dispatch<
-    React.SetStateAction<
-      IInspectableObjectInspectionFormMainSectionWithSubSection[]
-    >
-  >;
+
   mainSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
 }
 
@@ -54,60 +55,145 @@ interface GroupState {
 
 export const SubSection = ({
   subSection,
-  setMainSubSections,
   mainSubSections,
 }: SubSectionProps) => {
   const { showNotification } = useNotification();
   const [openGroupSelectDialog, setOpenGroupSelectDialog] =
     useState<boolean>(false);
 
+  const [multipleChoiceGroup, setMultipleChoiceGroup] = useState<
+    IMultipleChoiceGroupResponse | undefined
+  >(undefined);
+  const [multipleChoiceGroupIsLoading, setMultipleChoiceGroupIsLoading] =
+    useState<boolean>(true);
+
+  const [singleChoiceGroup, setSingleChoiceGroup] = useState<
+    ISingleChoiceGroupResponse | undefined
+  >(undefined);
+  const [singleChoiceGroupIsLoading, setSingleChoiceGroupIsLoading] =
+    useState<boolean>(true);
+
+  const [textInputGroup, setTextInputGroup] = useState<
+    ITextInputGroupResponse | undefined
+  >(undefined);
+  const [textInputGroupIsLoading, setTextInputGroupIsLoading] =
+    useState<boolean>(true);
+
   const [multipleChoiceGroupExists, setMultipleChoiceGroupExists] =
-    useState<boolean>(
-      subSection.multiple_choice_group
-        ? subSection.multiple_choice_group.length > 0
-          ? true
-          : false
-        : false
-    );
+    useState<boolean>(false);
 
   const [singleChoiceGroupExists, setSingleChoiceGroupExists] =
-    useState<boolean>(
-      subSection.single_choice_group
-        ? subSection.single_choice_group.length > 0
-          ? true
-          : false
-        : false
-    );
+    useState<boolean>(false);
 
-  const [textInputGroupExists, setTextInputGroupExists] = useState<boolean>(
-    subSection.text_input_group
-      ? subSection.text_input_group.length > 0
-        ? true
-        : false
-      : false
-  );
+  const [textInputGroupExists, setTextInputGroupExists] =
+    useState<boolean>(false);
 
   const [currentGroupState, setCurrentGroupState] = useState<GroupState>({
-    multi: subSection.multiple_choice_group
-      ? subSection.multiple_choice_group.length > 0
-        ? true
-        : false
-      : false,
-    single: subSection.single_choice_group
-      ? subSection.single_choice_group.length > 0
-        ? true
-        : false
-      : false,
-    text: subSection.text_input_group
-      ? subSection.text_input_group.length > 0
-        ? true
-        : false
-      : false,
+    multi: false,
+    single: false,
+    text: false,
+  });
+
+  const [isLoading, setIsLoading] = useState<GroupState>({
+    multi: true,
+    single: true,
+    text: true,
   });
 
   const [somethingChanged, setSomethingChanged] = useState<
     boolean | GroupState
   >(false);
+
+  const getAllGroupsWithFields = async (subSectionId: UUID) => {
+    const [multipleChoiceResult, singleChoiceResult, textInputResult] =
+      await Promise.allSettled([
+        fetchMultipleChoiceGroupWithFields(subSectionId),
+        fetchSingleChoiceGroupWithFields(subSectionId),
+        fetchTextInputGroupWithFields(subSectionId),
+      ]);
+
+    // Handle Multiple Choice Group
+    if (multipleChoiceResult.status === "fulfilled") {
+      const {
+        inspectableObjectInspectionFormMultipleChoiceGroupWithFields,
+        inspectableObjectInspectionFormMultipleChoiceGroupWithFieldsError,
+      } = multipleChoiceResult.value;
+
+      if (inspectableObjectInspectionFormMultipleChoiceGroupWithFieldsError) {
+        showNotification(
+          "Fetch multiple choice group with fields",
+          `Error: ${inspectableObjectInspectionFormMultipleChoiceGroupWithFieldsError.message} (${inspectableObjectInspectionFormMultipleChoiceGroupWithFieldsError.code})`,
+          "error"
+        );
+      } else if (inspectableObjectInspectionFormMultipleChoiceGroupWithFields) {
+        setMultipleChoiceGroup(
+          inspectableObjectInspectionFormMultipleChoiceGroupWithFields
+        );
+        setMultipleChoiceGroupExists(true);
+        setCurrentGroupState((prev) => {
+          prev.multi = true;
+          return prev;
+        });
+      }
+      setMultipleChoiceGroupIsLoading(false);
+    }
+
+    // Handle Single Choice Group
+    if (singleChoiceResult.status === "fulfilled") {
+      const {
+        inspectableObjectInspectionFormSingleChoiceGroupWithFields,
+        inspectableObjectInspectionFormSingleChoiceGroupWithFieldsError,
+      } = singleChoiceResult.value;
+
+      if (inspectableObjectInspectionFormSingleChoiceGroupWithFieldsError) {
+        showNotification(
+          "Fetch single choice group with fields",
+          `Error: ${inspectableObjectInspectionFormSingleChoiceGroupWithFieldsError.message} (${inspectableObjectInspectionFormSingleChoiceGroupWithFieldsError.code})`,
+          "error"
+        );
+      } else if (inspectableObjectInspectionFormSingleChoiceGroupWithFields) {
+        setSingleChoiceGroup(
+          inspectableObjectInspectionFormSingleChoiceGroupWithFields
+        );
+        setSingleChoiceGroupExists(true);
+        setCurrentGroupState((prev) => {
+          prev.single = true;
+          return prev;
+        });
+      }
+      setSingleChoiceGroupIsLoading(false);
+    }
+
+    // Handle Text Input Group
+    if (textInputResult.status === "fulfilled") {
+      const {
+        inspectableObjectInspectionFormTextInputGroupWithFields,
+        inspectableObjectInspectionFormTextInputGroupWithFieldsError,
+      } = textInputResult.value;
+
+      if (inspectableObjectInspectionFormTextInputGroupWithFieldsError) {
+        showNotification(
+          "Fetch text input group with fields",
+          `Error: ${inspectableObjectInspectionFormTextInputGroupWithFieldsError.message} (${inspectableObjectInspectionFormTextInputGroupWithFieldsError.code})`,
+          "error"
+        );
+      } else if (inspectableObjectInspectionFormTextInputGroupWithFields) {
+        setTextInputGroup(
+          inspectableObjectInspectionFormTextInputGroupWithFields
+        );
+        setTextInputGroupExists(true);
+        setCurrentGroupState((prev) => {
+          prev.text = true;
+          return prev;
+        });
+      }
+      setTextInputGroupIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getAllGroupsWithFields(subSection.id);
+  }, []);
 
   const checkIfSomethingChanged = (): boolean | GroupState => {
     const changedGroups: GroupState = {
@@ -139,24 +225,6 @@ export const SubSection = ({
     textInputGroupExists,
   ]);
 
-  const [multipleChoiceGroup, setMultipleChoiceGroup] = useState<
-    IMultipleChoiceGroupResponse | undefined
-  >(
-    subSection.multiple_choice_group
-      ? subSection.multiple_choice_group[0]
-      : undefined
-  );
-  const [singleChoiceGroup, setSingleChoiceGroup] = useState<
-    ISingleChoiceGroupResponse | undefined
-  >(
-    subSection.single_choice_group
-      ? subSection.single_choice_group[0]
-      : undefined
-  );
-  const [textInputGroup, setTextInputGroup] = useState<
-    ITextInputGroupResponse | undefined
-  >(subSection.text_input_group ? subSection.text_input_group[0] : undefined);
-
   const createMulti = async () => {
     console.log("create multiple choice group");
     const { multipleChoiceGroupResponse, multipleChoiceGroupResponseError } =
@@ -169,32 +237,6 @@ export const SubSection = ({
       );
     } else if (multipleChoiceGroupResponse) {
       setMultipleChoiceGroup(multipleChoiceGroupResponse);
-
-      const copyOfMainSubSections = [...mainSubSections];
-      for (
-        let mainIndex = 0;
-        mainIndex < copyOfMainSubSections.length;
-        mainIndex++
-      ) {
-        if (
-          copyOfMainSubSections[mainIndex].id === subSection.main_section_id
-        ) {
-          for (
-            let subIndex = 0;
-            subIndex <
-            copyOfMainSubSections[mainIndex]
-              .inspectable_object_inspection_form_sub_section.length;
-            subIndex++
-          ) {
-            copyOfMainSubSections[
-              mainIndex
-            ].inspectable_object_inspection_form_sub_section[
-              subIndex
-            ].multiple_choice_group = [multipleChoiceGroupResponse];
-          }
-        }
-      }
-      setMainSubSections(copyOfMainSubSections);
       showNotification(
         "Add multiple choice group",
         `Successfully added multiple choice group with id '${multipleChoiceGroupResponse.id}'`,
@@ -392,6 +434,12 @@ export const SubSection = ({
         ) : (
           <div className="border-2 min-h-24 p-2 rounded-xl">
             <p className="text-gray-300">Multiple choice group</p>
+            {multipleChoiceGroupIsLoading && (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-[250px]" />
+                <Skeleton className="h-4 w-[250px]" />
+              </div>
+            )}
           </div>
         )}
 
@@ -401,6 +449,12 @@ export const SubSection = ({
           ) : (
             <div className="border-2 flex-1 min-h-24 rounded-xl p-2">
               <p className="text-gray-300">Single choice group</p>
+              {singleChoiceGroupIsLoading && (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-[250px]" />
+                  <Skeleton className="h-4 w-[250px]" />
+                </div>
+              )}
             </div>
           )}
 
@@ -409,6 +463,12 @@ export const SubSection = ({
           ) : (
             <div className="border-2 flex-1 min-h-24 rounded-xl p-2">
               <p className="text-gray-300">Text input group</p>
+              {textInputGroupIsLoading && (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-[250px]" />
+                  <Skeleton className="h-4 w-[250px]" />
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -1,7 +1,10 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
   IInspectableObjectInspectionFormMainSectionWithSubSection,
+  IInspectableObjectInspectionFormMultipleChoiceGroupWithFields,
   IInspectableObjectInspectionFormResponse,
+  IInspectableObjectInspectionFormSingleChoiceGroupWithFields,
+  IInspectableObjectInspectionFormTextInputGroupWithFields,
   IInspectableObjectInspectionFormWithProps,
   IInspectableObjectProfileFormPropertyResponse,
   IInspectableObjectProfileFormTypeInsert,
@@ -17,6 +20,10 @@ import {
   IInspectableObjectResponse,
   IInspectableObjectWithPropertiesAndProfileResponse,
   IInspectableObjectWithPropertiesResponse,
+  IMultipleChoiceFieldResponse,
+  IMultipleChoiceGroupResponse,
+  ISingleChoiceGroupResponse,
+  ITextInputGroupResponse,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
@@ -550,7 +557,7 @@ export class DBActionsFormBuilderFetch {
       .select(
         `
         *,
-        inspectable_object_inspection_form_sub_section(*, single_choice_group(*, single_choice_field(*)), multiple_choice_group(*, multiple_choice_field(*)), text_input_group(*, text_input_field(*)) )
+        inspectable_object_inspection_form_sub_section(* )
         `
       )
       .eq("form_id", formId);
@@ -576,30 +583,27 @@ export class DBActionsFormBuilderFetch {
   }
 
   // need improvement
-
+  //, single_choice_group(*, single_choice_field(*)), multiple_choice_group(*, multiple_choice_field(*)), text_input_group(*, text_input_field(*))
   async fetchInspectableObjectInspectionFormMultipleChoiceGroupWithFields(
     subSectionId: UUID
   ): Promise<{
-    inspectableObjectInspectionFormMultipleChoiceGroupWithFields: IInspectableObjectInspectionFormMultipleChoiceGroupWithFields | null;
+    inspectableObjectInspectionFormMultipleChoiceGroupWithFields: IMultipleChoiceGroupResponse | null;
     inspectableObjectInspectionFormMultipleChoiceGroupWithFieldsError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
-      .from("inspectable_object_inspection_form_multiple_choice_group")
+      .from("multiple_choice_group")
       .select(
         `
         *,
-        inspectable_object_inspection_form_multiple_choice_field(*)
+        multiple_choice_field(*)
         `
       )
       .eq("sub_section_id", subSectionId);
 
-    console.log(
-      "fetch inspectable object inspection form multiple choice group with fields in db:",
-      data
-    );
+    console.log("fetch form multiple choice group with fields in db:", data);
     if (error) {
       console.error(
-        "fetch inspectable object inspection form multiple choice group with fields in db error: ",
+        "fetch form multiple choice group with fields in db error: ",
         error
       );
     }
@@ -616,26 +620,23 @@ export class DBActionsFormBuilderFetch {
   async fetchInspectableObjectInspectionFormSingleChoiceGroupWithFields(
     subSectionId: UUID
   ): Promise<{
-    inspectableObjectInspectionFormSingleChoiceGroupWithFields: IInspectableObjectInspectionFormSingleChoiceGroupWithFields | null;
+    inspectableObjectInspectionFormSingleChoiceGroupWithFields: ISingleChoiceGroupResponse | null;
     inspectableObjectInspectionFormSingleChoiceGroupWithFieldsError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
-      .from("inspectable_object_inspection_form_single_choice_group")
+      .from("single_choice_group")
       .select(
         `
         *,
-        inspectable_object_inspection_form_single_choice_field(*)
+        single_choice_field(*)
         `
       )
       .eq("sub_section_id", subSectionId);
 
-    console.log(
-      "fetch inspectable object inspection form single choice group with fields in db:",
-      data
-    );
+    console.log("fetch single choice group with fields in db:", data);
     if (error) {
       console.error(
-        "fetch inspectable object inspection form single choice group with fields in db error: ",
+        "fetch single choice group with fields in db error: ",
         error
       );
     }
@@ -652,28 +653,22 @@ export class DBActionsFormBuilderFetch {
   async fetchInspectableObjectInspectionFormTextInputGroupWithFields(
     subSectionId: UUID
   ): Promise<{
-    inspectableObjectInspectionFormTextInputGroupWithFields: IInspectableObjectInspectionFormTextInputGroupWithFields | null;
+    inspectableObjectInspectionFormTextInputGroupWithFields: ITextInputGroupResponse | null;
     inspectableObjectInspectionFormTextInputGroupWithFieldsError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
-      .from("inspectable_object_inspection_form_text_input_group")
+      .from("text_input_group")
       .select(
         `
         *,
-        inspectable_object_inspection_form_text_input_field(*)
+        text_input_field(*)
         `
       )
       .eq("sub_section_id", subSectionId);
 
-    console.log(
-      "fetch inspectable object inspection form text input group with fields in db:",
-      data
-    );
+    console.log("fetch text input group with fields in db:", data);
     if (error) {
-      console.error(
-        "fetch inspectable object inspection form text input group with fields in db error: ",
-        error
-      );
+      console.error("fetch text input group with fields in db error: ", error);
     }
 
     return {

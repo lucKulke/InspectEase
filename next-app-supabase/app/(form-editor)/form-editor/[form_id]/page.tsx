@@ -108,21 +108,13 @@ export default async function FormEditorPage({
         ></FormMetadataCard>
       </div>
       <div>
-        <EditorSection>
-          <TabsContent value="Document" className="h-screen pt-7 pl-16 pr-16  ">
-            {bucketResponse && (
-              <PDFViewer pdfUrl={bucketResponse.signedUrl}></PDFViewer>
-            )}
-          </TabsContent>
-          <TabsContent value="Editor">
-            <FormSection
-              formId={formId}
-              mainSectionsWithSubsections={
-                inspectableObjectInspectionFormMainSectionsWithSubSections
-              }
-            ></FormSection>
-          </TabsContent>
-        </EditorSection>
+        <EditorSection
+          mainSubSection={
+            inspectableObjectInspectionFormMainSectionsWithSubSections
+          }
+          bucketResponse={bucketResponse}
+          formId={formId}
+        />
       </div>
       {/* <PDFViewer></PDFViewer> */}
     </div>

@@ -268,9 +268,9 @@ export interface IInspectableObjectInspectionFormSubSectionResponse
   extends IInspectableObjectInspectionFormSubSectionInsert {
   id: UUID;
   created_at: Date | string;
-  multiple_choice_group: IMultipleChoiceGroupResponse[];
-  single_choice_group: ISingleChoiceGroupResponse[];
-  text_input_group: ITextInputGroupResponse[];
+  // multiple_choice_group: IMultipleChoiceGroupResponse[];
+  // single_choice_group: ISingleChoiceGroupResponse[];
+  // text_input_group: ITextInputGroupResponse[];
 }
 
 export interface ISubSectionCore
@@ -414,4 +414,19 @@ export interface IInspectableObjectProfileFormTypeWithProps
 export interface IInspectableObjectInspectionFormMainSectionWithSubSection
   extends IInspectableObjectInspectionFormMainSectionResponse {
   inspectable_object_inspection_form_sub_section: IInspectableObjectInspectionFormSubSectionResponse[];
+}
+
+export interface IInspectableObjectInspectionFormMultipleChoiceGroupWithFields
+  extends IInspectableObjectInspectionFormMultipleChoiceGroupResponse {
+  muliple_choice_field: IInspectableObjectInspectionFormMultipleChoiceFieldResponse[];
+}
+
+export interface IInspectableObjectInspectionFormSingleChoiceGroupWithFields
+  extends IInspectableObjectInspectionFormSingleChoiceGroupResponse {
+  single_choice_field: IInspectableObjectInspectionFormSingleChoiceFieldResponse[];
+}
+
+export interface IInspectableObjectInspectionFormTextInputGroupWithFields
+  extends IInspectableObjectInspectionFormTextInputGroupResponse {
+  muliple_choice_field: IInspectableObjectInspectionFormTextInputFieldResponse[];
 }

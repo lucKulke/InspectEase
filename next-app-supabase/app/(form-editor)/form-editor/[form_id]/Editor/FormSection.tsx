@@ -10,29 +10,30 @@ import { MainContent } from "./main-content/MainContent";
 
 interface MainFormSectionProps {
   formId: UUID;
-  mainSectionsWithSubsections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
+  mainSectionsWithSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
+  setMainSectionsWithSubSections: React.Dispatch<
+    React.SetStateAction<
+      IInspectableObjectInspectionFormMainSectionWithSubSection[]
+    >
+  >;
 }
 
 export const FormSection = ({
   formId,
-  mainSectionsWithSubsections,
+  mainSectionsWithSubSections,
+  setMainSectionsWithSubSections,
 }: MainFormSectionProps) => {
-  const [mainSubSections, setMainSubSections] = useState<
-    IInspectableObjectInspectionFormMainSectionWithSubSection[]
-  >(mainSectionsWithSubsections);
-
   return (
     <div className="flex h-screen p-4">
       <div className="flex flex-1 overflow-hidden bg-white rounded-lg shadow-lg ">
         <FormSideBar
           formId={formId}
-          setMainSubSections={setMainSubSections}
-          mainSubSections={mainSubSections}
+          setMainSubSections={setMainSectionsWithSubSections}
+          mainSubSections={mainSectionsWithSubSections}
         ></FormSideBar>
         <div className="flex-1 bg-gray-100 p-4 overflow-y-auto">
           <MainContent
-            mainSubSections={mainSubSections}
-            setMainSubSections={setMainSubSections}
+            mainSubSections={mainSectionsWithSubSections}
           ></MainContent>
         </div>
       </div>

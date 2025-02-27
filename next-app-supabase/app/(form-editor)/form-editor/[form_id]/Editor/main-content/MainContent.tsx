@@ -6,19 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface MainContentProps {
   mainSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
-  setMainSubSections: React.Dispatch<
-    React.SetStateAction<
-      IInspectableObjectInspectionFormMainSectionWithSubSection[]
-    >
-  >;
 }
 
-export const MainContent = ({
-  mainSubSections,
-  setMainSubSections,
-}: MainContentProps) => {
- 
-
+export const MainContent = ({ mainSubSections }: MainContentProps) => {
   return (
     <div>
       <AnimatePresence mode="wait">
@@ -38,7 +28,6 @@ export const MainContent = ({
                     <li key={subSection.id}>
                       <SubSection
                         subSection={subSection}
-                        setMainSubSections={setMainSubSections}
                         mainSubSections={mainSubSections}
                       />
                     </li>
