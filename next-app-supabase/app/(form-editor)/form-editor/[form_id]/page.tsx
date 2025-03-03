@@ -72,17 +72,19 @@ export default async function FormEditorPage({
   );
 
   const {
-    inspectableObjectInspectionFormMainSectionsWithSubSections,
-    inspectableObjectInspectionFormMainSectionsWithSubSectionsError,
+    inspectableObjectInspectionFormMainSectionsWithSubSectionData,
+    inspectableObjectInspectionFormMainSectionsWithSubSectionDataError,
   } =
     await dbActions.fetchInspectableObjectInspectionFormMainSectionsWithSubSections(
       formId
     );
 
-  if (inspectableObjectInspectionFormMainSectionsWithSubSectionsError)
+  if (inspectableObjectInspectionFormMainSectionsWithSubSectionDataError)
     return (
       <ErrorHandler
-        error={inspectableObjectInspectionFormMainSectionsWithSubSectionsError}
+        error={
+          inspectableObjectInspectionFormMainSectionsWithSubSectionDataError
+        }
       ></ErrorHandler>
     );
 
@@ -110,7 +112,7 @@ export default async function FormEditorPage({
       <div>
         <EditorSection
           mainSubSection={
-            inspectableObjectInspectionFormMainSectionsWithSubSections
+            inspectableObjectInspectionFormMainSectionsWithSubSectionData
           }
           bucketResponse={bucketResponse}
           formId={formId}

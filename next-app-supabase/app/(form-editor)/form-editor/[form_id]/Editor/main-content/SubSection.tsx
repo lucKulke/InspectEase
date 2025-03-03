@@ -2,10 +2,6 @@
 import {
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionResponse,
-  IInspectableObjectInspectionFormTextInputGroupResponse,
-  IMultipleChoiceGroupResponse,
-  ISingleChoiceGroupResponse,
-  ITextInputGroupResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import React, { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
@@ -41,8 +37,6 @@ import { flushSync } from "react-dom";
 
 interface SubSectionProps {
   subSection: IInspectableObjectInspectionFormSubSectionResponse;
-
-  mainSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
 }
 
 interface GroupState {
@@ -51,9 +45,10 @@ interface GroupState {
   text: boolean;
 }
 
-export const SubSection = ({
-  subSection,
-  mainSubSections,
-}: SubSectionProps) => {
-  return <div></div>;
+export const SubSection = ({ subSection }: SubSectionProps) => {
+  return (
+    <div className="border-2">
+      <p>{subSection.name}</p>
+    </div>
+  );
 };

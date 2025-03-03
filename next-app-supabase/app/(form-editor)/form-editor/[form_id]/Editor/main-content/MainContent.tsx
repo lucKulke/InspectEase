@@ -26,10 +26,7 @@ export const MainContent = ({ mainSubSections }: MainContentProps) => {
                 {mainSubSection.inspectable_object_inspection_form_sub_section.map(
                   (subSection) => (
                     <li key={subSection.id}>
-                      <SubSection
-                        subSection={subSection}
-                        mainSubSections={mainSubSections}
-                      />
+                      <SubSection subSection={subSection} />
                     </li>
                   )
                 )}
