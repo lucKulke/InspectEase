@@ -10,6 +10,7 @@ import {
   IInspectableObjectInspectionFormResponse,
   IInspectableObjectInspectionFormSubSectionInsert,
   IInspectableObjectInspectionFormSubSectionResponse,
+  IInspectableObjectInspectionFormSubSectionWithData,
   IInspectableObjectProfileFormPropertyInsert,
   IInspectableObjectProfileFormPropertyResponse,
   IInspectableObjectProfileFormTypeInsert,
@@ -328,13 +329,15 @@ export class DBActionsFormBuilderCreate {
   async createInspectableObjectInspectionFormSubSection(
     inspectionFormSubSection: IInspectableObjectInspectionFormSubSectionInsert
   ): Promise<{
-    inspectableObjectInspectionFormSubSection: IInspectableObjectInspectionFormSubSectionResponse | null;
+    inspectableObjectInspectionFormSubSection: IInspectableObjectInspectionFormSubSectionWithData | null;
     inspectableObjectInspectionFormSubSectionError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("inspectable_object_inspection_form_sub_section")
       .insert(inspectionFormSubSection)
-      .select();
+      .select(
+        `*, form_checkbox_group(*, form_checkbox(*)), form_text_input_field(*)`
+      );
 
     console.log(
       "create inspectable object inspection form sub section in db:",

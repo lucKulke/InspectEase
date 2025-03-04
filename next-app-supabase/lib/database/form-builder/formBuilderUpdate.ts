@@ -4,6 +4,7 @@ import {
   IInspectableObjectInspectionFormMainSectionResponse,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionResponse,
+  IInspectableObjectInspectionFormSubSectionWithData,
   IInspectableObjectProfileFormPropertyResponse,
   IInspectableObjectProfileFormTypePropertyInsert,
   IInspectableObjectProfileFormTypePropertyResponse,
@@ -218,14 +219,16 @@ export class DBActionsFormBuilderUpdate {
     newName: string,
     newDescription: string
   ): Promise<{
-    updatedInspectableObjectInspectionFormSubSection: IInspectableObjectInspectionFormSubSectionResponse | null;
+    updatedInspectableObjectInspectionFormSubSection: IInspectableObjectInspectionFormSubSectionWithData | null;
     updatedInspectableObjectInspectionFormSubSectionError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("inspectable_object_inspection_form_sub_section")
       .update({ name: newName, description: newDescription })
       .eq("id", subSectionId)
-      .select();
+      .select(
+        `*, form_checkbox_group(*, form_checkbox(*)), form_text_input_field(*)`
+      );
 
     console.log(
       "update inspectable object inspection form sub section in db:",

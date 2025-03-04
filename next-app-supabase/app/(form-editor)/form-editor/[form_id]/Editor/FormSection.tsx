@@ -5,7 +5,10 @@ import { FormSideBar } from "./sidebar/SideBar";
 import { ErrorHandler } from "@/components/ErrorHandler";
 import { error } from "console";
 import { UUID } from "crypto";
-import { IInspectableObjectInspectionFormMainSectionWithSubSection } from "@/lib/database/form-builder/formBuilderInterfaces";
+import {
+  IInspectableObjectInspectionFormMainSectionWithSubSection,
+  IInspectableObjectInspectionFormSubSectionWithData,
+} from "@/lib/database/form-builder/formBuilderInterfaces";
 import { MainContent } from "./main-content/MainContent";
 
 interface MainFormSectionProps {
@@ -16,12 +19,23 @@ interface MainFormSectionProps {
       IInspectableObjectInspectionFormMainSectionWithSubSection[]
     >
   >;
+  subSectionsData: Record<
+    UUID,
+    IInspectableObjectInspectionFormSubSectionWithData
+  >;
+  setSubSectionsData: React.Dispatch<
+    React.SetStateAction<
+      Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>
+    >
+  >;
 }
 
 export const FormSection = ({
   formId,
   mainSectionsWithSubSections,
   setMainSectionsWithSubSections,
+  subSectionsData,
+  setSubSectionsData,
 }: MainFormSectionProps) => {
   return (
     <div className="flex h-screen p-4">
@@ -30,10 +44,13 @@ export const FormSection = ({
           formId={formId}
           setMainSubSections={setMainSectionsWithSubSections}
           mainSubSections={mainSectionsWithSubSections}
+          setSubSectionsData={setSubSectionsData}
         ></FormSideBar>
         <div className="flex-1 bg-gray-100 p-4 overflow-y-auto">
           <MainContent
             mainSubSections={mainSectionsWithSubSections}
+            subSectionsData={subSectionsData}
+            setSubSectionsData={setSubSectionsData}
           ></MainContent>
         </div>
       </div>

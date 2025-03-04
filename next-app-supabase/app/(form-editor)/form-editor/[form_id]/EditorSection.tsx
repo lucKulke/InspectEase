@@ -1,7 +1,10 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { IInspectableObjectInspectionFormMainSectionWithSubSection } from "@/lib/database/form-builder/formBuilderInterfaces";
+import {
+  IInspectableObjectInspectionFormMainSectionWithSubSection,
+  IInspectableObjectInspectionFormSubSectionWithData,
+} from "@/lib/database/form-builder/formBuilderInterfaces";
 import { motion, AnimatePresence } from "framer-motion";
 import React, { useState } from "react";
 import { FormSection } from "./Editor/FormSection";
@@ -15,12 +18,17 @@ interface EditorSectionProps {
     signedUrl: string;
   } | null;
   formId: UUID;
+  subSectionData: Record<
+    UUID,
+    IInspectableObjectInspectionFormSubSectionWithData
+  >;
 }
 
 export const EditorSection = ({
   mainSubSection,
   bucketResponse,
   formId,
+  subSectionData,
 }: EditorSectionProps) => {
   const [activeTab, setActiveTab] = useState<string>("Editor");
 
@@ -32,6 +40,11 @@ export const EditorSection = ({
       mainSubSection
     );
 
+  const [subSectionsData, setSubSectionsData] =
+    useState<Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>>(
+      subSectionData
+    );
+
   return (
     <div className="mt-6 ">
       {activeTab === "Editor" ? (
@@ -39,6 +52,8 @@ export const EditorSection = ({
           formId={formId}
           mainSectionsWithSubSections={mainSubSections}
           setMainSectionsWithSubSections={setMainSubSections}
+          subSectionsData={subSectionsData}
+          setSubSectionsData={setSubSectionsData}
         ></FormSection>
       ) : (
         <div className="h-screen p-4">

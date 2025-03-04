@@ -5,7 +5,10 @@ import { createClient } from "@/utils/supabase/server";
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import { ErrorHandler } from "@/components/ErrorHandler";
 import { redirect } from "next/navigation";
-import { IInspectableObjectInspectionFormPropertyResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
+import {
+  IInspectableObjectInspectionFormPropertyResponse,
+  IInspectableObjectInspectionFormSubSectionWithData,
+} from "@/lib/database/form-builder/formBuilderInterfaces";
 import { EditorSection } from "./EditorSection";
 import { TabsContent } from "@/components/ui/tabs";
 import { DBActionsBucket } from "@/lib/database/bucket";
@@ -88,6 +91,22 @@ export default async function FormEditorPage({
       ></ErrorHandler>
     );
 
+  const subSectionData: Record<
+    UUID,
+    IInspectableObjectInspectionFormSubSectionWithData
+  > = {};
+  inspectableObjectInspectionFormMainSectionsWithSubSectionData.forEach(
+    (mainSection) => {
+      mainSection.inspectable_object_inspection_form_sub_section.forEach(
+        (subSection) => {
+          subSectionData[subSection.id] = subSection;
+        }
+      );
+    }
+  );
+
+  console.log("subSectiondata ", subSectionData);
+
   return (
     <div className="mt-10 p-4">
       <div>
@@ -116,6 +135,7 @@ export default async function FormEditorPage({
           }
           bucketResponse={bucketResponse}
           formId={formId}
+          subSectionData={subSectionData}
         />
       </div>
       {/* <PDFViewer></PDFViewer> */}

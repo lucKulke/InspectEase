@@ -1,14 +1,31 @@
 "use client";
-import { IInspectableObjectInspectionFormMainSectionWithSubSection } from "@/lib/database/form-builder/formBuilderInterfaces";
+import {
+  IInspectableObjectInspectionFormMainSectionWithSubSection,
+  IInspectableObjectInspectionFormSubSectionWithData,
+} from "@/lib/database/form-builder/formBuilderInterfaces";
 import React, { useEffect, useState } from "react";
 import { SubSection } from "./SubSection";
 import { motion, AnimatePresence } from "framer-motion";
+import { UUID } from "crypto";
 
 interface MainContentProps {
   mainSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
+  subSectionsData: Record<
+    UUID,
+    IInspectableObjectInspectionFormSubSectionWithData
+  >;
+  setSubSectionsData: React.Dispatch<
+    React.SetStateAction<
+      Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>
+    >
+  >;
 }
 
-export const MainContent = ({ mainSubSections }: MainContentProps) => {
+export const MainContent = ({
+  mainSubSections,
+  subSectionsData,
+  setSubSectionsData,
+}: MainContentProps) => {
   return (
     <div>
       <AnimatePresence mode="wait">
@@ -26,7 +43,11 @@ export const MainContent = ({ mainSubSections }: MainContentProps) => {
                 {mainSubSection.inspectable_object_inspection_form_sub_section.map(
                   (subSection) => (
                     <li key={subSection.id}>
-                      <SubSection subSection={subSection} />
+                      <SubSection
+                        subSection={subSection}
+                        subSectionsData={subSectionsData}
+                        setSubSectionsData={setSubSectionsData}
+                      />
                     </li>
                   )
                 )}

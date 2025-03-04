@@ -33,6 +33,7 @@ import {
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionInsert,
   IInspectableObjectInspectionFormSubSectionResponse,
+  IInspectableObjectInspectionFormSubSectionWithData,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import React, { useState } from "react";
 import {
@@ -70,12 +71,18 @@ interface FormSideBarProps {
       IInspectableObjectInspectionFormMainSectionWithSubSection[]
     >
   >;
+  setSubSectionsData: React.Dispatch<
+    React.SetStateAction<
+      Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>
+    >
+  >;
 }
 
 export const FormSideBar = ({
   formId,
   mainSubSections,
   setMainSubSections,
+  setSubSectionsData,
 }: FormSideBarProps) => {
   const { showNotification } = useNotification();
 
@@ -356,6 +363,14 @@ export const FormSideBar = ({
           break;
         }
       }
+      setSubSectionsData((prev) => {
+        const copy = { ...prev };
+
+        copy[inspectableObjectInspectionFormSubSection.id] =
+          inspectableObjectInspectionFormSubSection;
+
+        return copy;
+      });
 
       setMainSubSections(copyOfMainSubSections);
       setNewSubSectionName("");
@@ -397,6 +412,12 @@ export const FormSideBar = ({
               newSubSectionList,
               inspectableObjectInspectionFormSubSection.main_section_id
             );
+
+          setSubSectionsData((prev) => {
+            const copy = { ...prev };
+            delete copy[inspectableObjectInspectionFormSubSection.id];
+            return copy;
+          });
           setMainSubSections(updatedMainSubSections);
           debouncedSubSectionUpdate(updatedSubSections);
           break;
@@ -446,6 +467,12 @@ export const FormSideBar = ({
             );
         }
       }
+      setSubSectionsData((prev) => {
+        const copy = { ...prev };
+        copy[updatedInspectableObjectInspectionFormSubSection.id] =
+          updatedInspectableObjectInspectionFormSubSection;
+        return copy;
+      });
 
       setMainSubSections(copyOfMainSubSections);
       setNewSubSectionName("");

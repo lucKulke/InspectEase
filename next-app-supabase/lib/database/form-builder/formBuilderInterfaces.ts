@@ -314,5 +314,5 @@ export interface IInspectableObjectInspectionFormMainSectionWithSubSection
 
 export interface IInspectableObjectInspectionFormMainSectionWithSubSectionData
   extends IInspectableObjectInspectionFormMainSectionResponse {
-  inspectable_object_inspection_form_sub_section: IInspectableObjectInspectionFormSubSectionResponse[];
+  inspectable_object_inspection_form_sub_section: IInspectableObjectInspectionFormSubSectionWithData[];
 }

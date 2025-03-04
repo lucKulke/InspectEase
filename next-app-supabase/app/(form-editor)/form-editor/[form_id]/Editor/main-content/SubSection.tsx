@@ -2,9 +2,10 @@
 import {
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionResponse,
+  IInspectableObjectInspectionFormSubSectionWithData,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import React, { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { DiscAlbum, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,15 @@ import { flushSync } from "react-dom";
 
 interface SubSectionProps {
   subSection: IInspectableObjectInspectionFormSubSectionResponse;
+  subSectionsData: Record<
+    UUID,
+    IInspectableObjectInspectionFormSubSectionWithData
+  >;
+  setSubSectionsData: React.Dispatch<
+    React.SetStateAction<
+      Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>
+    >
+  >;
 }
 
 interface GroupState {
@@ -45,10 +55,18 @@ interface GroupState {
   text: boolean;
 }
 
-export const SubSection = ({ subSection }: SubSectionProps) => {
+export const SubSection = ({
+  subSection,
+  subSectionsData,
+  setSubSectionsData,
+}: SubSectionProps) => {
+  console.log(subSectionsData);
   return (
     <div className="border-2">
-      <p>{subSection.name}</p>
+      <p>{subSectionsData[subSection.id].name}</p>
+      {subSectionsData[subSection.id].form_checkbox_group.map((group) => {
+        return <div>{group.id}</div>;
+      })}
     </div>
   );
 };
