@@ -11,6 +11,7 @@ import { FormSection } from "./Editor/FormSection";
 import { UUID } from "crypto";
 import { PDFViewer } from "@/components/PDFViewer";
 import { FileText, Blocks } from "lucide-react";
+import { ToolBar } from "./ToolBar";
 
 interface EditorSectionProps {
   mainSubSection: IInspectableObjectInspectionFormMainSectionWithSubSection[];
@@ -32,9 +33,6 @@ export const EditorSection = ({
 }: EditorSectionProps) => {
   const [activeTab, setActiveTab] = useState<string>("Editor");
 
-  const toggleTab = () => {
-    setActiveTab((prevTab) => (prevTab === "Editor" ? "Document" : "Editor"));
-  };
   const [mainSubSections, setMainSubSections] =
     useState<IInspectableObjectInspectionFormMainSectionWithSubSection[]>(
       mainSubSection
@@ -62,38 +60,8 @@ export const EditorSection = ({
           )}
         </div>
       )}
-      <AnimatePresence mode="wait">
-        <motion.ul
-          key={activeTab} // Ensures re-animation on change
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 flex items-center bg-gray-200 rounded-full p-2 shadow-lg">
-            <button
-              onClick={toggleTab}
-              className={`px-4 py-2 rounded-full transition flex items-center ${
-                activeTab === "Editor"
-                  ? "bg-blue-500 text-white"
-                  : "bg-transparent text-gray-500"
-              }`}
-            >
-              <Blocks className="text-xl" />
-            </button>
-            <button
-              onClick={toggleTab}
-              className={`px-4 py-2 rounded-full transition flex items-center ${
-                activeTab === "Document"
-                  ? "bg-blue-500 text-white"
-                  : "bg-transparent text-gray-500"
-              }`}
-            >
-              <FileText className="text-xl" />
-            </button>
-          </div>
-        </motion.ul>
-      </AnimatePresence>
+
+      <ToolBar activeTab={activeTab} setActiveTab={setActiveTab}></ToolBar>
     </div>
   );
 };
