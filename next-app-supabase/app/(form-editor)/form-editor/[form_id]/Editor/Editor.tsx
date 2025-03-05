@@ -7,13 +7,13 @@ import {
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { motion, AnimatePresence } from "framer-motion";
 import React, { useState } from "react";
-import { FormSection } from "./Editor/FormSection";
+import { FormSection } from "./FormSection";
 import { UUID } from "crypto";
 import { PDFViewer } from "@/components/PDFViewer";
 import { FileText, Blocks } from "lucide-react";
-import { ToolBar } from "./ToolBar";
+import { ToolBar } from "./ToolBar/ToolBar";
 
-interface EditorSectionProps {
+interface EditorProps {
   mainSubSection: IInspectableObjectInspectionFormMainSectionWithSubSection[];
   bucketResponse: {
     signedUrl: string;
@@ -25,12 +25,12 @@ interface EditorSectionProps {
   >;
 }
 
-export const EditorSection = ({
+export const Editor = ({
   mainSubSection,
   bucketResponse,
   formId,
   subSectionData,
-}: EditorSectionProps) => {
+}: EditorProps) => {
   const [activeTab, setActiveTab] = useState<string>("Editor");
 
   const [mainSubSections, setMainSubSections] =
@@ -61,7 +61,15 @@ export const EditorSection = ({
         </div>
       )}
 
-      <ToolBar activeTab={activeTab} setActiveTab={setActiveTab}></ToolBar>
+      <ToolBar
+        sideBarData={mainSubSections}
+        setSideBarData={setMainSubSections}
+        formId={formId}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        setSubSectionsData={setSubSectionsData}
+        subSectionData={subSectionData}
+      ></ToolBar>
     </div>
   );
 };

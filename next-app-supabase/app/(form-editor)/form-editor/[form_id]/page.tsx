@@ -9,7 +9,7 @@ import {
   IInspectableObjectInspectionFormPropertyResponse,
   IInspectableObjectInspectionFormSubSectionWithData,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
-import { EditorSection } from "./EditorSection";
+import { Editor } from "./Editor/Editor";
 import { TabsContent } from "@/components/ui/tabs";
 import { DBActionsBucket } from "@/lib/database/bucket";
 import { FormSection } from "./Editor/FormSection";
@@ -129,7 +129,7 @@ export default async function FormEditorPage({
         ></FormMetadataCard>
       </div>
       <div>
-        <EditorSection
+        <Editor
           mainSubSection={
             inspectableObjectInspectionFormMainSectionsWithSubSectionData
           }
