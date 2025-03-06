@@ -60,7 +60,6 @@ export const SubSection = ({
   subSectionsData,
   setSubSectionsData,
 }: SubSectionProps) => {
-  console.log(subSectionsData);
   return (
     <div className="border-2">
       <p>{subSectionsData[subSection.id].name}</p>

@@ -105,8 +105,6 @@ export default async function FormEditorPage({
     }
   );
 
-  console.log("subSectiondata ", subSectionData);
-
   return (
     <div className="mt-10 p-4">
       <div>

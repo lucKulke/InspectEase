@@ -28,6 +28,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { UUID } from "crypto";
+import { CheckboxManager } from "./CheckboxManager";
 
 interface CreateMainSectionDialogProps {
   open: boolean;
@@ -97,18 +99,18 @@ interface CreateSubSectionDialogProps {
   create: (
     newSubSection: IInspectableObjectInspectionFormSubSectionInsert
   ) => Promise<void>;
-  sideBarData: IInspectableObjectInspectionFormMainSectionWithSubSection[];
+  sections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
 }
 
 export const CreateSubSectionDialog = ({
   open,
   setOpen,
   create,
-  sideBarData,
+  sections,
 }: CreateSubSectionDialogProps) => {
-  const [mainSectionId, setMainSectionId] = useState("");
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [mainSectionId, setMainSectionId] = useState<string>("");
+  const [name, setName] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[425px]">
@@ -126,7 +128,7 @@ export const CreateSubSectionDialog = ({
                 <SelectValue placeholder="Select a main section" />
               </SelectTrigger>
               <SelectContent className="max-h-[200px] overflow-y-auto">
-                {sideBarData.map((mainSection) => (
+                {sections.map((mainSection) => (
                   <SelectItem key={mainSection.id} value={mainSection.id}>
                     <TooltipProvider>
                       <Tooltip>
@@ -161,6 +163,60 @@ export const CreateSubSectionDialog = ({
             />
           </div>
         </div>
+        <DialogFooter>
+          {mainSectionId.length > 0 && name.length > 3 ? (
+            <Button
+              onClick={() => {
+                let subSectionOrderNumber = 0;
+                sections.forEach((mainSubSection) => {
+                  if (mainSubSection.id === mainSectionId) {
+                    subSectionOrderNumber =
+                      mainSubSection
+                        .inspectable_object_inspection_form_sub_section.length +
+                      1;
+                    return;
+                  }
+                });
+                create({
+                  name: name,
+                  description: description,
+                  main_section_id: mainSectionId as UUID,
+                  order_number: subSectionOrderNumber,
+                });
+              }}
+            >
+              Create
+            </Button>
+          ) : (
+            <Button variant="outline">Create</Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+interface CreateCheckboxDialogProps {
+  open: boolean;
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  sections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
+}
+
+export const CreateCheckboxDialog = ({
+  open,
+  setOpen,
+  sections,
+}: CreateCheckboxDialogProps) => {
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-[800px]">
+        <DialogHeader>
+          <DialogTitle>Manage Checkboxes</DialogTitle>
+          <DialogDescription>
+            Create checkboxes and organize them into selection groups.
+          </DialogDescription>
+        </DialogHeader>
+        <CheckboxManager sections={sections}></CheckboxManager>
         <DialogFooter></DialogFooter>
       </DialogContent>
     </Dialog>

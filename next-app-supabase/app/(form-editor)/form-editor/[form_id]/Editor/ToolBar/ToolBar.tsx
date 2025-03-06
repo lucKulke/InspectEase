@@ -34,7 +34,11 @@ import {
   IInspectableObjectInspectionFormSubSectionWithData,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { Button } from "@/components/ui/button";
-import { CreateMainSectionDialog, CreateSubSectionDialog } from "./Dialogs";
+import {
+  CreateCheckboxDialog,
+  CreateMainSectionDialog,
+  CreateSubSectionDialog,
+} from "./Dialogs";
 
 interface ToolBarProps {
   setSideBarData: React.Dispatch<
@@ -75,7 +79,8 @@ export const ToolBar = ({
     useState<boolean>(false);
   const [openCreateSubSectionDialog, setOpenCreateSubSectionDialog] =
     useState<boolean>(false);
-
+  const [openCreateCheckboxDialog, setOpenCreateCheckboxDialog] =
+    useState<boolean>(false);
   const handleCreateMainSection = async (name: string, description: string) => {
     const {
       inspectableObjectInspectionFormMainSection,
@@ -173,10 +178,16 @@ export const ToolBar = ({
           <DropdownMenuItem
             onClick={() => setOpenCreateMainSectionDialog(true)}
           >
-            Create Main Section
+            Main Section
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setOpenCreateSubSectionDialog(true)}>
-            Create Sub Section
+            Sub Section
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setOpenCreateCheckboxDialog(true)}>
+            Checkbox
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setOpenCreateSubSectionDialog(true)}>
+            Text input
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -221,8 +232,14 @@ export const ToolBar = ({
         open={openCreateSubSectionDialog}
         setOpen={setOpenCreateSubSectionDialog}
         create={handleCreateSubSection}
-        sideBarData={sideBarData}
+        sections={sideBarData}
       />
+
+      <CreateCheckboxDialog
+        open={openCreateCheckboxDialog}
+        setOpen={setOpenCreateCheckboxDialog}
+        sections={sideBarData}
+      ></CreateCheckboxDialog>
     </div>
   );
 };

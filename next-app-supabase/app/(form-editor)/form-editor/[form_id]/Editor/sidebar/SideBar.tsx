@@ -86,8 +86,6 @@ export const FormSideBar = ({
 }: FormSideBarProps) => {
   const { showNotification } = useNotification();
 
-  const [openCreateMainSectionDialog, setOpenCreateMainSectionDialog] =
-    useState<boolean>(false);
   const [openUpdateMainSectionDialog, setOpenUpdateMainSectionDialog] =
     useState<boolean>(false);
   const [newMainSectionName, setNewMainSectionName] = useState<string>("");
@@ -154,44 +152,6 @@ export const FormSideBar = ({
     const updatedItems = reorderItems(newOrder);
     setMainSubSections(updatedItems);
     debouncedMainSectionUpdate(updatedItems);
-  };
-
-  const handleCreateMainSection = async (name: string, description: string) => {
-    const {
-      inspectableObjectInspectionFormMainSection,
-      inspectableObjectInspectionFormMainSectionError,
-    } = await createNewMainSection({
-      name: name,
-      description: description,
-      form_id: formId,
-      order_number: mainSubSections.length + 1,
-    });
-
-    if (inspectableObjectInspectionFormMainSectionError) {
-      showNotification(
-        "Create main section",
-        `Error: ${inspectableObjectInspectionFormMainSectionError.message} (${inspectableObjectInspectionFormMainSectionError.code})`,
-        "error"
-      );
-    } else if (inspectableObjectInspectionFormMainSection) {
-      const newMainSubSection: IInspectableObjectInspectionFormMainSectionWithSubSection =
-        {
-          id: inspectableObjectInspectionFormMainSection.id,
-          name: inspectableObjectInspectionFormMainSection.name,
-          description: inspectableObjectInspectionFormMainSection.description,
-          created_at: inspectableObjectInspectionFormMainSection.created_at,
-          order_number: mainSubSections.length + 1,
-          inspectable_object_inspection_form_sub_section: [],
-          form_id: inspectableObjectInspectionFormMainSection.form_id,
-        };
-      inspectableObjectInspectionFormMainSection;
-      setMainSubSections((prev) => [...prev, newMainSubSection]);
-      showNotification(
-        "Create main section",
-        `Successfully created new main section with id '${inspectableObjectInspectionFormMainSection.id}'`,
-        "info"
-      );
-    }
   };
 
   const handleDeleteMainSection = async (mainSectionId: UUID) => {
@@ -639,68 +599,6 @@ export const FormSideBar = ({
           </Reorder.Item>
         ))}
       </Reorder.Group>
-      <Button
-        className="mt-2"
-        onClick={() => {
-          setOpenCreateMainSectionDialog(true);
-        }}
-      >
-        New Main-Section
-      </Button>
-      <Dialog
-        open={openCreateMainSectionDialog}
-        onOpenChange={setOpenCreateMainSectionDialog}
-      >
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Create</DialogTitle>
-            <DialogDescription>Create new main section</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="createMainSectionName" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="createMainSectionName"
-                value={newMainSectionName} // Controlled input
-                onChange={(e) => setNewMainSectionName(e.target.value)} // Update state on input change
-                className="col-span-3"
-              />
-              <Label
-                htmlFor="createMainSectionDescription"
-                className="text-right"
-              >
-                Description
-              </Label>
-              <Input
-                id="createMainSectionDescription"
-                value={newMainSectionDescription} // Controlled input
-                onChange={(e) => setNewMainSectionDescription(e.target.value)} // Update state on input change
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            {newMainSectionName.length > 3 ? (
-              <Button
-                onClick={() => {
-                  handleCreateMainSection(
-                    newMainSectionName,
-                    newMainSectionDescription
-                  );
-                }}
-              >
-                Save changes
-              </Button>
-            ) : (
-              <Button disabled variant="outline">
-                Save changes
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog
         open={openCreateSubSectionDialog}
