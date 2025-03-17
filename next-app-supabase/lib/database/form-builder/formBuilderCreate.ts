@@ -1,5 +1,8 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  IFormCheckboxGroupInsert,
+  IFormCheckboxInsert,
+  IFormCheckboxResponse,
   IInspectableObjectInsert,
   IInspectableObjectInspectionFormAnnotationInsert,
   IInspectableObjectInspectionFormAnnotationResponse,
@@ -24,14 +27,6 @@ import {
   IInspectableObjectPropertyInsert,
   IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
-  IMultipleChoiceFieldInsert,
-  IMultipleChoiceFieldResponse,
-  IMultipleChoiceGroupInsert,
-  IMultipleChoiceGroupResponse,
-  ISingleChoiceGroupInsert,
-  ISingleChoiceGroupResponse,
-  ITextInputGroupInsert,
-  ITextInputGroupResponse,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
@@ -357,73 +352,43 @@ export class DBActionsFormBuilderCreate {
     };
   }
 
-  async createMultipleChoiceGroup(
-    multipleChoiceGroup: IMultipleChoiceGroupInsert
-  ): Promise<{
-    multipleChoiceGroupResponse: IMultipleChoiceGroupResponse | null;
-    multipleChoiceGroupResponseError: SupabaseError | null;
+  async createFormCheckbox(newFormCheckboxes: IFormCheckboxInsert[]): Promise<{
+    formCheckboxes: IFormCheckboxResponse[] | null;
+    formCheckboxesError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
-      .from("multiple_choice_group")
-      .insert(multipleChoiceGroup).select(`
-        *,
-         multiple_choice_field(*)
-        `);
+      .from("form_checkbox")
+      .insert(newFormCheckboxes)
+      .select(`*`);
 
-    console.log("create multiple choice group in db:", data);
+    console.log("create form checkboxes in db:", data);
     if (error) {
-      console.error("create multiple choice group in db error: ", error);
+      console.error("create form checkboxes in db error: ", error);
     }
 
     return {
-      multipleChoiceGroupResponse: data ? data[0] : null,
-      multipleChoiceGroupResponseError: error as SupabaseError | null,
+      formCheckboxes: data ? data : [],
+      formCheckboxesError: error as SupabaseError | null,
     };
   }
 
-  async createSingleChoiceGroup(
-    singleChoiceGroup: ISingleChoiceGroupInsert
-  ): Promise<{
-    singleChoiceGroupResponse: ISingleChoiceGroupResponse | null;
-    singleChoiceGroupResponseError: SupabaseError | null;
+  async createFormCheckboxGroups(groups: IFormCheckboxGroupInsert[]): Promise<{
+    formCheckboxGroups: IFormCheckboxResponse[] | null;
+    formCheckboxGroupsError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
-      .from("single_choice_group")
-      .insert(singleChoiceGroup).select(`
-        *,
-         single_choice_field(*)
-        `);
+      .from("form_checkbox_group")
+      .insert(groups)
+      .select(`*`);
 
-    console.log("create single choice group in db:", data);
+    console.log("create form checkboxes in db:", data);
     if (error) {
-      console.error("create single choice group in db error: ", error);
+      console.error("create form checkboxes in db error: ", error);
     }
 
     return {
-      singleChoiceGroupResponse: data ? data[0] : null,
-      singleChoiceGroupResponseError: error as SupabaseError | null,
-    };
-  }
-
-  async createTextInputGroup(textInputGroup: ITextInputGroupInsert): Promise<{
-    textInputGroupResponse: ITextInputGroupResponse | null;
-    textInputGroupResponseError: SupabaseError | null;
-  }> {
-    const { data, error } = await this.supabase
-      .from("text_input_group")
-      .insert(textInputGroup).select(`
-        *,
-         text_input_field(*)
-        `);
-
-    console.log("create text input group in db:", data);
-    if (error) {
-      console.error("create text input group in db error: ", error);
-    }
-
-    return {
-      textInputGroupResponse: data ? data[0] : null,
-      textInputGroupResponseError: error as SupabaseError | null,
+      formCheckboxGroups: data ? data : [],
+      formCheckboxGroupsError: error as SupabaseError | null,
     };
   }
 }

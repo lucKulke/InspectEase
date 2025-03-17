@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -25,8 +25,16 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { IInspectableObjectInspectionFormMainSectionWithSubSection } from "@/lib/database/form-builder/formBuilderInterfaces";
+import {
+  IFormCheckboxGroupInsert,
+  IFormCheckboxInsert,
+  IInspectableObjectInspectionFormMainSectionWithSubSection,
+} from "@/lib/database/form-builder/formBuilderInterfaces";
 import { Reorder } from "framer-motion";
+import { v4 as uuidv4 } from "uuid";
+import { group } from "console";
+import { UUID } from "crypto";
+import { createFormCheckboxes, createFromCheckboxGroups } from "../actions";
 
 interface CheckboxItem {
   id: string;
@@ -62,7 +70,7 @@ export const CheckboxManager = ({ sections }: CheckboxManagerProps) => {
     if (!newCheckboxLabel.trim()) return;
 
     const newCheckbox: CheckboxItem = {
-      id: `checkbox-${Date.now()}`,
+      id: uuidv4(),
       label: newCheckboxLabel,
       order_number: checkboxes.length + 1,
       group_id: null,
@@ -77,7 +85,7 @@ export const CheckboxManager = ({ sections }: CheckboxManagerProps) => {
     if (!newGroupName.trim()) return;
 
     const newGroup: SelectionGroup = {
-      id: `group-${Date.now()}`,
+      id: uuidv4(),
       name: newGroupName,
       checkboxIds: [],
     };
@@ -114,6 +122,15 @@ export const CheckboxManager = ({ sections }: CheckboxManagerProps) => {
   const toggleCheckboxInGroup = (checkboxId: string) => {
     if (!selectedGroupId) return;
 
+    setCheckboxes(
+      checkboxes.map((checkbox) => {
+        if (checkboxId === checkbox.id) {
+          checkbox.group_id = selectedGroupId;
+        }
+        return checkbox;
+      })
+    );
+
     setGroups(
       groups.map((group) => {
         if (group.id === selectedGroupId) {
@@ -133,10 +150,8 @@ export const CheckboxManager = ({ sections }: CheckboxManagerProps) => {
   const anySubSectionsSelected = (
     record: Record<string, string[]>
   ): boolean => {
-    console.log("record", record);
     let foundSelectedSubSection = false;
     Object.entries(record).forEach(([subSectionId, groupIdList]) => {
-      console.log("group list", groupIdList);
       if (groupIdList.length > 0) foundSelectedSubSection = true;
     });
     return foundSelectedSubSection;
@@ -154,6 +169,9 @@ export const CheckboxManager = ({ sections }: CheckboxManagerProps) => {
         copyOfAssignedSubSections[subSectionId] = currentGroupIdList.filter(
           (groupId) => groupId !== selectedGroupId
         );
+        if (copyOfAssignedSubSections[subSectionId].length === 0) {
+          delete copyOfAssignedSubSections[subSectionId];
+        }
       } else {
         copyOfAssignedSubSections[subSectionId].push(selectedGroupId);
       }
@@ -168,6 +186,7 @@ export const CheckboxManager = ({ sections }: CheckboxManagerProps) => {
     }
 
     setAssignedSubSections(copyOfAssignedSubSections);
+    console.log("assigned sub sections", copyOfAssignedSubSections);
   };
 
   // Get checkboxes for a specific group
@@ -188,11 +207,56 @@ export const CheckboxManager = ({ sections }: CheckboxManagerProps) => {
   };
 
   const handleCheckboxesReorder = (newOrder: CheckboxItem[]) => {
+    const unchangedCheckboxes = checkboxes.filter(
+      (checkbox) => !newOrder.includes(checkbox)
+    );
+
     const updatedItems = reorderItems(newOrder);
-    setCheckboxes(updatedItems);
+    setCheckboxes([...unchangedCheckboxes, ...updatedItems]);
   };
 
-  const handleCreateSelectionGroups = async () => {};
+  // useEffect(() => {
+  //   console.log("checkboxes", checkboxes);
+  // }, [checkboxes]);
+
+  const handleCreateCheckboxGroups = async () => {
+    console.log("groups", groups);
+    for (const [subSectionId, groupIds] of Object.entries(
+      assignedSubSections
+    )) {
+      const neededGroups = groups.filter((group) =>
+        groupIds.includes(group.id)
+      );
+
+      const newGroupsForDB = neededGroups.map((group) => {
+        const newGroup: IFormCheckboxGroupInsert = {
+          id: group.id as UUID,
+          name: group.name,
+          sub_section_id: subSectionId as UUID,
+        };
+        return newGroup;
+      });
+
+      const { formCheckboxGroups, formCheckboxGroupsError } =
+        await createFromCheckboxGroups(newGroupsForDB);
+
+      const newCheckboxesForDB = checkboxes.map((checkbox) => {
+        const newCheckbox: IFormCheckboxInsert = {
+          id: uuidv4() as UUID,
+          group_id: checkbox.group_id as UUID,
+          label: checkbox.label,
+          order_number: checkbox.order_number,
+          annotation_id: null,
+        };
+        return newCheckbox;
+      });
+
+      const { formCheckboxes, formCheckboxesError } =
+        await createFormCheckboxes(newCheckboxesForDB);
+
+      console.log(`${subSectionId}: ${groupIds}`);
+    }
+  };
 
   return (
     <div>
@@ -352,18 +416,38 @@ export const CheckboxManager = ({ sections }: CheckboxManagerProps) => {
                           .find((g) => g.id === selectedGroupId)
                           ?.checkboxIds.includes(checkbox.id) || false;
 
+                      let isInDiffrentSelectedGroup = false;
+                      groups.forEach((group) => {
+                        if (
+                          group.id !== selectedGroupId &&
+                          group.checkboxIds.includes(checkbox.id)
+                        ) {
+                          isInDiffrentSelectedGroup = true;
+                          return;
+                        }
+                      });
+
                       return (
                         <div
                           key={checkbox.id}
                           className="flex items-center space-x-2"
                         >
-                          <Checkbox
-                            id={`group-${selectedGroupId}-${checkbox.id}`}
-                            checked={isInSelectedGroup}
-                            onCheckedChange={() =>
-                              toggleCheckboxInGroup(checkbox.id)
-                            }
-                          />
+                          {isInDiffrentSelectedGroup ? (
+                            <Checkbox
+                              id={`group-${selectedGroupId}-${checkbox.id}`}
+                              checked={isInSelectedGroup}
+                              disabled={true}
+                            />
+                          ) : (
+                            <Checkbox
+                              id={`group-${selectedGroupId}-${checkbox.id}`}
+                              checked={isInSelectedGroup}
+                              onCheckedChange={() =>
+                                toggleCheckboxInGroup(checkbox.id)
+                              }
+                            />
+                          )}
+
                           <Label
                             htmlFor={`group-${selectedGroupId}-${checkbox.id}`}
                           >
@@ -428,6 +512,7 @@ export const CheckboxManager = ({ sections }: CheckboxManagerProps) => {
                                   dragConstraints={{ top: 0, bottom: 0 }}
                                 >
                                   <Checkbox
+                                    checked={true}
                                     id={`preview-${group.id}-${checkbox.id}`}
                                   />
                                   <Label
@@ -494,7 +579,7 @@ export const CheckboxManager = ({ sections }: CheckboxManagerProps) => {
           </div>
           <div className="flex justify-end">
             {atLeastOneSubSectionSelected ? (
-              <Button onClick={() => handleCreateSelectionGroups}>Save</Button>
+              <Button onClick={() => handleCreateCheckboxGroups()}>Save</Button>
             ) : (
               <Button variant="outline">Save</Button>
             )}

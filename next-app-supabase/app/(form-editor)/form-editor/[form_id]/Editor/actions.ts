@@ -2,6 +2,8 @@
 import { DBActionsFormBuilderCreate } from "@/lib/database/form-builder/formBuilderCreate";
 import { DBActionsFormBuilderDelete } from "@/lib/database/form-builder/formBuilderDelete";
 import {
+  IFormCheckboxGroupInsert,
+  IFormCheckboxInsert,
   IInspectableObjectInspectionFormMainSectionInsert,
   IInspectableObjectInspectionFormMainSectionResponse,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
@@ -111,4 +113,18 @@ export async function updateMainSection(
     newName,
     newDescription
   );
+}
+
+export async function createFormCheckboxes(checkboxes: IFormCheckboxInsert[]) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderCreate(supabase);
+  return await dbActions.createFormCheckbox(checkboxes);
+}
+
+export async function createFromCheckboxGroups(
+  groups: IFormCheckboxGroupInsert[]
+) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderCreate(supabase);
+  return await dbActions.createFormCheckboxGroups(groups);
 }
