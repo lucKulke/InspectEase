@@ -5,7 +5,13 @@ import {
   IInspectableObjectInspectionFormSubSectionWithData,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import React, { useEffect, useState } from "react";
-import { DiscAlbum, Divide, Plus } from "lucide-react";
+import {
+  ArrowBigRightDash,
+  DiscAlbum,
+  Divide,
+  Plus,
+  PlusCircle,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -23,12 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useNotification } from "@/app/context/NotificationContext";
 import { Spinner } from "@/components/Spinner";
 
-import {
-  deleteMultipleChoiceGroup,
-  deleteSingleChoiceGroup,
-  deleteTextInputGroup,
-  updateCheckboxesOrderNumber,
-} from "./actions";
+import { updateCheckboxesOrderNumber } from "./actions";
 import { flushSync } from "react-dom";
 import {
   Card,
@@ -40,6 +41,7 @@ import {
 
 import { Reorder } from "framer-motion";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CreateTaskDialog } from "./Dialogs";
 
 const debounce = (func: Function, delay: number) => {
   let timer: NodeJS.Timeout;
@@ -79,7 +81,11 @@ export const SubSection = ({
     useState<IInspectableObjectInspectionFormSubSectionWithData>(
       subSectionsData[subSectionId]
     );
+  const [openCreateTaskDialog, setOpenCreateTaskDialog] =
+    useState<boolean>(false);
 
+  const [currentCheckboxGroup, setCurrentCheckboxGroup] =
+    useState<IFormCheckboxGroupWithCheckboxes | null>(null);
   const updateCheckboxOrderInDB = async (
     updatedItems: IFormCheckboxResponse[]
   ) => {
@@ -134,12 +140,29 @@ export const SubSection = ({
     return 0;
   }
   return (
-    <div className="border-2">
+    <div className="border-2 rounded-xl p-2">
       <p>{sectionData.name}</p>
       {sectionData.form_checkbox_group.map((group) => {
         return (
-          <div key={group.id}>
-            <Card key={group.id}>
+          <div className="flex space-x-5 p-5 " key={group.id}>
+            <div className="border-2 w-2/3 rounded-xl flex items-center justify-center">
+              <button
+                onClick={() => {
+                  console.log("group", group);
+                  setCurrentCheckboxGroup(group);
+                  setOpenCreateTaskDialog(true);
+                }}
+              >
+                <PlusCircle
+                  size={32}
+                  className="text-gray-400 hover:text-black"
+                />
+              </button>
+            </div>
+            <div className="flex items-center">
+              <ArrowBigRightDash className="text-gray-400" size={32} />
+            </div>
+            <Card className="w-1/3" key={group.id}>
               <CardHeader>
                 <CardTitle>{group.name}</CardTitle>
                 <CardDescription>
@@ -184,6 +207,11 @@ export const SubSection = ({
           </div>
         );
       })}
+      <CreateTaskDialog
+        open={openCreateTaskDialog}
+        setOpen={setOpenCreateTaskDialog}
+        currentCheckboxGroup={currentCheckboxGroup}
+      />
     </div>
   );
 };

@@ -292,41 +292,6 @@ export const CheckboxManager = ({
         }
       }
       return null;
-
-      // for (const [subSectionId, groupIds] of Object.entries(
-      //   assignedSubSections
-      // )) {
-      //   const neededGroups = groups.filter((group) =>
-      //     groupIds.includes(group.id)
-      //   );
-
-      //   const newGroupsForDB = neededGroups.map((group) => {
-      //     const newGroup: IFormCheckboxGroupInsert = {
-      //       name: group.name,
-      //       sub_section_id: subSectionId as UUID,
-      //     };
-      //     return newGroup;
-      //   });
-
-      //   const { formCheckboxGroups, formCheckboxGroupsError } =
-      //     await createFromCheckboxGroups(newGroupsForDB);
-
-      //   const newCheckboxesForDB = checkboxes.map((checkbox) => {
-      //     const newCheckbox: IFormCheckboxInsert = {
-      //       id: uuidv4() as UUID,
-      //       group_id: checkbox.group_id as UUID,
-      //       label: checkbox.label,
-      //       order_number: checkbox.order_number,
-      //       annotation_id: null,
-      //     };
-      //     return newCheckbox;
-      //   });
-
-      //   const { formCheckboxes, formCheckboxesError } =
-      //     await createFormCheckboxes(newCheckboxesForDB);
-
-      //   console.log(`${subSectionId}: ${groupIds}`);
-      // }
     };
 
   return (

@@ -230,6 +230,7 @@ export interface IFormCheckboxGroupResponse extends IFormCheckboxGroupInsert {
 
 export interface IFormCheckboxGroupWithCheckboxes
   extends IFormCheckboxGroupResponse {
+  form_checkbox_task: IFormCheckboxTaskResponse[];
   form_checkbox: IFormCheckboxResponse[];
 }
 
@@ -254,6 +255,17 @@ export interface IFormTextInputFieldInsert {
 }
 
 export interface IFormTextInputFieldResponse {
+  id: UUID;
+  created_at: Date | string;
+}
+
+export interface IFormCheckboxTaskInsert {
+  description: string;
+  group_id: UUID;
+  order_number: number;
+}
+
+export interface IFormCheckboxTaskResponse extends IFormCheckboxTaskInsert {
   id: UUID;
   created_at: Date | string;
 }

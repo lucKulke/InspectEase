@@ -551,7 +551,7 @@ export class DBActionsFormBuilderFetch {
       .select(
         `
         *,
-        inspectable_object_inspection_form_sub_section(*, form_checkbox_group(*, form_checkbox(*)), form_text_input_field(*))
+        inspectable_object_inspection_form_sub_section(*, form_checkbox_group(*, form_checkbox_task(*), form_checkbox(*)), form_text_input_field(*))
         `
       )
       .eq("form_id", formId);

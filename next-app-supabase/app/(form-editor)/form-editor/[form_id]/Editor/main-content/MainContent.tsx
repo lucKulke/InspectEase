@@ -39,7 +39,7 @@ export const MainContent = ({
           {mainSubSections.map((mainSubSection) => (
             <li key={mainSubSection.id} className="group mt-2">
               <p className="group-hover:underline ">{mainSubSection.name}</p>
-              <ul>
+              <ul className="space-y-2">
                 {mainSubSection.inspectable_object_inspection_form_sub_section.map(
                   (subSection) => (
                     <li key={subSection.id}>
