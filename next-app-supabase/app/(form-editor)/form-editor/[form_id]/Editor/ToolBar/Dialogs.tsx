@@ -200,12 +200,14 @@ interface CreateCheckboxDialogProps {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   sections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
+  refetchSubSectionsData: () => Promise<void>;
 }
 
 export const CreateCheckboxDialog = ({
   open,
   setOpen,
   sections,
+  refetchSubSectionsData,
 }: CreateCheckboxDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -216,7 +218,11 @@ export const CreateCheckboxDialog = ({
             Create checkboxes and organize them into selection groups.
           </DialogDescription>
         </DialogHeader>
-        <CheckboxManager sections={sections}></CheckboxManager>
+        <CheckboxManager
+          sections={sections}
+          setOpen={setOpen}
+          refetchSubSectionsData={refetchSubSectionsData}
+        ></CheckboxManager>
         <DialogFooter></DialogFooter>
       </DialogContent>
     </Dialog>

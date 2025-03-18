@@ -12,6 +12,8 @@ import { UUID } from "crypto";
 import { PDFViewer } from "@/components/PDFViewer";
 import { FileText, Blocks } from "lucide-react";
 import { ToolBar } from "./ToolBar/ToolBar";
+import { fetchAllFormData } from "./actions";
+import { useNotification } from "@/app/context/NotificationContext";
 
 interface EditorProps {
   mainSubSection: IInspectableObjectInspectionFormMainSectionWithSubSection[];
@@ -31,6 +33,7 @@ export const Editor = ({
   formId,
   subSectionData,
 }: EditorProps) => {
+  const { showNotification } = useNotification();
   const [activeTab, setActiveTab] = useState<string>("Editor");
 
   const [mainSubSections, setMainSubSections] =
@@ -42,6 +45,35 @@ export const Editor = ({
     useState<Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>>(
       subSectionData
     );
+
+  const refetchSubSectionsData = async () => {
+    const {
+      inspectableObjectInspectionFormMainSectionsWithSubSectionData,
+      inspectableObjectInspectionFormMainSectionsWithSubSectionDataError,
+    } = await fetchAllFormData(formId);
+
+    if (inspectableObjectInspectionFormMainSectionsWithSubSectionDataError)
+      return showNotification(
+        "Fetch SubSections Data",
+        `Error: ${inspectableObjectInspectionFormMainSectionsWithSubSectionDataError.message} (${inspectableObjectInspectionFormMainSectionsWithSubSectionDataError.code})`,
+        "error"
+      );
+
+    const data: Record<
+      UUID,
+      IInspectableObjectInspectionFormSubSectionWithData
+    > = {};
+    inspectableObjectInspectionFormMainSectionsWithSubSectionData.forEach(
+      (mainSection) => {
+        mainSection.inspectable_object_inspection_form_sub_section.forEach(
+          (subSection) => {
+            data[subSection.id] = subSection;
+          }
+        );
+      }
+    );
+    setSubSectionsData(data);
+  };
 
   return (
     <div className="mt-6 ">
@@ -69,6 +101,7 @@ export const Editor = ({
         setActiveTab={setActiveTab}
         setSubSectionsData={setSubSectionsData}
         subSectionData={subSectionData}
+        refetchSubSectionsData={refetchSubSectionsData}
       ></ToolBar>
     </div>
   );

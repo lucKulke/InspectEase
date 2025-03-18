@@ -35,6 +35,8 @@ import { v4 as uuidv4 } from "uuid";
 import { group } from "console";
 import { UUID } from "crypto";
 import { createFormCheckboxes, createFromCheckboxGroups } from "../actions";
+import { SupabaseError } from "@/lib/globalInterfaces";
+import { useNotification } from "@/app/context/NotificationContext";
 
 interface CheckboxItem {
   id: string;
@@ -47,13 +49,21 @@ interface SelectionGroup {
   id: string;
   name: string;
   checkboxIds: string[];
+  subSectionIds: string[];
 }
 
 interface CheckboxManagerProps {
   sections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  refetchSubSectionsData: () => Promise<void>;
 }
 
-export const CheckboxManager = ({ sections }: CheckboxManagerProps) => {
+export const CheckboxManager = ({
+  sections,
+  setOpen,
+  refetchSubSectionsData,
+}: CheckboxManagerProps) => {
+  const { showNotification } = useNotification();
   const [checkboxes, setCheckboxes] = useState<CheckboxItem[]>([]);
   const [groups, setGroups] = useState<SelectionGroup[]>([]);
   const [newCheckboxLabel, setNewCheckboxLabel] = useState("");
@@ -88,6 +98,7 @@ export const CheckboxManager = ({ sections }: CheckboxManagerProps) => {
       id: uuidv4(),
       name: newGroupName,
       checkboxIds: [],
+      subSectionIds: [],
     };
 
     setGroups([...groups, newGroup]);
@@ -163,6 +174,15 @@ export const CheckboxManager = ({ sections }: CheckboxManagerProps) => {
 
     const copyOfAssignedSubSections = { ...assignedSubSections };
 
+    setGroups(
+      groups.map((group) => {
+        if (selectedGroupId === group.id) {
+          group.subSectionIds.push(subSectionId);
+        }
+        return group;
+      })
+    );
+
     const currentGroupIdList = copyOfAssignedSubSections[subSectionId];
     if (currentGroupIdList) {
       if (currentGroupIdList.includes(selectedGroupId)) {
@@ -219,44 +239,95 @@ export const CheckboxManager = ({ sections }: CheckboxManagerProps) => {
   //   console.log("checkboxes", checkboxes);
   // }, [checkboxes]);
 
-  const handleCreateCheckboxGroups = async () => {
-    console.log("groups", groups);
-    for (const [subSectionId, groupIds] of Object.entries(
-      assignedSubSections
-    )) {
-      const neededGroups = groups.filter((group) =>
-        groupIds.includes(group.id)
-      );
+  const handleCreateCheckboxGroups =
+    async (): Promise<SupabaseError | null> => {
+      console.log("groups", groups);
+      for (let outerindex = 0; outerindex < groups.length; outerindex++) {
+        const group = groups[outerindex];
 
-      const newGroupsForDB = neededGroups.map((group) => {
-        const newGroup: IFormCheckboxGroupInsert = {
-          id: group.id as UUID,
-          name: group.name,
-          sub_section_id: subSectionId as UUID,
-        };
-        return newGroup;
-      });
+        for (
+          let innerindex = 0;
+          innerindex < group.subSectionIds.length;
+          innerindex++
+        ) {
+          const subSectionId = group.subSectionIds[innerindex];
 
-      const { formCheckboxGroups, formCheckboxGroupsError } =
-        await createFromCheckboxGroups(newGroupsForDB);
+          const newGroup: IFormCheckboxGroupInsert = {
+            name: group.name,
+            sub_section_id: subSectionId as UUID,
+          };
 
-      const newCheckboxesForDB = checkboxes.map((checkbox) => {
-        const newCheckbox: IFormCheckboxInsert = {
-          id: uuidv4() as UUID,
-          group_id: checkbox.group_id as UUID,
-          label: checkbox.label,
-          order_number: checkbox.order_number,
-          annotation_id: null,
-        };
-        return newCheckbox;
-      });
+          const { formCheckboxGroups, formCheckboxGroupsError } =
+            await createFromCheckboxGroups([newGroup]);
 
-      const { formCheckboxes, formCheckboxesError } =
-        await createFormCheckboxes(newCheckboxesForDB);
+          if (!formCheckboxGroups) return formCheckboxGroupsError;
 
-      console.log(`${subSectionId}: ${groupIds}`);
-    }
-  };
+          const groupInDB = formCheckboxGroups[0];
+
+          const associatedCheckboxes = checkboxes.filter(
+            (checkbox) => checkbox.group_id === group.id
+          );
+
+          const newCheckboxesForDB: IFormCheckboxInsert[] = [];
+          for (
+            let checkboxIndex = 0;
+            checkboxIndex < associatedCheckboxes.length;
+            checkboxIndex++
+          ) {
+            const checkbox = associatedCheckboxes[checkboxIndex];
+
+            const newCheckbox: IFormCheckboxInsert = {
+              group_id: groupInDB.id as UUID,
+              label: checkbox.label,
+              order_number: checkbox.order_number,
+              annotation_id: null,
+            };
+
+            newCheckboxesForDB.push(newCheckbox);
+          }
+          const { formCheckboxes, formCheckboxesError } =
+            await createFormCheckboxes(newCheckboxesForDB);
+
+          if (!formCheckboxes) return formCheckboxGroupsError;
+        }
+      }
+      return null;
+
+      // for (const [subSectionId, groupIds] of Object.entries(
+      //   assignedSubSections
+      // )) {
+      //   const neededGroups = groups.filter((group) =>
+      //     groupIds.includes(group.id)
+      //   );
+
+      //   const newGroupsForDB = neededGroups.map((group) => {
+      //     const newGroup: IFormCheckboxGroupInsert = {
+      //       name: group.name,
+      //       sub_section_id: subSectionId as UUID,
+      //     };
+      //     return newGroup;
+      //   });
+
+      //   const { formCheckboxGroups, formCheckboxGroupsError } =
+      //     await createFromCheckboxGroups(newGroupsForDB);
+
+      //   const newCheckboxesForDB = checkboxes.map((checkbox) => {
+      //     const newCheckbox: IFormCheckboxInsert = {
+      //       id: uuidv4() as UUID,
+      //       group_id: checkbox.group_id as UUID,
+      //       label: checkbox.label,
+      //       order_number: checkbox.order_number,
+      //       annotation_id: null,
+      //     };
+      //     return newCheckbox;
+      //   });
+
+      //   const { formCheckboxes, formCheckboxesError } =
+      //     await createFormCheckboxes(newCheckboxesForDB);
+
+      //   console.log(`${subSectionId}: ${groupIds}`);
+      // }
+    };
 
   return (
     <div>
@@ -579,7 +650,28 @@ export const CheckboxManager = ({ sections }: CheckboxManagerProps) => {
           </div>
           <div className="flex justify-end">
             {atLeastOneSubSectionSelected ? (
-              <Button onClick={() => handleCreateCheckboxGroups()}>Save</Button>
+              <Button
+                onClick={async () => {
+                  const error = await handleCreateCheckboxGroups();
+                  if (error) {
+                    showNotification(
+                      "Checkbox-Manager",
+                      `Error: ${error.message} (${error.code})`,
+                      "error"
+                    );
+                  } else {
+                    showNotification(
+                      "Checkbox-Manger",
+                      "Success fully created checkboxes",
+                      "info"
+                    );
+                    refetchSubSectionsData();
+                    setOpen(false);
+                  }
+                }}
+              >
+                Save
+              </Button>
             ) : (
               <Button variant="outline">Save</Button>
             )}

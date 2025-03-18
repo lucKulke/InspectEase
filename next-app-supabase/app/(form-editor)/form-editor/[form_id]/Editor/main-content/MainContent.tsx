@@ -44,7 +44,7 @@ export const MainContent = ({
                   (subSection) => (
                     <li key={subSection.id}>
                       <SubSection
-                        subSection={subSection}
+                        subSectionId={subSection.id}
                         subSectionsData={subSectionsData}
                         setSubSectionsData={setSubSectionsData}
                       />

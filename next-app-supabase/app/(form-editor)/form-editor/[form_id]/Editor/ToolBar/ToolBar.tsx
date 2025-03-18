@@ -59,6 +59,7 @@ interface ToolBarProps {
   formId: UUID;
   activeTab: string;
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
+  refetchSubSectionsData: () => Promise<void>;
 }
 
 export const ToolBar = ({
@@ -69,6 +70,7 @@ export const ToolBar = ({
   setSideBarData,
   subSectionData,
   setSubSectionsData,
+  refetchSubSectionsData,
 }: ToolBarProps) => {
   const { showNotification } = useNotification();
 
@@ -236,6 +238,7 @@ export const ToolBar = ({
       />
 
       <CreateCheckboxDialog
+        refetchSubSectionsData={refetchSubSectionsData}
         open={openCreateCheckboxDialog}
         setOpen={setOpenCreateCheckboxDialog}
         sections={sideBarData}

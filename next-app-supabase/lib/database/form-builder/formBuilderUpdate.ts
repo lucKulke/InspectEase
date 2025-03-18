@@ -1,5 +1,8 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  IFormCheckboxGroupInsert,
+  IFormCheckboxInsert,
+  IFormCheckboxResponse,
   IInspectableObjectInspectionFormMainSectionInsert,
   IInspectableObjectInspectionFormMainSectionResponse,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
@@ -278,6 +281,26 @@ export class DBActionsFormBuilderUpdate {
       updatedInspectableObjectInspectionFormMainSection: data ? data[0] : null,
       updatedInspectableObjectInspectionFormMainSectionError:
         error as SupabaseError | null,
+    };
+  }
+
+  async updateFormCheckboxes(checkboxes: IFormCheckboxInsert[]): Promise<{
+    updatedFormCheckboxes: IFormCheckboxResponse[];
+    updatedFormCheckboxesError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_checkbox")
+      .upsert(checkboxes)
+      .select();
+
+    console.log("update form checkboxes order number in db:", data);
+    if (error) {
+      console.error("update form checkboxes order number in db error: ", error);
+    }
+
+    return {
+      updatedFormCheckboxes: data ? data : [],
+      updatedFormCheckboxesError: error as SupabaseError | null,
     };
   }
 }

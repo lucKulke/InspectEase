@@ -1,6 +1,7 @@
 "use server";
 import { DBActionsFormBuilderCreate } from "@/lib/database/form-builder/formBuilderCreate";
 import { DBActionsFormBuilderDelete } from "@/lib/database/form-builder/formBuilderDelete";
+import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import {
   IFormCheckboxGroupInsert,
   IFormCheckboxInsert,
@@ -127,4 +128,12 @@ export async function createFromCheckboxGroups(
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderCreate(supabase);
   return await dbActions.createFormCheckboxGroups(groups);
+}
+
+export async function fetchAllFormData(formId: UUID) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderFetch(supabase);
+  return await dbActions.fetchInspectableObjectInspectionFormMainSectionsWithSubSections(
+    formId
+  );
 }
