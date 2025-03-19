@@ -15,37 +15,44 @@ import {
   IFormCheckboxGroupWithCheckboxes,
   IFormCheckboxTaskInsert,
   IFormCheckboxTaskResponse,
+  IInspectableObjectInspectionFormSubSectionWithData,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { createCheckboxTask } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
+import { group } from "console";
 
 interface CreateTaskDialogProps {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  currentCheckboxGroup: IFormCheckboxGroupWithCheckboxes | null;
+  currentCheckboxGroupId: UUID;
+  sectionData: IInspectableObjectInspectionFormSubSectionWithData;
+  setSectionData: React.Dispatch<
+    React.SetStateAction<IInspectableObjectInspectionFormSubSectionWithData>
+  >;
 }
 
 export const CreateTaskDialog = ({
   open,
   setOpen,
-  currentCheckboxGroup,
+  currentCheckboxGroupId,
+  sectionData,
+  setSectionData,
 }: CreateTaskDialogProps) => {
-  if (!currentCheckboxGroup) {
-    return <div>Error</div>;
-  }
-
   const { showNotification } = useNotification();
-  const [taskList, setTaskList] = useState<IFormCheckboxTaskResponse[]>(
-    currentCheckboxGroup.form_checkbox_task
-  );
 
   const [newTaskDescription, setNewTaskDescription] = useState<string>("");
+
+  const currentTaskListLenght = () => {
+    return sectionData.form_checkbox_group.filter(
+      (group) => group.id === currentCheckboxGroupId
+    )[0].form_checkbox_task.length;
+  };
 
   const handleCreateTask = async () => {
     const newTask: IFormCheckboxTaskInsert = {
       description: newTaskDescription,
-      group_id: currentCheckboxGroup.id,
-      order_number: taskList.length + 1,
+      group_id: currentCheckboxGroupId,
+      order_number: currentTaskListLenght() + 1,
     };
     const { formCheckboxTask, formCheckboxTaskError } =
       await createCheckboxTask(newTask);
@@ -60,7 +67,11 @@ export const CreateTaskDialog = ({
     }
 
     if (formCheckboxTask) {
-      setTaskList([...taskList, formCheckboxTask]);
+      const copyOfSectionData = { ...sectionData };
+      copyOfSectionData.form_checkbox_group
+        .filter((group) => group.id === currentCheckboxGroupId)[0]
+        .form_checkbox_task.push(formCheckboxTask);
+      setSectionData(copyOfSectionData);
     }
   };
 
@@ -76,12 +87,12 @@ export const CreateTaskDialog = ({
         </DialogHeader>
 
         <div>
-          <Label htmlFor={`task-dialog-${currentCheckboxGroup.id}`}>
+          <Label htmlFor={`task-dialog-${currentCheckboxGroupId}`}>
             New Task
           </Label>
           <div className="flex items-center space-x-2">
             <Input
-              id={`task-dialog-${currentCheckboxGroup.id}`}
+              id={`task-dialog-${currentCheckboxGroupId}`}
               value={newTaskDescription}
               onChange={(e) => setNewTaskDescription(e.target.value)}
             />
@@ -89,15 +100,17 @@ export const CreateTaskDialog = ({
           </div>
         </div>
 
-        {taskList.length < 1 ? (
+        {currentTaskListLenght() < 1 ? (
           <div className="border-2 rounded-xl min-h-11 flex items-center justify-center">
             <p className="text-sm text-slate-500">No task created yet</p>
           </div>
         ) : (
           <ul className="border-2 rounded-xl">
-            {taskList.map((task) => (
-              <li key={task.id}>-{task.description}</li>
-            ))}
+            {sectionData.form_checkbox_group
+              .filter((group) => group.id === currentCheckboxGroupId)[0]
+              .form_checkbox_task.map((task) => (
+                <li key={task.id}>-{task.description}</li>
+              ))}
           </ul>
         )}
       </DialogContent>

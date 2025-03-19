@@ -42,7 +42,13 @@ import {
 import { Reorder } from "framer-motion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CreateTaskDialog } from "./Dialogs";
-import { groupCollapsed } from "console";
+
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 const debounce = (func: Function, delay: number) => {
   let timer: NodeJS.Timeout;
@@ -92,8 +98,8 @@ export const SubSection = ({
     setSectionData;
   }, [subSectionsData]);
 
-  const [currentCheckboxGroup, setCurrentCheckboxGroup] =
-    useState<IFormCheckboxGroupWithCheckboxes | null>(null);
+  const [currentCheckboxGroupId, setCurrentCheckboxGroupId] =
+    useState<UUID | null>(null);
   const updateCheckboxOrderInDB = async (
     updatedItems: IFormCheckboxResponse[]
   ) => {
@@ -153,19 +159,44 @@ export const SubSection = ({
       {sectionData.form_checkbox_group.map((group) => {
         return (
           <div className="flex space-x-5 p-5 " key={group.id}>
-            <div className="border-2 w-2/3 rounded-xl">
+            <div
+              className={` w-2/3 ${
+                group.form_checkbox_task.length === 0 && "rounded-xl border-2"
+              }`}
+            >
               {group.form_checkbox_task.length > 0 ? (
-                <ul className="p-4">
-                  {group.form_checkbox_task.map((task) => (
-                    <li key={task.id}>{task.description}</li>
-                  ))}
-                </ul>
+                <ContextMenu modal={false}>
+                  <ContextMenuTrigger>
+                    <Card className="h-full">
+                      <CardHeader>
+                        <CardTitle>Tasks</CardTitle>
+                        <CardDescription>
+                          Tasks that need to be fullfilled
+                        </CardDescription>
+                      </CardHeader>
+
+                      <CardContent>
+                        <ul className="pl-4">
+                          {group.form_checkbox_task.map((task) => (
+                            <li key={task.id}>- {task.description}</li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                    <ContextMenuItem>Profile</ContextMenuItem>
+                    <ContextMenuItem>Billing</ContextMenuItem>
+                    <ContextMenuItem>Team</ContextMenuItem>
+                    <ContextMenuItem>Subscription</ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
               ) : (
                 <div className="flex items-center justify-center h-full">
                   <button
                     onClick={() => {
                       console.log("group", group);
-                      setCurrentCheckboxGroup(group);
+                      setCurrentCheckboxGroupId(group.id);
                       setOpenCreateTaskDialog(true);
                     }}
                   >
@@ -177,8 +208,16 @@ export const SubSection = ({
                 </div>
               )}
             </div>
+
             <div className="flex items-center">
-              <ArrowBigRightDash className="text-gray-400" size={32} />
+              <ArrowBigRightDash
+                className={`${
+                  group.form_checkbox_task.length > 0
+                    ? "text-black"
+                    : "text-gray-400"
+                } `}
+                size={32}
+              />
             </div>
             <Card className="w-1/3" key={group.id}>
               <CardHeader>
@@ -225,11 +264,15 @@ export const SubSection = ({
           </div>
         );
       })}
-      <CreateTaskDialog
-        open={openCreateTaskDialog}
-        setOpen={setOpenCreateTaskDialog}
-        currentCheckboxGroup={currentCheckboxGroup}
-      />
+      {currentCheckboxGroupId && (
+        <CreateTaskDialog
+          open={openCreateTaskDialog}
+          setOpen={setOpenCreateTaskDialog}
+          currentCheckboxGroupId={currentCheckboxGroupId}
+          sectionData={sectionData}
+          setSectionData={setSectionData}
+        />
+      )}
     </div>
   );
 };
