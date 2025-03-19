@@ -42,6 +42,7 @@ import {
 import { Reorder } from "framer-motion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CreateTaskDialog } from "./Dialogs";
+import { groupCollapsed } from "console";
 
 const debounce = (func: Function, delay: number) => {
   let timer: NodeJS.Timeout;
@@ -83,6 +84,13 @@ export const SubSection = ({
     );
   const [openCreateTaskDialog, setOpenCreateTaskDialog] =
     useState<boolean>(false);
+
+  useEffect(() => {
+    if (sectionData != subSectionsData[subSectionId]) {
+      setSectionData(subSectionsData[subSectionId]);
+    }
+    setSectionData;
+  }, [subSectionsData]);
 
   const [currentCheckboxGroup, setCurrentCheckboxGroup] =
     useState<IFormCheckboxGroupWithCheckboxes | null>(null);
@@ -145,19 +153,29 @@ export const SubSection = ({
       {sectionData.form_checkbox_group.map((group) => {
         return (
           <div className="flex space-x-5 p-5 " key={group.id}>
-            <div className="border-2 w-2/3 rounded-xl flex items-center justify-center">
-              <button
-                onClick={() => {
-                  console.log("group", group);
-                  setCurrentCheckboxGroup(group);
-                  setOpenCreateTaskDialog(true);
-                }}
-              >
-                <PlusCircle
-                  size={32}
-                  className="text-gray-400 hover:text-black"
-                />
-              </button>
+            <div className="border-2 w-2/3 rounded-xl">
+              {group.form_checkbox_task.length > 0 ? (
+                <ul className="p-4">
+                  {group.form_checkbox_task.map((task) => (
+                    <li key={task.id}>{task.description}</li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <button
+                    onClick={() => {
+                      console.log("group", group);
+                      setCurrentCheckboxGroup(group);
+                      setOpenCreateTaskDialog(true);
+                    }}
+                  >
+                    <PlusCircle
+                      size={32}
+                      className="text-gray-400 hover:text-black"
+                    />
+                  </button>
+                </div>
+              )}
             </div>
             <div className="flex items-center">
               <ArrowBigRightDash className="text-gray-400" size={32} />

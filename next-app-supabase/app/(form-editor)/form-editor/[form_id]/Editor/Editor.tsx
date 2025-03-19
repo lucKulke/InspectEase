@@ -46,7 +46,11 @@ export const Editor = ({
       subSectionData
     );
 
+  function delay(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
   const refetchSubSectionsData = async () => {
+    await delay(500);
     const {
       inspectableObjectInspectionFormMainSectionsWithSubSectionData,
       inspectableObjectInspectionFormMainSectionsWithSubSectionDataError,
@@ -72,6 +76,7 @@ export const Editor = ({
         );
       }
     );
+    console.log("update subsection data");
     setSubSectionsData(data);
   };
 
