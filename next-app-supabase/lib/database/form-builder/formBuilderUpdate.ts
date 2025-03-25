@@ -3,6 +3,7 @@ import {
   IFormCheckboxGroupInsert,
   IFormCheckboxInsert,
   IFormCheckboxResponse,
+  IFormCheckboxTaskResponse,
   IInspectableObjectInspectionFormMainSectionInsert,
   IInspectableObjectInspectionFormMainSectionResponse,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
@@ -301,6 +302,31 @@ export class DBActionsFormBuilderUpdate {
     return {
       updatedFormCheckboxes: data ? data : [],
       updatedFormCheckboxesError: error as SupabaseError | null,
+    };
+  }
+
+  async updateFormCheckboxTasks(
+    checkboxTasks: IFormCheckboxTaskResponse[]
+  ): Promise<{
+    updatedFormCheckboxTasks: IFormCheckboxTaskResponse[];
+    updatedFormCheckboxTasksError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_checkbox_task")
+      .upsert(checkboxTasks)
+      .select();
+
+    console.log("update form checkbox tasks order number in db:", data);
+    if (error) {
+      console.error(
+        "update form checkbox tasks order number in db error: ",
+        error
+      );
+    }
+
+    return {
+      updatedFormCheckboxTasks: data ? data : [],
+      updatedFormCheckboxTasksError: error as SupabaseError | null,
     };
   }
 }

@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  IFormCheckboxTaskResponse,
   IInspectableObjectInspectionFormSubSectionInsert,
   IInspectableObjectInspectionFormSubSectionResponse,
   IInspectableObjectProfileFormPropertyResponse,
@@ -9,9 +10,6 @@ import {
   IInspectableObjectProfileInsert,
   IInspectableObjectProfileResponse,
   IInspectableObjectResponse,
-  IMultipleChoiceGroupResponse,
-  ISingleChoiceGroupResponse,
-  ITextInputGroupResponse,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
@@ -219,81 +217,45 @@ export class DBActionsFormBuilderDelete {
     };
   }
 
-  async deleteMultipleChoiceGroup(groupId: UUID): Promise<{
-    multipleChoiceGroupResponse: IMultipleChoiceGroupResponse | null;
-    multipleChoiceGroupResponseError: SupabaseError | null;
+  async deleteCheckboxTask(taskId: UUID): Promise<{
+    deletedFormCheckboxTask: IFormCheckboxTaskResponse | null;
+    deletedFormCheckboxTaskError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
-      .from("multiple_choice_group")
+      .from("form_checkbox_task")
       .delete()
-      .eq("id", groupId)
-      .select(
-        `
-        *,
-        multiple_choice_field(*)
-        `
-      );
+      .eq("id", taskId)
+      .select();
 
-    console.log("delete multiple choice group in db:", data);
+    console.log("delete form checkbox task in db:", data);
     if (error) {
-      console.error("delete multiple choice group in db error:", error);
+      console.error("delete form checkbox task in db error:", error);
     }
 
     return {
-      multipleChoiceGroupResponse: data ? data[0] : null,
-      multipleChoiceGroupResponseError: error as SupabaseError | null,
+      deletedFormCheckboxTask: data ? data[0] : null,
+      deletedFormCheckboxTaskError: error as SupabaseError | null,
     };
   }
 
-  async deleteSingleChoiceGroup(groupId: UUID): Promise<{
-    singleChoiceGroupResponse: ISingleChoiceGroupResponse | null;
-    singleChoiceGroupResponseError: SupabaseError | null;
+  async deleteCheckbox(checkboxId: UUID): Promise<{
+    deletedFormCheckbox: IFormCheckboxTaskResponse | null;
+    deletedFormCheckboxError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
-      .from("single_choice_group")
+      .from("form_checkbox")
       .delete()
-      .eq("id", groupId)
-      .select(
-        `
-        *,
-        single_choice_field(*)
-        `
-      );
+      .eq("id", checkboxId)
+      .select();
 
-    console.log("delete single choice group in db:", data);
+    console.log("delete form checkbox in db:", data);
     if (error) {
-      console.error("delete single choice group in db error:", error);
+      console.error("delete form checkbox in db error:", error);
     }
 
     return {
-      singleChoiceGroupResponse: data ? data[0] : null,
-      singleChoiceGroupResponseError: error as SupabaseError | null,
-    };
-  }
-
-  async deleteTextInputGroup(groupId: UUID): Promise<{
-    textInputGroupResponse: ITextInputGroupResponse | null;
-    textInputGroupResponseError: SupabaseError | null;
-  }> {
-    const { data, error } = await this.supabase
-      .from("text_input_group")
-      .delete()
-      .eq("id", groupId)
-      .select(
-        `
-        *,
-        text_input_field(*)
-        `
-      );
-
-    console.log("delete text input group in db:", data);
-    if (error) {
-      console.error("delete text input group in db error:", error);
-    }
-
-    return {
-      textInputGroupResponse: data ? data[0] : null,
-      textInputGroupResponseError: error as SupabaseError | null,
+      deletedFormCheckbox: data ? data[0] : null,
+      deletedFormCheckboxError: error as SupabaseError | null,
     };
   }
 }

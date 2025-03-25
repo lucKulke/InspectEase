@@ -11,6 +11,7 @@ import {
   Divide,
   Plus,
   PlusCircle,
+  Trash2,
 } from "lucide-react";
 import {
   Dialog,
@@ -41,7 +42,7 @@ import {
 
 import { Reorder } from "framer-motion";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CreateTaskDialog } from "./Dialogs";
+import { CheckboxGroupDialog, TaskDialog } from "./Dialogs";
 
 import {
   ContextMenu,
@@ -88,18 +89,19 @@ export const SubSection = ({
     useState<IInspectableObjectInspectionFormSubSectionWithData>(
       subSectionsData[subSectionId]
     );
-  const [openCreateTaskDialog, setOpenCreateTaskDialog] =
+  const [openTaskDialog, setOpenTaskDialog] = useState<boolean>(false);
+  const [openCheckboxGroupDialog, setOpenCheckboxGroupDialog] =
     useState<boolean>(false);
 
   useEffect(() => {
     if (sectionData != subSectionsData[subSectionId]) {
       setSectionData(subSectionsData[subSectionId]);
     }
-    setSectionData;
   }, [subSectionsData]);
 
   const [currentCheckboxGroupId, setCurrentCheckboxGroupId] =
     useState<UUID | null>(null);
+
   const updateCheckboxOrderInDB = async (
     updatedItems: IFormCheckboxResponse[]
   ) => {
@@ -185,10 +187,17 @@ export const SubSection = ({
                     </Card>
                   </ContextMenuTrigger>
                   <ContextMenuContent>
-                    <ContextMenuItem>Profile</ContextMenuItem>
-                    <ContextMenuItem>Billing</ContextMenuItem>
-                    <ContextMenuItem>Team</ContextMenuItem>
-                    <ContextMenuItem>Subscription</ContextMenuItem>
+                    <ContextMenuItem
+                      onClick={() => {
+                        setCurrentCheckboxGroupId(group.id);
+                        setOpenTaskDialog(true);
+                      }}
+                    >
+                      update
+                    </ContextMenuItem>
+                    <ContextMenuItem className="text-red-500 flex justify-between">
+                      delete <Trash2></Trash2>
+                    </ContextMenuItem>
                   </ContextMenuContent>
                 </ContextMenu>
               ) : (
@@ -197,7 +206,7 @@ export const SubSection = ({
                     onClick={() => {
                       console.log("group", group);
                       setCurrentCheckboxGroupId(group.id);
-                      setOpenCreateTaskDialog(true);
+                      setOpenTaskDialog(true);
                     }}
                   >
                     <PlusCircle
@@ -219,59 +228,80 @@ export const SubSection = ({
                 size={32}
               />
             </div>
-            <Card className="w-1/3" key={group.id}>
-              <CardHeader>
-                <CardTitle>{group.name}</CardTitle>
-                <CardDescription>
-                  {group.form_checkbox.length} checkbox
-                  {group.form_checkbox.length !== 1 ? "es" : ""}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {group.form_checkbox.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No checkboxes in this group.
-                  </p>
-                ) : (
-                  <Reorder.Group
-                    axis="y"
-                    values={group.form_checkbox}
-                    onReorder={handleCheckboxesReorder}
-                    className="space-y-2 "
-                  >
-                    {group.form_checkbox
-                      .sort(compareCheckboxOrderNumbers)
-                      .map((checkbox) => (
-                        <Reorder.Item
-                          key={checkbox.id}
-                          value={checkbox}
-                          className="cursor-grab flex items-center space-x-2"
-                          dragConstraints={{ top: 0, bottom: 0 }}
-                        >
-                          <Checkbox
-                            checked={true}
-                            id={`preview-${group.id}-${checkbox.id}`}
-                          />
-                          <Label htmlFor={`preview-${group.id}-${checkbox.id}`}>
-                            {checkbox.label}
-                          </Label>
-                        </Reorder.Item>
-                      ))}
-                  </Reorder.Group>
-                )}
-              </CardContent>
-            </Card>
+            <ContextMenu modal={false}>
+              <ContextMenuTrigger className="w-1/3">
+                <Card className="w-full h-full" key={group.id}>
+                  <CardHeader>
+                    <CardTitle>{group.name}</CardTitle>
+                    <CardDescription>
+                      {group.form_checkbox.length} checkbox
+                      {group.form_checkbox.length !== 1 ? "es" : ""}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {group.form_checkbox.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No checkboxes in this group.
+                      </p>
+                    ) : (
+                      <ul className="space-y-3">
+                        {group.form_checkbox
+                          .sort(compareCheckboxOrderNumbers)
+                          .map((checkbox) => (
+                            <li
+                              key={checkbox.id}
+                              className="flex items-center space-x-2"
+                            >
+                              <Checkbox
+                                checked={true}
+                                id={`preview-${group.id}-${checkbox.id}`}
+                              />
+                              <Label
+                                htmlFor={`preview-${group.id}-${checkbox.id}`}
+                              >
+                                {checkbox.label}
+                              </Label>
+                            </li>
+                          ))}
+                      </ul>
+                    )}
+                  </CardContent>
+                </Card>
+              </ContextMenuTrigger>
+              <ContextMenuContent>
+                <ContextMenuItem
+                  onClick={() => {
+                    setCurrentCheckboxGroupId(group.id);
+                    setOpenCheckboxGroupDialog(true);
+                  }}
+                >
+                  update
+                </ContextMenuItem>
+                <ContextMenuItem className="text-red-500 flex justify-between">
+                  delete <Trash2></Trash2>
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenu>
           </div>
         );
       })}
       {currentCheckboxGroupId && (
-        <CreateTaskDialog
-          open={openCreateTaskDialog}
-          setOpen={setOpenCreateTaskDialog}
-          currentCheckboxGroupId={currentCheckboxGroupId}
-          sectionData={sectionData}
-          setSectionData={setSectionData}
-        />
+        <>
+          <TaskDialog
+            open={openTaskDialog}
+            setOpen={setOpenTaskDialog}
+            currentCheckboxGroupId={currentCheckboxGroupId}
+            sectionData={sectionData}
+            setSectionData={setSectionData}
+          />
+          <CheckboxGroupDialog
+            open={openCheckboxGroupDialog}
+            setOpen={setOpenCheckboxGroupDialog}
+            currentCheckboxGroupId={currentCheckboxGroupId}
+            sectionData={sectionData}
+            setSectionData={setSectionData}
+          />
+        </>
       )}
     </div>
   );

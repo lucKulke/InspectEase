@@ -119,7 +119,7 @@ export async function updateMainSection(
 export async function createFormCheckboxes(checkboxes: IFormCheckboxInsert[]) {
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderCreate(supabase);
-  return await dbActions.createFormCheckbox(checkboxes);
+  return await dbActions.createFormCheckboxes(checkboxes);
 }
 
 export async function createFromCheckboxGroups(

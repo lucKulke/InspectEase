@@ -354,7 +354,9 @@ export class DBActionsFormBuilderCreate {
     };
   }
 
-  async createFormCheckbox(newFormCheckboxes: IFormCheckboxInsert[]): Promise<{
+  async createFormCheckboxes(
+    newFormCheckboxes: IFormCheckboxInsert[]
+  ): Promise<{
     formCheckboxes: IFormCheckboxResponse[] | null;
     formCheckboxesError: SupabaseError | null;
   }> {
@@ -371,6 +373,26 @@ export class DBActionsFormBuilderCreate {
     return {
       formCheckboxes: data ? data : [],
       formCheckboxesError: error as SupabaseError | null,
+    };
+  }
+
+  async createFormCheckbox(newFormCheckbox: IFormCheckboxInsert): Promise<{
+    formCheckbox: IFormCheckboxResponse | null;
+    formCheckboxError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_checkbox")
+      .insert(newFormCheckbox)
+      .select();
+
+    console.log("create form checkbox in db:", data);
+    if (error) {
+      console.error("create form checkbox in db error: ", error);
+    }
+
+    return {
+      formCheckbox: data ? data[0] : null,
+      formCheckboxError: error as SupabaseError | null,
     };
   }
 

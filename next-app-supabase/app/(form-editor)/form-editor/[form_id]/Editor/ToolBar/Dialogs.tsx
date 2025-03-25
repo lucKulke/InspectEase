@@ -111,6 +111,25 @@ export const CreateSubSectionDialog = ({
   const [mainSectionId, setMainSectionId] = useState<string>("");
   const [name, setName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
+
+  const handleCreateSubSection = () => {
+    let subSectionOrderNumber = 0;
+    sections.forEach((mainSubSection) => {
+      if (mainSubSection.id === mainSectionId) {
+        subSectionOrderNumber =
+          mainSubSection.inspectable_object_inspection_form_sub_section.length +
+          1;
+        return;
+      }
+    });
+    create({
+      name: name,
+      description: description,
+      main_section_id: mainSectionId as UUID,
+      order_number: subSectionOrderNumber,
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[425px]">
@@ -150,6 +169,14 @@ export const CreateSubSectionDialog = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter sub section name"
+              onKeyDown={(e) => {
+                if (
+                  e.key === "Enter" &&
+                  mainSectionId.length > 0 &&
+                  name.length > 3
+                )
+                  handleCreateSubSection();
+              }}
             />
           </div>
           <div className="grid gap-2">
@@ -167,22 +194,7 @@ export const CreateSubSectionDialog = ({
           {mainSectionId.length > 0 && name.length > 3 ? (
             <Button
               onClick={() => {
-                let subSectionOrderNumber = 0;
-                sections.forEach((mainSubSection) => {
-                  if (mainSubSection.id === mainSectionId) {
-                    subSectionOrderNumber =
-                      mainSubSection
-                        .inspectable_object_inspection_form_sub_section.length +
-                      1;
-                    return;
-                  }
-                });
-                create({
-                  name: name,
-                  description: description,
-                  main_section_id: mainSectionId as UUID,
-                  order_number: subSectionOrderNumber,
-                });
+                handleCreateSubSection();
               }}
             >
               Create
