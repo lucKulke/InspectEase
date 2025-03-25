@@ -60,6 +60,10 @@ export const CreateMainSectionDialog = ({
               value={newMainSectionName} // Controlled input
               onChange={(e) => setNewMainSectionName(e.target.value)} // Update state on input change
               className="col-span-3"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newMainSectionName.length > 0)
+                  create(newMainSectionName, newMainSectionDescription);
+              }}
             />
           </div>
           <div className="grid gap-2">

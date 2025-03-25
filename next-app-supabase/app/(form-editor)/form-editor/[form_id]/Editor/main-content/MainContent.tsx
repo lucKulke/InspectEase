@@ -7,6 +7,12 @@ import React, { useEffect, useState } from "react";
 import { SubSection } from "./SubSection";
 import { motion, AnimatePresence } from "framer-motion";
 import { UUID } from "crypto";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface MainContentProps {
   mainSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
@@ -27,7 +33,7 @@ export const MainContent = ({
   setSubSectionsData,
 }: MainContentProps) => {
   return (
-    <div>
+    <div className="w-full border-2 rounded-r-xl p-4 border-black ">
       <AnimatePresence mode="wait">
         <motion.ul
           key={JSON.stringify(mainSubSections)} // Ensures re-animation on change
@@ -38,12 +44,28 @@ export const MainContent = ({
         >
           {mainSubSections.map((mainSubSection) => (
             <li key={mainSubSection.id} className="group mt-2">
-              <p className="group-hover:underline ">{mainSubSection.name}</p>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <p
+                      id={mainSubSection.id}
+                      className="group-hover:underline "
+                    >
+                      {mainSubSection.name}
+                    </p>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{mainSubSection.description}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <ul className="space-y-2">
                 {mainSubSection.inspectable_object_inspection_form_sub_section.map(
                   (subSection) => (
-                    <li key={subSection.id}>
+                    <li key={subSection.id} id={subSection.id}>
                       <SubSection
+                        subSectionName={subSection.name}
+                        subSectionDescription={subSection.description}
                         subSectionId={subSection.id}
                         subSectionsData={subSectionsData}
                         setSubSectionsData={setSubSectionsData}

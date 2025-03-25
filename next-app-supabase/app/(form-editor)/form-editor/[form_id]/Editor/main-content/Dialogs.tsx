@@ -198,6 +198,9 @@ export const TaskDialog = ({
               id={`task-dialog-${currentCheckboxGroupId}`}
               value={newTaskDescription}
               onChange={(e) => setNewTaskDescription(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleCreateTask();
+              }}
             />
             <Button onClick={() => handleCreateTask()}>Create</Button>
           </div>
@@ -399,6 +402,9 @@ export const CheckboxGroupDialog = ({
               id={`task-dialog-${currentCheckboxGroupId}`}
               value={newCheckboxLabel}
               onChange={(e) => setNewCheckboxLabel(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleCreateCheckbox();
+              }}
             />
             <Button
               onClick={() => {

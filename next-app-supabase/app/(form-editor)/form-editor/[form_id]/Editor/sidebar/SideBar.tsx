@@ -49,7 +49,13 @@ import {
 import { UUID } from "crypto";
 import { Ellipsis, Scale, Trash2 } from "lucide-react";
 import { useNotification } from "@/app/context/NotificationContext";
-import { deserialize } from "v8";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { Textarea } from "@/components/ui/textarea";
 
 // Helper function to update order numbers
 
@@ -105,6 +111,15 @@ export const FormSideBar = ({
 
   const [selectedMainSection, setSelectedMainSection] =
     useState<IInspectableObjectInspectionFormMainSectionResponse>();
+
+  const scrollToSection = (id: UUID) => {
+    const section = document.getElementById(id);
+    if (section) {
+      const rect = section.getBoundingClientRect(); // Get section position
+      const scrollOffset = window.scrollY + rect.top - window.innerHeight * 0.2; // 3/4 of viewport
+      window.scrollTo({ top: scrollOffset, behavior: "smooth" });
+    }
+  };
 
   const updateMainSectionOrderInDB = async (
     updatedItems: IInspectableObjectInspectionFormMainSectionWithSubSection[]
@@ -293,9 +308,26 @@ export const FormSideBar = ({
     debouncedSubSectionUpdate(updatedSubSections);
   };
 
-  const handleCreateSubSection = async (
-    newSubSection: IInspectableObjectInspectionFormSubSectionInsert
-  ) => {
+  const handleCreateSubSection = async () => {
+    if (!selectedMainSection) return;
+
+    let subSectionOrderNumber = 0;
+    mainSubSections.forEach((mainSubSection) => {
+      if (mainSubSection.id === selectedMainSection.id) {
+        subSectionOrderNumber =
+          mainSubSection.inspectable_object_inspection_form_sub_section.length +
+          1;
+        return;
+      }
+    });
+
+    const newSubSection: IInspectableObjectInspectionFormSubSectionInsert = {
+      name: newSubSectionName,
+      description: newSubSectionDescription,
+      main_section_id: selectedMainSection.id,
+      order_number: subSectionOrderNumber,
+    };
+
     const {
       inspectableObjectInspectionFormSubSection,
       inspectableObjectInspectionFormSubSectionError,
@@ -427,12 +459,6 @@ export const FormSideBar = ({
             );
         }
       }
-      setSubSectionsData((prev) => {
-        const copy = { ...prev };
-        copy[updatedInspectableObjectInspectionFormSubSection.id] =
-          updatedInspectableObjectInspectionFormSubSection;
-        return copy;
-      });
 
       setMainSubSections(copyOfMainSubSections);
       setNewSubSectionName("");
@@ -458,7 +484,7 @@ export const FormSideBar = ({
   }
 
   return (
-    <div className="w-64 bg-gray-800 text-white p-4 overflow-y-auto">
+    <div>
       <Reorder.Group
         axis="y"
         values={mainSubSections}
@@ -469,62 +495,64 @@ export const FormSideBar = ({
           <Reorder.Item
             key={mainSubSection.id}
             value={mainSubSection}
-            className=" bg-white border p-4 rounded-md shadow cursor-grab "
+            className=" bg-white p-4 rounded-md cursor-grab "
             dragConstraints={{ top: 0, bottom: 0 }}
           >
-            <div className="flex justify-between">
-              <span className="text-gray-500 font-bold w-6">
-                {mainSubSection.order_number}.
-              </span>
+            <ContextMenu modal={false}>
+              <ContextMenuTrigger>
+                <div className="flex">
+                  <span className="text-gray-500 font-bold w-6">
+                    {mainSubSection.order_number}.
+                  </span>
 
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <p className="text-slate-600 font-bold">
-                      {mainSubSection.name}
-                    </p>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{mainSubSection.description}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <DropdownMenu modal={false}>
-                <DropdownMenuTrigger>
-                  <Ellipsis className="text-slate-500 "></Ellipsis>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSelectedMainSection(mainSubSection);
-                      setOpenCreateSubSectionDialog(true);
-                    }}
-                  >
-                    create sub section
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSelectedMainSection(mainSubSection);
-                      setNewMainSectionName(mainSubSection.name);
-                      setNewMainSectionDescription(mainSubSection.description);
-                      setOpenUpdateMainSectionDialog(true);
-                    }}
-                  >
-                    update
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-red-600"
-                    onClick={() => {
-                      handleDeleteMainSection(mainSubSection.id);
-                    }}
-                  >
-                    delete <Trash2></Trash2>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <p
+                          onClick={() => scrollToSection(mainSubSection.id)}
+                          className="text-slate-600 font-bold"
+                        >
+                          {mainSubSection.name}
+                        </p>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{mainSubSection.description}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </ContextMenuTrigger>
+              <ContextMenuContent>
+                <ContextMenuItem
+                  onClick={() => {
+                    setSelectedMainSection(mainSubSection);
+                    setNewSubSectionName("");
+                    setNewSubSectionDescription("");
+                    setOpenCreateSubSectionDialog(true);
+                  }}
+                >
+                  create sub section
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => {
+                    setSelectedMainSection(mainSubSection);
+                    setNewMainSectionName(mainSubSection.name);
+                    setNewMainSectionDescription(mainSubSection.description);
+                    setOpenUpdateMainSectionDialog(true);
+                  }}
+                >
+                  update
+                </ContextMenuItem>
+                <ContextMenuItem
+                  className="text-red-600"
+                  onClick={() => {
+                    handleDeleteMainSection(mainSubSection.id);
+                  }}
+                >
+                  delete <Trash2></Trash2>
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenu>
             <div>
               <Reorder.Group
                 axis="y"
@@ -532,10 +560,7 @@ export const FormSideBar = ({
                   mainSubSection.inspectable_object_inspection_form_sub_section
                 }
                 onReorder={handleSubSectionReorder}
-                className={`space-y-2  p-2 ${
-                  mainSubSection.inspectable_object_inspection_form_sub_section
-                    .length > 0 && "border-2 rounded-xl"
-                } cursor-default `}
+                className={`space-y-2  p-2 cursor-default `}
               >
                 {mainSubSection.inspectable_object_inspection_form_sub_section
                   .sort(compareSubSections)
@@ -543,34 +568,36 @@ export const FormSideBar = ({
                     <Reorder.Item
                       key={subSection.id}
                       value={subSection}
-                      className="flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-grab "
                       dragConstraints={{ top: 0, bottom: 0 }}
                     >
-                      <span className="text-gray-500 font-bold w-6">
-                        {subSection.order_number}.
-                      </span>
+                      <ContextMenu modal={false}>
+                        <ContextMenuTrigger>
+                          <div className="flex items-center bg-white border p-4 rounded-md shadow cursor-grab">
+                            <span className="text-gray-500 font-bold w-6">
+                              {subSection.order_number}.
+                            </span>
 
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <p className="text-slate-600 font-bold">
-                              {subSection.name}
-                            </p>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{subSection.description}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-
-                      <DropdownMenu modal={false}>
-                        <DropdownMenuTrigger>
-                          <Ellipsis className="text-slate-500 "></Ellipsis>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <p
+                                    onClick={() => {
+                                      scrollToSection(subSection.id);
+                                    }}
+                                    className="text-slate-600 font-bold"
+                                  >
+                                    {subSection.name}
+                                  </p>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{subSection.description}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent>
+                          <ContextMenuItem
                             onClick={() => {
                               setSelectedSubSection(subSection);
                               setNewSubSectionName(subSection.name);
@@ -581,17 +608,17 @@ export const FormSideBar = ({
                             }}
                           >
                             update
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
+                          </ContextMenuItem>
+                          <ContextMenuItem
                             className="text-red-600"
                             onClick={() => {
                               handleDeleteSubSection(subSection.id);
                             }}
                           >
                             delete <Trash2></Trash2>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                          </ContextMenuItem>
+                        </ContextMenuContent>
+                      </ContextMenu>
                     </Reorder.Item>
                   ))}
               </Reorder.Group>
@@ -609,28 +636,29 @@ export const FormSideBar = ({
             <DialogTitle>Create</DialogTitle>
             <DialogDescription>Create new sub section</DialogDescription>
           </DialogHeader>
+
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="createSubSectionName" className="text-right">
-                Name
-              </Label>
+            <div className="grid gap-2">
+              <Label htmlFor="createSubSectionName">Name</Label>
               <Input
                 id="createSubSectionName"
                 value={newSubSectionName} // Controlled input
                 onChange={(e) => setNewSubSectionName(e.target.value)} // Update state on input change
                 className="col-span-3"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newSubSectionName.length > 3)
+                    handleCreateSubSection();
+                }}
               />
-              <Label
-                htmlFor="createSubSectionDescription"
-                className="text-right"
-              >
-                Description
-              </Label>
-              <Input
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="createSubSectionDescription">Description</Label>
+              <Textarea
                 id="createSubSectionDescription"
-                value={newSubSectionDescription} // Controlled input
-                onChange={(e) => setNewSubSectionDescription(e.target.value)} // Update state on input change
-                className="col-span-3"
+                value={newSubSectionDescription}
+                onChange={(e) => setNewSubSectionDescription(e.target.value)}
+                placeholder="Enter sub section description (optional)"
+                rows={3}
               />
             </div>
           </div>
@@ -638,23 +666,7 @@ export const FormSideBar = ({
             {newSubSectionName.length > 3 ? (
               <Button
                 onClick={() => {
-                  if (!selectedMainSection) return;
-                  let subSectionOrderNumber = 0;
-                  mainSubSections.forEach((mainSubSection) => {
-                    if (mainSubSection.id === selectedMainSection.id) {
-                      subSectionOrderNumber =
-                        mainSubSection
-                          .inspectable_object_inspection_form_sub_section
-                          .length + 1;
-                      return;
-                    }
-                  });
-                  handleCreateSubSection({
-                    name: newSubSectionName,
-                    description: newSubSectionDescription,
-                    main_section_id: selectedMainSection.id,
-                    order_number: subSectionOrderNumber,
-                  });
+                  handleCreateSubSection();
                 }}
               >
                 Save changes
@@ -677,28 +689,37 @@ export const FormSideBar = ({
             <DialogTitle>Update</DialogTitle>
             <DialogDescription>Update main section</DialogDescription>
           </DialogHeader>
+
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="updateMainSectionName" className="text-right">
-                Name
-              </Label>
+            <div className="grid gap-2">
+              <Label htmlFor="createMainSectionName">Name</Label>
               <Input
-                id="updateMainSectionName"
-                value={newMainSectionName}
-                onChange={(e) => setNewMainSectionName(e.target.value)}
+                id="createMainSectionName"
+                value={newMainSectionName} // Controlled input
+                onChange={(e) => setNewMainSectionName(e.target.value)} // Update state on input change
                 className="col-span-3"
+                onKeyDown={(e) => {
+                  if (
+                    e.key === "Enter" &&
+                    newMainSectionName.length > 3 &&
+                    selectedMainSection
+                  )
+                    handleUpdateMainSection(
+                      selectedMainSection,
+                      newMainSectionName,
+                      newMainSectionDescription
+                    );
+                }}
               />
-              <Label
-                htmlFor="updateMainSectionDescription"
-                className="text-right"
-              >
-                Description
-              </Label>
-              <Input
-                id="updateMainSectionDescription"
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="createMainSectionDescription">Description</Label>
+              <Textarea
+                id="createMainSectionDescription"
                 value={newMainSectionDescription}
                 onChange={(e) => setNewMainSectionDescription(e.target.value)}
-                className="col-span-3"
+                placeholder="Enter sub section description (optional)"
+                rows={3}
               />
             </div>
           </div>
@@ -735,28 +756,37 @@ export const FormSideBar = ({
             <DialogTitle>Update</DialogTitle>
             <DialogDescription>Update new sub section</DialogDescription>
           </DialogHeader>
+
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="updateSubSectionName" className="text-right">
-                Name
-              </Label>
+            <div className="grid gap-2">
+              <Label htmlFor="updateSubSectionName">Name</Label>
               <Input
                 id="updateSubSectionName"
                 value={newSubSectionName} // Controlled input
                 onChange={(e) => setNewSubSectionName(e.target.value)} // Update state on input change
                 className="col-span-3"
+                onKeyDown={(e) => {
+                  if (
+                    e.key === "Enter" &&
+                    newSubSectionName.length > 3 &&
+                    selectedSubSection
+                  )
+                    handleUpdateSubSection(
+                      selectedSubSection,
+                      newSubSectionName,
+                      newSubSectionDescription
+                    );
+                }}
               />
-              <Label
-                htmlFor="updateSubSectionDescription"
-                className="text-right"
-              >
-                Description
-              </Label>
-              <Input
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="updateSubSectionDescription">Description</Label>
+              <Textarea
                 id="updateSubSectionDescription"
-                value={newSubSectionDescription} // Controlled input
-                onChange={(e) => setNewSubSectionDescription(e.target.value)} // Update state on input change
-                className="col-span-3"
+                value={newSubSectionDescription}
+                onChange={(e) => setNewSubSectionDescription(e.target.value)}
+                placeholder="Enter sub section description (optional)"
+                rows={3}
               />
             </div>
           </div>

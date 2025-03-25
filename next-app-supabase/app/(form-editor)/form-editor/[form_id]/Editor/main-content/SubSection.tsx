@@ -45,6 +45,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CheckboxGroupDialog, TaskDialog } from "./Dialogs";
 
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
@@ -60,6 +67,8 @@ const debounce = (func: Function, delay: number) => {
 };
 
 interface SubSectionProps {
+  subSectionName: string;
+  subSectionDescription: string;
   subSectionId: UUID;
   subSectionsData: Record<
     UUID,
@@ -79,6 +88,8 @@ interface GroupState {
 }
 
 export const SubSection = ({
+  subSectionName,
+  subSectionDescription,
   subSectionId,
   subSectionsData,
   setSubSectionsData,
@@ -102,49 +113,6 @@ export const SubSection = ({
   const [currentCheckboxGroupId, setCurrentCheckboxGroupId] =
     useState<UUID | null>(null);
 
-  const updateCheckboxOrderInDB = async (
-    updatedItems: IFormCheckboxResponse[]
-  ) => {
-    const { updatedFormCheckboxes, updatedFormCheckboxesError } =
-      await updateCheckboxesOrderNumber(updatedItems);
-
-    if (updatedFormCheckboxesError) {
-      showNotification(
-        "Main section order",
-        `Error: ${updatedFormCheckboxesError.message} (${updatedFormCheckboxesError.code})`,
-        "error"
-      );
-    }
-  };
-
-  const debouncedCheckboxUpdate = debounce(updateCheckboxOrderInDB, 500);
-
-  const reorderItems = (newOrder: IFormCheckboxResponse[]) => {
-    return newOrder.map((item, index) => ({
-      ...item,
-      order_number: index + 1,
-    }));
-  };
-
-  const handleCheckboxesReorder = (newOrder: IFormCheckboxResponse[]) => {
-    console.log("reorder");
-    const updatedItems = reorderItems(newOrder);
-    setSectionData((prev) => {
-      const copyOfSectionData = { ...sectionData };
-      copyOfSectionData.form_checkbox_group = prev.form_checkbox_group.map(
-        (checkboxGroup) => {
-          if (checkboxGroup.id === newOrder[0].group_id) {
-            checkboxGroup.form_checkbox = updatedItems;
-          }
-          return checkboxGroup;
-        }
-      );
-      return copyOfSectionData;
-    });
-
-    debouncedCheckboxUpdate(updatedItems);
-  };
-
   function compareCheckboxOrderNumbers(
     a: IFormCheckboxResponse,
     b: IFormCheckboxResponse
@@ -156,8 +124,18 @@ export const SubSection = ({
     return 0;
   }
   return (
-    <div className="border-2 rounded-xl p-2">
-      <p>{sectionData.name}</p>
+    <div className="border-2  rounded-xl p-2">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger>
+            <p>{subSectionName}</p>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{subSectionDescription}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
       {sectionData.form_checkbox_group.map((group) => {
         return (
           <div className="flex space-x-5 p-5 " key={group.id}>
