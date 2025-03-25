@@ -35,7 +35,7 @@ import {
   IInspectableObjectInspectionFormSubSectionResponse,
   IInspectableObjectInspectionFormSubSectionWithData,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   createNewMainSection,
   createNewSubSection,
@@ -507,16 +507,16 @@ export const FormSideBar = ({
 
                   <TooltipProvider>
                     <Tooltip>
-                      <TooltipTrigger>
-                        <p
-                          onClick={() => scrollToSection(mainSubSection.id)}
-                          className="text-slate-600 font-bold"
-                        >
-                          {mainSubSection.name}
-                        </p>
+                      <TooltipTrigger asChild>
+                        <div className={`w-64 overflow-hidden`}>
+                          <p className="truncate text-ellipsis whitespace-nowrap text-black">
+                            {mainSubSection.name}
+                          </p>
+                        </div>
                       </TooltipTrigger>
+
                       <TooltipContent>
-                        <p>{mainSubSection.description}</p>
+                        <p>{mainSubSection.name}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -572,19 +572,34 @@ export const FormSideBar = ({
                     >
                       <ContextMenu modal={false}>
                         <ContextMenuTrigger>
-                          <div className="flex items-center bg-white border p-4 rounded-md shadow cursor-grab">
-                            <span className="text-gray-500 font-bold w-6">
+                          <div className="flex items-center bg-white border p-4 space-x-2 rounded-md cursor-grab">
+                            <span className="text-gray-500 font-bold ">
                               {subSection.order_number}.
                             </span>
-
                             <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className={`w-64 overflow-hidden`}>
+                                    <p className="truncate text-ellipsis whitespace-nowrap text-black">
+                                      {subSection.name}
+                                    </p>
+                                  </div>
+                                </TooltipTrigger>
+
+                                <TooltipContent>
+                                  <p>{subSection.name}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+
+                            {/* <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger>
                                   <p
                                     onClick={() => {
                                       scrollToSection(subSection.id);
                                     }}
-                                    className="text-slate-600 font-bold"
+                                    className="text-left  text-black"
                                   >
                                     {subSection.name}
                                   </p>
@@ -593,7 +608,7 @@ export const FormSideBar = ({
                                   <p>{subSection.description}</p>
                                 </TooltipContent>
                               </Tooltip>
-                            </TooltipProvider>
+                            </TooltipProvider> */}
                           </div>
                         </ContextMenuTrigger>
                         <ContextMenuContent>

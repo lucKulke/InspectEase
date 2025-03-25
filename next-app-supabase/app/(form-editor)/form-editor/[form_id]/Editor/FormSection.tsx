@@ -38,10 +38,10 @@ export const FormSection = ({
   subSectionsData,
   setSubSectionsData,
 }: MainFormSectionProps) => {
-  const [width, setWidth] = useState(300); // Initial sidebar width
+  const [width, setWidth] = useState(350); // Initial sidebar width
   const isResizing = useRef(false);
   const startX = useRef(0);
-  const startWidth = useRef(300); // Store initial width during drag start
+  const startWidth = useRef(350); // Store initial width during drag start
 
   const handleMouseDown = (e: React.MouseEvent) => {
     isResizing.current = true;
