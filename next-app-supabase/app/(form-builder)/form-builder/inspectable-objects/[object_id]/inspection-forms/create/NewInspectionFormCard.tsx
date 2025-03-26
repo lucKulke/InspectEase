@@ -158,24 +158,24 @@ export const NewInspectionFormCard = ({
   const handleCreateInspectionForm = async () => {
     if (!file || !selectedFormTypeId || !formTypeValues) return;
 
-    const annotationsData = await getAnnotationsFromPDF(file);
-    console.log("annotations", annotationsData);
-    if (hasDuplicateAnnotations(annotationsData.annotations)) {
-      showNotification(
-        "Extract pdf annotations",
-        "Error: Duplicate annotations found",
-        "error"
-      );
-      setLoading(false);
-      return;
-    }
+    // const annotationsData = await getAnnotationsFromPDF(file);
+    // console.log("annotations", annotationsData);
+    // if (hasDuplicateAnnotations(annotationsData.annotations)) {
+    //   showNotification(
+    //     "Extract pdf annotations",
+    //     "Error: Duplicate annotations found",
+    //     "error"
+    //   );
+    //   setLoading(false);
+    //   return;
+    // }
 
     const { inspectionForm, inspectionFormError } = await createInspectionForm(
       selectedFormTypeId,
       objectId,
       formTypeValues,
       file,
-      annotationsData.annotations
+      null
     );
 
     if (inspectionFormError) {
