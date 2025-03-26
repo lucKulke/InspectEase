@@ -134,6 +134,29 @@ export class DBActionsFormBuilderCreate {
     };
   }
 
+  async createInspectableObjectInspectionFormProperty(
+    newProp: IInspectableObjectInspectionFormPropertyInsert
+  ): Promise<{
+    inspectableObjectInspectionFormProperty: IInspectableObjectPropertyResponse | null;
+    inspectableObjectInspectionFormPropertyError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_inspection_form_property")
+      .insert(newProp)
+      .select();
+
+    console.log("create inspectable object property in db:", data);
+    if (error) {
+      console.error("create inspectable object property in db error: ", error);
+    }
+
+    return {
+      inspectableObjectInspectionFormProperty: data ? data[0] : null,
+      inspectableObjectInspectionFormPropertyError:
+        error as SupabaseError | null,
+    };
+  }
+
   async createInspectableObject(object: IInspectableObjectInsert): Promise<{
     inspectableObject: IInspectableObjectResponse;
     inspectableObjectError: SupabaseError | null;

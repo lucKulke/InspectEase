@@ -31,13 +31,7 @@ import { useNotification } from "@/app/context/NotificationContext";
 
 import { Trash2 } from "lucide-react";
 import { Reorder } from "framer-motion";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+
 import { Checkbox } from "@/components/ui/checkbox";
 
 const debounce = (func: Function, delay: number) => {
@@ -52,25 +46,32 @@ interface TaskDialogProps {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   currentCheckboxGroupId: UUID;
-  sectionData: IInspectableObjectInspectionFormSubSectionWithData;
-  setSectionData: React.Dispatch<
-    React.SetStateAction<IInspectableObjectInspectionFormSubSectionWithData>
+  subSectionsData: Record<
+    UUID,
+    IInspectableObjectInspectionFormSubSectionWithData
   >;
+  setSubSectionsData: React.Dispatch<
+    React.SetStateAction<
+      Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>
+    >
+  >;
+  subSectionId: UUID;
 }
 
 export const TaskDialog = ({
   open,
   setOpen,
   currentCheckboxGroupId,
-  sectionData,
-  setSectionData,
+  subSectionsData,
+  setSubSectionsData,
+  subSectionId,
 }: TaskDialogProps) => {
   const { showNotification } = useNotification();
 
   const [newTaskDescription, setNewTaskDescription] = useState<string>("");
 
   const currentTaskListLenght = () => {
-    return sectionData.form_checkbox_group.filter(
+    return subSectionsData[subSectionId].form_checkbox_group.filter(
       (group) => group.id === currentCheckboxGroupId
     )[0].form_checkbox_task.length;
   };
@@ -92,18 +93,19 @@ export const TaskDialog = ({
       );
       return;
     } else if (formCheckboxTask) {
-      const copyOfSectionData = { ...sectionData };
-      copyOfSectionData.form_checkbox_group
+      const copy = { ...subSectionsData };
+
+      copy[subSectionId].form_checkbox_group
         .filter((group) => group.id === currentCheckboxGroupId)[0]
         .form_checkbox_task.push(formCheckboxTask);
-      setSectionData(copyOfSectionData);
+
+      setSubSectionsData(copy);
     }
   };
 
   const handleDeleteTask = async (taskId: UUID) => {
     const { deletedFormCheckboxTask, deletedFormCheckboxTaskError } =
       await deleteCheckboxTask(taskId);
-
     if (deletedFormCheckboxTaskError) {
       showNotification(
         "Delete task",
@@ -111,16 +113,15 @@ export const TaskDialog = ({
         "error"
       );
     } else if (deletedFormCheckboxTask) {
-      const copyOfSectionData = { ...sectionData };
-      copyOfSectionData.form_checkbox_group.filter(
+      const copy = { ...subSectionsData };
+      copy[subSectionId].form_checkbox_group.filter(
         (group) => group.id === currentCheckboxGroupId
-      )[0].form_checkbox_task = copyOfSectionData.form_checkbox_group
+      )[0].form_checkbox_task = copy[subSectionId].form_checkbox_group
         .filter((group) => group.id === currentCheckboxGroupId)[0]
         .form_checkbox_task.filter(
           (task) => task.id !== deletedFormCheckboxTask.id
         );
-
-      setSectionData(copyOfSectionData);
+      setSubSectionsData(copy);
     }
   };
 
@@ -161,19 +162,16 @@ export const TaskDialog = ({
 
   const handleTaskReorder = (newOrder: IFormCheckboxTaskResponse[]) => {
     const updatedItems = reorderItems(newOrder);
-
-    setSectionData((prevData) => {
-      const updatedSectionData = { ...prevData };
-      const groupIndex = updatedSectionData.form_checkbox_group.findIndex(
+    setSubSectionsData((prevData) => {
+      const copy = { ...prevData };
+      const groupIndex = copy[subSectionId].form_checkbox_group.findIndex(
         (group) => group.id === currentCheckboxGroupId
       );
-
       if (groupIndex !== -1) {
-        updatedSectionData.form_checkbox_group[groupIndex].form_checkbox_task =
+        copy[subSectionId].form_checkbox_group[groupIndex].form_checkbox_task =
           updatedItems;
       }
-
-      return updatedSectionData;
+      return copy;
     });
     debouncedMainSectionUpdate(updatedItems);
   };
@@ -214,14 +212,14 @@ export const TaskDialog = ({
           <Reorder.Group
             axis="y"
             values={
-              sectionData.form_checkbox_group.filter(
+              subSectionsData[subSectionId].form_checkbox_group.filter(
                 (group) => group.id === currentCheckboxGroupId
               )[0].form_checkbox_task
             }
             onReorder={handleTaskReorder}
             className={`p-2 space-y-3 `}
           >
-            {sectionData.form_checkbox_group
+            {subSectionsData[subSectionId].form_checkbox_group
               .filter((group) => group.id === currentCheckboxGroupId)[0]
               .form_checkbox_task.sort(compareTaskOrder)
               .map((task) => (
@@ -248,25 +246,33 @@ interface CheckboxGroupDialogProps {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   currentCheckboxGroupId: UUID;
-  sectionData: IInspectableObjectInspectionFormSubSectionWithData;
-  setSectionData: React.Dispatch<
-    React.SetStateAction<IInspectableObjectInspectionFormSubSectionWithData>
+
+  subSectionsData: Record<
+    UUID,
+    IInspectableObjectInspectionFormSubSectionWithData
   >;
+  setSubSectionsData: React.Dispatch<
+    React.SetStateAction<
+      Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>
+    >
+  >;
+  subSectionId: UUID;
 }
 
 export const CheckboxGroupDialog = ({
   open,
   setOpen,
   currentCheckboxGroupId,
-  sectionData,
-  setSectionData,
+  subSectionsData,
+  setSubSectionsData,
+  subSectionId,
 }: CheckboxGroupDialogProps) => {
   const { showNotification } = useNotification();
 
   const [newCheckboxLabel, setNewCheckboxLabel] = useState<string>("");
 
   const currentCheckboxGroup = () => {
-    return sectionData.form_checkbox_group.filter(
+    return subSectionsData[subSectionId].form_checkbox_group.filter(
       (group) => group.id === currentCheckboxGroupId
     )[0].form_checkbox;
   };
@@ -298,18 +304,13 @@ export const CheckboxGroupDialog = ({
   const handleCheckboxesReorder = (newOrder: IFormCheckboxResponse[]) => {
     console.log("reorder");
     const updatedItems = reorderItems(newOrder);
-    setSectionData((prev) => {
-      const copyOfSectionData = { ...sectionData };
-      copyOfSectionData.form_checkbox_group = prev.form_checkbox_group.map(
-        (checkboxGroup) => {
-          if (checkboxGroup.id === newOrder[0].group_id) {
-            checkboxGroup.form_checkbox = updatedItems;
-          }
-          return checkboxGroup;
-        }
-      );
-      return copyOfSectionData;
-    });
+
+    const copy = { ...subSectionsData };
+    copy[subSectionId].form_checkbox_group.filter(
+      (group) => group.id === currentCheckboxGroupId
+    )[0].form_checkbox = newOrder;
+
+    setSubSectionsData(copy);
 
     debouncedCheckboxUpdate(updatedItems);
   };
@@ -336,16 +337,16 @@ export const CheckboxGroupDialog = ({
         "error"
       );
     } else if (deletedFormCheckbox) {
-      const copyOfSectionData = { ...sectionData };
-      copyOfSectionData.form_checkbox_group.filter(
+      const copy = { ...subSectionsData };
+      copy[subSectionId].form_checkbox_group.filter(
         (group) => group.id === currentCheckboxGroupId
-      )[0].form_checkbox = copyOfSectionData.form_checkbox_group
+      )[0].form_checkbox = copy[subSectionId].form_checkbox_group
         .filter((group) => group.id === currentCheckboxGroupId)[0]
         .form_checkbox.filter(
           (checkbox) => checkbox.id !== deletedFormCheckbox.id
         );
 
-      setSectionData(copyOfSectionData);
+      setSubSectionsData(copy);
     }
   };
 
@@ -367,11 +368,12 @@ export const CheckboxGroupDialog = ({
         "error"
       );
     } else if (formCheckbox) {
-      const copyOfSectionData = { ...sectionData };
-      copyOfSectionData.form_checkbox_group
+      const copy = { ...subSectionsData };
+      copy[subSectionId].form_checkbox_group
         .filter((group) => group.id === currentCheckboxGroupId)[0]
         .form_checkbox.push(formCheckbox);
-      setSectionData(copyOfSectionData);
+
+      setSubSectionsData(copy);
     }
   };
 
@@ -382,7 +384,7 @@ export const CheckboxGroupDialog = ({
           <DialogTitle>
             Manage Checkbox Group{" "}
             {
-              sectionData.form_checkbox_group.filter(
+              subSectionsData[subSectionId].form_checkbox_group.filter(
                 (group) => group.id === currentCheckboxGroupId
               )[0].name
             }
@@ -423,7 +425,7 @@ export const CheckboxGroupDialog = ({
           <Reorder.Group
             axis="y"
             values={
-              sectionData.form_checkbox_group.filter(
+              subSectionsData[subSectionId].form_checkbox_group.filter(
                 (group) => group.id === currentCheckboxGroupId
               )[0].form_checkbox
             }

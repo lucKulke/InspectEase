@@ -79,12 +79,16 @@ interface SubSectionProps {
       Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>
     >
   >;
-}
-
-interface GroupState {
-  multi: boolean;
-  single: boolean;
-  text: boolean;
+  setOpenTaskDialog: React.Dispatch<React.SetStateAction<boolean>>;
+  setOpenCheckboxGroupDialog: React.Dispatch<React.SetStateAction<boolean>>;
+  setSelectedCheckboxGroupId: React.Dispatch<
+    React.SetStateAction<UUID | undefined>
+  >;
+  setSelectedSubSectionId: React.Dispatch<
+    React.SetStateAction<
+      `${string}-${string}-${string}-${string}-${string}` | undefined
+    >
+  >;
 }
 
 export const SubSection = ({
@@ -92,7 +96,10 @@ export const SubSection = ({
   subSectionDescription,
   subSectionId,
   subSectionsData,
-  setSubSectionsData,
+  setOpenTaskDialog,
+  setOpenCheckboxGroupDialog,
+  setSelectedCheckboxGroupId,
+  setSelectedSubSectionId,
 }: SubSectionProps) => {
   const { showNotification } = useNotification();
 
@@ -100,18 +107,12 @@ export const SubSection = ({
     useState<IInspectableObjectInspectionFormSubSectionWithData>(
       subSectionsData[subSectionId]
     );
-  const [openTaskDialog, setOpenTaskDialog] = useState<boolean>(false);
-  const [openCheckboxGroupDialog, setOpenCheckboxGroupDialog] =
-    useState<boolean>(false);
 
   useEffect(() => {
     if (sectionData != subSectionsData[subSectionId]) {
       setSectionData(subSectionsData[subSectionId]);
     }
   }, [subSectionsData]);
-
-  const [currentCheckboxGroupId, setCurrentCheckboxGroupId] =
-    useState<UUID | null>(null);
 
   function compareCheckboxOrderNumbers(
     a: IFormCheckboxResponse,
@@ -167,7 +168,8 @@ export const SubSection = ({
                   <ContextMenuContent>
                     <ContextMenuItem
                       onClick={() => {
-                        setCurrentCheckboxGroupId(group.id);
+                        setSelectedCheckboxGroupId(group.id);
+                        setSelectedSubSectionId(subSectionId);
                         setOpenTaskDialog(true);
                       }}
                     >
@@ -183,7 +185,8 @@ export const SubSection = ({
                   <button
                     onClick={() => {
                       console.log("group", group);
-                      setCurrentCheckboxGroupId(group.id);
+                      setSelectedCheckboxGroupId(group.id);
+                      setSelectedSubSectionId(subSectionId);
                       setOpenTaskDialog(true);
                     }}
                   >
@@ -249,7 +252,8 @@ export const SubSection = ({
               <ContextMenuContent>
                 <ContextMenuItem
                   onClick={() => {
-                    setCurrentCheckboxGroupId(group.id);
+                    setSelectedCheckboxGroupId(group.id);
+                    setSelectedSubSectionId(subSectionId);
                     setOpenCheckboxGroupDialog(true);
                   }}
                 >
@@ -263,24 +267,6 @@ export const SubSection = ({
           </div>
         );
       })}
-      {currentCheckboxGroupId && (
-        <>
-          <TaskDialog
-            open={openTaskDialog}
-            setOpen={setOpenTaskDialog}
-            currentCheckboxGroupId={currentCheckboxGroupId}
-            sectionData={sectionData}
-            setSectionData={setSectionData}
-          />
-          <CheckboxGroupDialog
-            open={openCheckboxGroupDialog}
-            setOpen={setOpenCheckboxGroupDialog}
-            currentCheckboxGroupId={currentCheckboxGroupId}
-            sectionData={sectionData}
-            setSectionData={setSectionData}
-          />
-        </>
-      )}
     </div>
   );
 };
