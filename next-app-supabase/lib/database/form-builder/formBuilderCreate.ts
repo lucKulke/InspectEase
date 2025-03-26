@@ -1,5 +1,10 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  IFormCheckboxGroupInsert,
+  IFormCheckboxInsert,
+  IFormCheckboxResponse,
+  IFormCheckboxTaskInsert,
+  IFormCheckboxTaskResponse,
   IInspectableObjectInsert,
   IInspectableObjectInspectionFormAnnotationInsert,
   IInspectableObjectInspectionFormAnnotationResponse,
@@ -10,6 +15,7 @@ import {
   IInspectableObjectInspectionFormResponse,
   IInspectableObjectInspectionFormSubSectionInsert,
   IInspectableObjectInspectionFormSubSectionResponse,
+  IInspectableObjectInspectionFormSubSectionWithData,
   IInspectableObjectProfileFormPropertyInsert,
   IInspectableObjectProfileFormPropertyResponse,
   IInspectableObjectProfileFormTypeInsert,
@@ -320,13 +326,15 @@ export class DBActionsFormBuilderCreate {
   async createInspectableObjectInspectionFormSubSection(
     inspectionFormSubSection: IInspectableObjectInspectionFormSubSectionInsert
   ): Promise<{
-    inspectableObjectInspectionFormSubSection: IInspectableObjectInspectionFormSubSectionResponse | null;
+    inspectableObjectInspectionFormSubSection: IInspectableObjectInspectionFormSubSectionWithData | null;
     inspectableObjectInspectionFormSubSectionError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("inspectable_object_inspection_form_sub_section")
       .insert(inspectionFormSubSection)
-      .select();
+      .select(
+        `*, form_checkbox_group(*, form_checkbox(*)), form_text_input_field(*)`
+      );
 
     console.log(
       "create inspectable object inspection form sub section in db:",
@@ -343,6 +351,88 @@ export class DBActionsFormBuilderCreate {
       inspectableObjectInspectionFormSubSection: data ? data[0] : null,
       inspectableObjectInspectionFormSubSectionError:
         error as SupabaseError | null,
+    };
+  }
+
+  async createFormCheckboxes(
+    newFormCheckboxes: IFormCheckboxInsert[]
+  ): Promise<{
+    formCheckboxes: IFormCheckboxResponse[] | null;
+    formCheckboxesError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_checkbox")
+      .insert(newFormCheckboxes)
+      .select(`*`);
+
+    console.log("create form checkboxes in db:", data);
+    if (error) {
+      console.error("create form checkboxes in db error: ", error);
+    }
+
+    return {
+      formCheckboxes: data ? data : [],
+      formCheckboxesError: error as SupabaseError | null,
+    };
+  }
+
+  async createFormCheckbox(newFormCheckbox: IFormCheckboxInsert): Promise<{
+    formCheckbox: IFormCheckboxResponse | null;
+    formCheckboxError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_checkbox")
+      .insert(newFormCheckbox)
+      .select();
+
+    console.log("create form checkbox in db:", data);
+    if (error) {
+      console.error("create form checkbox in db error: ", error);
+    }
+
+    return {
+      formCheckbox: data ? data[0] : null,
+      formCheckboxError: error as SupabaseError | null,
+    };
+  }
+
+  async createFormCheckboxGroups(groups: IFormCheckboxGroupInsert[]): Promise<{
+    formCheckboxGroups: IFormCheckboxResponse[] | null;
+    formCheckboxGroupsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_checkbox_group")
+      .insert(groups)
+      .select(`*`);
+
+    console.log("create form checkboxes in db:", data);
+    if (error) {
+      console.error("create form checkboxes in db error: ", error);
+    }
+
+    return {
+      formCheckboxGroups: data ? data : [],
+      formCheckboxGroupsError: error as SupabaseError | null,
+    };
+  }
+
+  async createFormCheckboxTasks(newTask: IFormCheckboxTaskInsert): Promise<{
+    formCheckboxTask: IFormCheckboxTaskResponse | null;
+    formCheckboxTaskError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_checkbox_task")
+      .insert(newTask)
+      .select(`*`);
+
+    console.log("create form checkbox task in db:", data);
+    if (error) {
+      console.error("create form checkbox task in db error: ", error);
+    }
+
+    return {
+      formCheckboxTask: data ? data[0] : null,
+      formCheckboxTaskError: error as SupabaseError | null,
     };
   }
 }

@@ -5,8 +5,11 @@ import { createClient } from "@/utils/supabase/server";
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import { ErrorHandler } from "@/components/ErrorHandler";
 import { redirect } from "next/navigation";
-import { IInspectableObjectInspectionFormPropertyResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
-import { EditorSection } from "./EditorSection";
+import {
+  IInspectableObjectInspectionFormPropertyResponse,
+  IInspectableObjectInspectionFormSubSectionWithData,
+} from "@/lib/database/form-builder/formBuilderInterfaces";
+import { Editor } from "./Editor/Editor";
 import { TabsContent } from "@/components/ui/tabs";
 import { DBActionsBucket } from "@/lib/database/bucket";
 import { FormSection } from "./Editor/FormSection";
@@ -72,22 +75,38 @@ export default async function FormEditorPage({
   );
 
   const {
-    inspectableObjectInspectionFormMainSectionsWithSubSections,
-    inspectableObjectInspectionFormMainSectionsWithSubSectionsError,
+    inspectableObjectInspectionFormMainSectionsWithSubSectionData,
+    inspectableObjectInspectionFormMainSectionsWithSubSectionDataError,
   } =
     await dbActions.fetchInspectableObjectInspectionFormMainSectionsWithSubSections(
       formId
     );
 
-  if (inspectableObjectInspectionFormMainSectionsWithSubSectionsError)
+  if (inspectableObjectInspectionFormMainSectionsWithSubSectionDataError)
     return (
       <ErrorHandler
-        error={inspectableObjectInspectionFormMainSectionsWithSubSectionsError}
+        error={
+          inspectableObjectInspectionFormMainSectionsWithSubSectionDataError
+        }
       ></ErrorHandler>
     );
 
+  const subSectionData: Record<
+    UUID,
+    IInspectableObjectInspectionFormSubSectionWithData
+  > = {};
+  inspectableObjectInspectionFormMainSectionsWithSubSectionData.forEach(
+    (mainSection) => {
+      mainSection.inspectable_object_inspection_form_sub_section.forEach(
+        (subSection) => {
+          subSectionData[subSection.id] = subSection;
+        }
+      );
+    }
+  );
+
   return (
-    <div className="mt-10">
+    <div className="mt-10 p-4">
       <div>
         <Link
           className="flex items-center mb-2"
@@ -108,21 +127,14 @@ export default async function FormEditorPage({
         ></FormMetadataCard>
       </div>
       <div>
-        <EditorSection>
-          <TabsContent value="Document" className="h-screen pt-7 pl-16 pr-16  ">
-            {bucketResponse && (
-              <PDFViewer pdfUrl={bucketResponse.signedUrl}></PDFViewer>
-            )}
-          </TabsContent>
-          <TabsContent value="Editor">
-            <FormSection
-              formId={formId}
-              mainSectionsWithSubsections={
-                inspectableObjectInspectionFormMainSectionsWithSubSections
-              }
-            ></FormSection>
-          </TabsContent>
-        </EditorSection>
+        <Editor
+          mainSubSection={
+            inspectableObjectInspectionFormMainSectionsWithSubSectionData
+          }
+          bucketResponse={bucketResponse}
+          formId={formId}
+          subSectionData={subSectionData}
+        />
       </div>
       {/* <PDFViewer></PDFViewer> */}
     </div>

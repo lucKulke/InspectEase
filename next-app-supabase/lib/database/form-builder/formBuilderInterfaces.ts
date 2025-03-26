@@ -208,96 +208,75 @@ export interface IInspectableObjectInspectionFormSubSectionResponse
   created_at: Date | string;
 }
 
-// ---------------------------
+// test ######
 
-// inspection form multiple choice field
-export interface IInspectableObjectInspectionFormMultipleChoiceFieldInsert {
-  name: string;
-  description: string;
-  order_number: number;
-  group_id: UUID;
-}
-
-export interface IInspectableObjectInspectionFormMultipleChoiceFieldResponse
-  extends IInspectableObjectInspectionFormMultipleChoiceFieldInsert {
+export interface IInspectableObjectInspectionFormSubSectionWithData
+  extends IInspectableObjectInspectionFormSubSectionInsert {
   id: UUID;
   created_at: Date | string;
+  form_checkbox_group: IFormCheckboxGroupWithCheckboxes[];
+  form_text_input_field: IFormTextInputFieldResponse[];
 }
 
-// -------------------------
-
-// inspection form multiple choice group
-export interface IInspectableObjectInspectionFormMultipleChoiceGroupInsert {
+export interface IFormCheckboxGroupInsert {
   sub_section_id: UUID;
-}
-
-export interface IInspectableObjectInspectionFormMultipleChoiceGroupResponse
-  extends IInspectableObjectInspectionFormMultipleChoiceGroupInsert {
-  id: UUID;
-  created_at: Date | string;
-}
-
-// -------------------------
-
-// inspection form single choice field
-export interface IInspectableObjectInspectionFormSingleChoiceFieldInsert {
   name: string;
-  description: string;
-  order_number: number;
-  group_id: UUID;
 }
 
-export interface IInspectableObjectInspectionFormSingleChoiceFieldResponse
-  extends IInspectableObjectInspectionFormSingleChoiceFieldInsert {
+export interface IFormCheckboxGroupResponse extends IFormCheckboxGroupInsert {
   id: UUID;
   created_at: Date | string;
 }
 
-// -------------------------
+export interface IFormCheckboxGroupWithCheckboxes
+  extends IFormCheckboxGroupResponse {
+  form_checkbox_task: IFormCheckboxTaskResponse[];
+  form_checkbox: IFormCheckboxResponse[];
+}
 
-// inspection form single choice group
-export interface IInspectableObjectInspectionFormSingleChoiceGroupInsert {
+export interface IFormCheckboxInsert {
+  group_id: UUID;
+  label: string;
+  order_number: number;
+  annotation_id: UUID | null;
+}
+
+export interface IFormCheckboxResponse extends IFormCheckboxInsert {
+  id: UUID;
+  created_at: Date | string;
+}
+
+export interface IFormTextInputFieldInsert {
   sub_section_id: UUID;
-}
-
-export interface IInspectableObjectInspectionFormSingleChoiceGroupResponse
-  extends IInspectableObjectInspectionFormSingleChoiceGroupInsert {
-  id: UUID;
-  created_at: Date | string;
-}
-
-// -------------------------
-
-// inspection form text input field
-export interface IInspectableObjectInspectionFormTextInputFieldInsert {
-  name: string;
   description: string;
   order_number: number;
-  group_id: UUID;
   nullable: boolean;
-  training_id: UUID;
+  annotation_id: UUID;
 }
 
-export interface IInspectableObjectInspectionFormTextInputFieldResponse
-  extends IInspectableObjectInspectionFormTextInputFieldInsert {
+export interface IFormTextInputFieldResponse {
   id: UUID;
   created_at: Date | string;
 }
 
-// -------------------------
-
-// inspection form text input group
-export interface IInspectableObjectInspectionFormTextInputGroupInsert {
-  sub_section_id: UUID;
+export interface IFormCheckboxTaskInsert {
+  description: string;
+  group_id: UUID;
+  order_number: number;
 }
 
-export interface IInspectableObjectInspectionFormTextInputGroupResponse
-  extends IInspectableObjectInspectionFormTextInputGroupInsert {
+export interface IFormCheckboxTaskResponse extends IFormCheckboxTaskInsert {
   id: UUID;
   created_at: Date | string;
 }
 
-// -------------------------
+// ########
+
+export interface ISubSectionCore
+  extends IInspectableObjectInspectionFormSubSectionInsert {
+  id: UUID;
+  created_at: Date | string;
+}
 
 export interface IInspectableObjectWithPropertiesAndProfileResponse
   extends IInspectableObjectResponse {
@@ -345,17 +324,7 @@ export interface IInspectableObjectInspectionFormMainSectionWithSubSection
   inspectable_object_inspection_form_sub_section: IInspectableObjectInspectionFormSubSectionResponse[];
 }
 
-export interface IInspectableObjectInspectionFormMultipleChoiceGroupWithFields
-  extends IInspectableObjectInspectionFormMultipleChoiceGroupResponse {
-  fields: IInspectableObjectInspectionFormMultipleChoiceFieldResponse[];
-}
-
-export interface IInspectableObjectInspectionFormSingleChoiceGroupWithFields
-  extends IInspectableObjectInspectionFormSingleChoiceGroupResponse {
-  fields: IInspectableObjectInspectionFormSingleChoiceFieldResponse[];
-}
-
-export interface IInspectableObjectInspectionFormTextInputGroupWithFields
-  extends IInspectableObjectInspectionFormTextInputGroupResponse {
-  fields: IInspectableObjectInspectionFormTextInputFieldResponse[];
+export interface IInspectableObjectInspectionFormMainSectionWithSubSectionData
+  extends IInspectableObjectInspectionFormMainSectionResponse {
+  inspectable_object_inspection_form_sub_section: IInspectableObjectInspectionFormSubSectionWithData[];
 }

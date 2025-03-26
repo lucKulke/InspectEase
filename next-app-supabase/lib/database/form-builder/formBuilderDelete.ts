@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  IFormCheckboxTaskResponse,
   IInspectableObjectInspectionFormSubSectionInsert,
   IInspectableObjectInspectionFormSubSectionResponse,
   IInspectableObjectProfileFormPropertyResponse,
@@ -213,6 +214,48 @@ export class DBActionsFormBuilderDelete {
       inspectableObjectInspectionFormMainSection: data ? data[0] : null,
       inspectableObjectInspectionFormMainSectionError:
         error as SupabaseError | null,
+    };
+  }
+
+  async deleteCheckboxTask(taskId: UUID): Promise<{
+    deletedFormCheckboxTask: IFormCheckboxTaskResponse | null;
+    deletedFormCheckboxTaskError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_checkbox_task")
+      .delete()
+      .eq("id", taskId)
+      .select();
+
+    console.log("delete form checkbox task in db:", data);
+    if (error) {
+      console.error("delete form checkbox task in db error:", error);
+    }
+
+    return {
+      deletedFormCheckboxTask: data ? data[0] : null,
+      deletedFormCheckboxTaskError: error as SupabaseError | null,
+    };
+  }
+
+  async deleteCheckbox(checkboxId: UUID): Promise<{
+    deletedFormCheckbox: IFormCheckboxTaskResponse | null;
+    deletedFormCheckboxError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_checkbox")
+      .delete()
+      .eq("id", checkboxId)
+      .select();
+
+    console.log("delete form checkbox in db:", data);
+    if (error) {
+      console.error("delete form checkbox in db error:", error);
+    }
+
+    return {
+      deletedFormCheckbox: data ? data[0] : null,
+      deletedFormCheckboxError: error as SupabaseError | null,
     };
   }
 }

@@ -1,9 +1,14 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  IFormCheckboxGroupInsert,
+  IFormCheckboxInsert,
+  IFormCheckboxResponse,
+  IFormCheckboxTaskResponse,
   IInspectableObjectInspectionFormMainSectionInsert,
   IInspectableObjectInspectionFormMainSectionResponse,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionResponse,
+  IInspectableObjectInspectionFormSubSectionWithData,
   IInspectableObjectProfileFormPropertyResponse,
   IInspectableObjectProfileFormTypePropertyInsert,
   IInspectableObjectProfileFormTypePropertyResponse,
@@ -12,6 +17,7 @@ import {
   IInspectableObjectProfileResponse,
   IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
+  ISubSectionCore,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
@@ -183,7 +189,7 @@ export class DBActionsFormBuilderUpdate {
   }
 
   async updateInspectableObjectInspectionFormSubSections(
-    subSections: IInspectableObjectInspectionFormSubSectionResponse[]
+    subSections: ISubSectionCore[]
   ): Promise<{
     updatedInspectableObjectInspectionFormSubSections: IInspectableObjectInspectionFormSubSectionResponse[];
 
@@ -217,14 +223,16 @@ export class DBActionsFormBuilderUpdate {
     newName: string,
     newDescription: string
   ): Promise<{
-    updatedInspectableObjectInspectionFormSubSection: IInspectableObjectInspectionFormSubSectionResponse | null;
+    updatedInspectableObjectInspectionFormSubSection: IInspectableObjectInspectionFormSubSectionWithData | null;
     updatedInspectableObjectInspectionFormSubSectionError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("inspectable_object_inspection_form_sub_section")
       .update({ name: newName, description: newDescription })
       .eq("id", subSectionId)
-      .select();
+      .select(
+        `*, form_checkbox_group(*, form_checkbox(*)), form_text_input_field(*)`
+      );
 
     console.log(
       "update inspectable object inspection form sub section in db:",
@@ -274,6 +282,51 @@ export class DBActionsFormBuilderUpdate {
       updatedInspectableObjectInspectionFormMainSection: data ? data[0] : null,
       updatedInspectableObjectInspectionFormMainSectionError:
         error as SupabaseError | null,
+    };
+  }
+
+  async updateFormCheckboxes(checkboxes: IFormCheckboxInsert[]): Promise<{
+    updatedFormCheckboxes: IFormCheckboxResponse[];
+    updatedFormCheckboxesError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_checkbox")
+      .upsert(checkboxes)
+      .select();
+
+    console.log("update form checkboxes order number in db:", data);
+    if (error) {
+      console.error("update form checkboxes order number in db error: ", error);
+    }
+
+    return {
+      updatedFormCheckboxes: data ? data : [],
+      updatedFormCheckboxesError: error as SupabaseError | null,
+    };
+  }
+
+  async updateFormCheckboxTasks(
+    checkboxTasks: IFormCheckboxTaskResponse[]
+  ): Promise<{
+    updatedFormCheckboxTasks: IFormCheckboxTaskResponse[];
+    updatedFormCheckboxTasksError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_checkbox_task")
+      .upsert(checkboxTasks)
+      .select();
+
+    console.log("update form checkbox tasks order number in db:", data);
+    if (error) {
+      console.error(
+        "update form checkbox tasks order number in db error: ",
+        error
+      );
+    }
+
+    return {
+      updatedFormCheckboxTasks: data ? data : [],
+      updatedFormCheckboxTasksError: error as SupabaseError | null,
     };
   }
 }

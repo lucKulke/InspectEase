@@ -1,10 +1,8 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
   IInspectableObjectInspectionFormMainSectionWithSubSection,
-  IInspectableObjectInspectionFormMultipleChoiceGroupWithFields,
+  IInspectableObjectInspectionFormMainSectionWithSubSectionData,
   IInspectableObjectInspectionFormResponse,
-  IInspectableObjectInspectionFormSingleChoiceGroupWithFields,
-  IInspectableObjectInspectionFormTextInputGroupWithFields,
   IInspectableObjectInspectionFormWithProps,
   IInspectableObjectProfileFormPropertyResponse,
   IInspectableObjectProfileFormTypeInsert,
@@ -544,16 +542,16 @@ export class DBActionsFormBuilderFetch {
   async fetchInspectableObjectInspectionFormMainSectionsWithSubSections(
     formId: UUID
   ): Promise<{
-    inspectableObjectInspectionFormMainSectionsWithSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
+    inspectableObjectInspectionFormMainSectionsWithSubSectionData: IInspectableObjectInspectionFormMainSectionWithSubSectionData[];
 
-    inspectableObjectInspectionFormMainSectionsWithSubSectionsError: SupabaseError | null;
+    inspectableObjectInspectionFormMainSectionsWithSubSectionDataError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("inspectable_object_inspection_form_main_section")
       .select(
         `
         *,
-        inspectable_object_inspection_form_sub_section(*)
+        inspectable_object_inspection_form_sub_section(*, form_checkbox_group(*, form_checkbox_task(*), form_checkbox(*)), form_text_input_field(*))
         `
       )
       .eq("form_id", formId);
@@ -570,119 +568,14 @@ export class DBActionsFormBuilderFetch {
     }
 
     return {
-      inspectableObjectInspectionFormMainSectionsWithSubSections: data
+      inspectableObjectInspectionFormMainSectionsWithSubSectionData: data
         ? data
         : [],
-      inspectableObjectInspectionFormMainSectionsWithSubSectionsError:
+      inspectableObjectInspectionFormMainSectionsWithSubSectionDataError:
         error as SupabaseError | null,
     };
   }
 
-  async fetchInspectableObjectInspectionFormMultipleChoiceGroupWithFields(
-    subSectionId: UUID
-  ): Promise<{
-    inspectableObjectInspectionFormMultipleChoiceGroupWithFields: IInspectableObjectInspectionFormMultipleChoiceGroupWithFields | null;
-    inspectableObjectInspectionFormMultipleChoiceGroupWithFieldsError: SupabaseError | null;
-  }> {
-    const { data, error } = await this.supabase
-      .from("inspectable_object_inspection_form_multiple_choice_group")
-      .select(
-        `
-        *,
-        inspectable_object_inspection_form_multiple_choice_field(*)
-        `
-      )
-      .eq("sub_section_id", subSectionId);
-
-    console.log(
-      "fetch inspectable object inspection form multiple choice group with fields in db:",
-      data
-    );
-    if (error) {
-      console.error(
-        "fetch inspectable object inspection form multiple choice group with fields in db error: ",
-        error
-      );
-    }
-
-    return {
-      inspectableObjectInspectionFormMultipleChoiceGroupWithFields: data
-        ? data[0]
-        : null,
-      inspectableObjectInspectionFormMultipleChoiceGroupWithFieldsError:
-        error as SupabaseError | null,
-    };
-  }
-
-  async fetchInspectableObjectInspectionFormSingleChoiceGroupWithFields(
-    subSectionId: UUID
-  ): Promise<{
-    inspectableObjectInspectionFormSingleChoiceGroupWithFields: IInspectableObjectInspectionFormSingleChoiceGroupWithFields | null;
-    inspectableObjectInspectionFormSingleChoiceGroupWithFieldsError: SupabaseError | null;
-  }> {
-    const { data, error } = await this.supabase
-      .from("inspectable_object_inspection_form_single_choice_group")
-      .select(
-        `
-        *,
-        inspectable_object_inspection_form_single_choice_field(*)
-        `
-      )
-      .eq("sub_section_id", subSectionId);
-
-    console.log(
-      "fetch inspectable object inspection form single choice group with fields in db:",
-      data
-    );
-    if (error) {
-      console.error(
-        "fetch inspectable object inspection form single choice group with fields in db error: ",
-        error
-      );
-    }
-
-    return {
-      inspectableObjectInspectionFormSingleChoiceGroupWithFields: data
-        ? data[0]
-        : null,
-      inspectableObjectInspectionFormSingleChoiceGroupWithFieldsError:
-        error as SupabaseError | null,
-    };
-  }
-
-  async fetchInspectableObjectInspectionFormTextInputGroupWithFields(
-    subSectionId: UUID
-  ): Promise<{
-    inspectableObjectInspectionFormTextInputGroupWithFields: IInspectableObjectInspectionFormTextInputGroupWithFields | null;
-    inspectableObjectInspectionFormTextInputGroupWithFieldsError: SupabaseError | null;
-  }> {
-    const { data, error } = await this.supabase
-      .from("inspectable_object_inspection_form_text_input_group")
-      .select(
-        `
-        *,
-        inspectable_object_inspection_form_text_input_field(*)
-        `
-      )
-      .eq("sub_section_id", subSectionId);
-
-    console.log(
-      "fetch inspectable object inspection form text input group with fields in db:",
-      data
-    );
-    if (error) {
-      console.error(
-        "fetch inspectable object inspection form text input group with fields in db error: ",
-        error
-      );
-    }
-
-    return {
-      inspectableObjectInspectionFormTextInputGroupWithFields: data
-        ? data[0]
-        : null,
-      inspectableObjectInspectionFormTextInputGroupWithFieldsError:
-        error as SupabaseError | null,
-    };
-  }
+  // need improvement
+  //, single_choice_group(*, single_choice_field(*)), multiple_choice_group(*, multiple_choice_field(*)), text_input_group(*, text_input_field(*))
 }
