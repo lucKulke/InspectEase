@@ -25,8 +25,10 @@ import {
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  IInspectableObjectInspectionFormPropertyResponse,
   IInspectableObjectInspectionFormResponse,
   IInspectableObjectInspectionFormWithProps,
+  IInspectableObjectProfileFormTypePropertyResponse,
   IInspectableObjectProfileFormTypeResponse,
   IInspectableObjectProfileFormTypeWithProps,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
@@ -34,19 +36,28 @@ import {
 import { Cog } from "lucide-react";
 import Link from "next/link";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
-import { UUID } from "crypto";
+import { randomUUID, UUID } from "crypto";
 
 interface InspectionPlanTableProps {
-  objectId: UUID;
   inspectionFormsWithProps: IInspectableObjectInspectionFormWithProps[];
   profileFormTypes: IInspectableObjectProfileFormTypeWithProps[];
 }
 
 export const InspectionPlansTable = ({
-  objectId,
   inspectionFormsWithProps,
   profileFormTypes,
 }: InspectionPlanTableProps) => {
+  function compareFormTypeProps(
+    a: IInspectableObjectProfileFormTypePropertyResponse,
+    b: IInspectableObjectProfileFormTypePropertyResponse
+  ) {
+    if (a.order_number < b.order_number) return -1;
+
+    if (a.order_number > b.order_number) return 1;
+
+    return 0;
+  }
+
   return (
     <ul className="space-y-3">
       {profileFormTypes.map((formType) => (
@@ -59,13 +70,13 @@ export const InspectionPlansTable = ({
               </TableCaption>
               <TableHeader>
                 <TableRow>
-                  {formType.inspectable_object_profile_form_type_property.map(
-                    (formTypeProp) => (
+                  {formType.inspectable_object_profile_form_type_property
+                    .sort(compareFormTypeProps)
+                    .map((formTypeProp) => (
                       <TableCell key={formTypeProp.id}>
-                        {formTypeProp.name}
+                        <p className="font-bold">{formTypeProp.name}</p>
                       </TableCell>
-                    )
-                  )}
+                    ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -76,13 +87,21 @@ export const InspectionPlansTable = ({
                   )
                   .map((inspectionForm) => (
                     <TableRow key={inspectionForm.id}>
-                      {inspectionForm.inspectable_object_inspection_form_property.map(
-                        (inspectionFormProp) => (
-                          <TableCell key={inspectionFormProp.id}>
-                            {inspectionFormProp.value}
-                          </TableCell>
-                        )
-                      )}
+                      {formType.inspectable_object_profile_form_type_property
+                        .sort(compareFormTypeProps)
+                        .map((type) => {
+                          const form =
+                            inspectionForm.inspectable_object_inspection_form_property.filter(
+                              (inspectionForm) =>
+                                inspectionForm.form_type_prop_id === type.id
+                            )[0];
+
+                          return form ? (
+                            <TableCell key={form.id}>{form?.value}</TableCell>
+                          ) : (
+                            <TableCell key={randomUUID()}></TableCell>
+                          );
+                        })}
                       <TableCell>
                         <div className="flex justify-end">
                           <Link href={"/form-editor/" + inspectionForm.id}>

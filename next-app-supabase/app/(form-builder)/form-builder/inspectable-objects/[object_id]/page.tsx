@@ -81,6 +81,7 @@ export default async function ObjectPage({
     );
 
   if (!inspectableObjectInspectionForms) return <div></div>;
+
   return (
     <div>
       <PageHeading>Object</PageHeading>
@@ -101,7 +102,6 @@ export default async function ObjectPage({
       </div>
       <div className=" m-5">
         <InspectionPlansTable
-          objectId={objectId}
           inspectionFormsWithProps={inspectableObjectInspectionForms}
           profileFormTypes={inspectableObjectProfileFormTypesWithProps}
         ></InspectionPlansTable>
@@ -109,14 +109,3 @@ export default async function ObjectPage({
     </div>
   );
 }
-
-// {errorList.length > 0 ? (
-//   <ErrorHandler errors={errorList} />
-// ) : inspectableObjectWithPropertiesAndProfile && profileProperties ? (
-//   <ObjectCard
-//     objectProfileProps={profileProperties}
-//     objectInfo={inspectableObjectWithPropertiesAndProfile[0]}
-//   ></ObjectCard>
-// ) : (
-//   <div>No data...</div>
-// )}

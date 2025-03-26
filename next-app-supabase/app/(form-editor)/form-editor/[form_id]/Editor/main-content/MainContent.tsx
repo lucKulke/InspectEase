@@ -13,6 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { CheckboxGroupDialog, TaskDialog } from "./Dialogs";
 
 interface MainContentProps {
   mainSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
@@ -32,6 +33,14 @@ export const MainContent = ({
   subSectionsData,
   setSubSectionsData,
 }: MainContentProps) => {
+  const [openTaskDialog, setOpenTaskDialog] = useState<boolean>(false);
+  const [openCheckboxGroupDialog, setOpenCheckboxGroupDialog] =
+    useState<boolean>(false);
+  const [selectedCheckboxGroupId, setSelectedCheckboxGroupId] =
+    useState<UUID>();
+
+  const [selectedSubSectionId, setSelectedSubSectionId] = useState<UUID>();
+
   return (
     <div className="w-full border-2 rounded-r-xl p-4 border-gray-800 ">
       <AnimatePresence mode="wait">
@@ -69,6 +78,10 @@ export const MainContent = ({
                         subSectionId={subSection.id}
                         subSectionsData={subSectionsData}
                         setSubSectionsData={setSubSectionsData}
+                        setOpenTaskDialog={setOpenTaskDialog}
+                        setOpenCheckboxGroupDialog={setOpenCheckboxGroupDialog}
+                        setSelectedCheckboxGroupId={setSelectedCheckboxGroupId}
+                        setSelectedSubSectionId={setSelectedSubSectionId}
                       />
                     </li>
                   )
@@ -78,6 +91,27 @@ export const MainContent = ({
           ))}
         </motion.ul>
       </AnimatePresence>
+
+      {selectedCheckboxGroupId && selectedSubSectionId && (
+        <>
+          <TaskDialog
+            open={openTaskDialog}
+            setOpen={setOpenTaskDialog}
+            currentCheckboxGroupId={selectedCheckboxGroupId}
+            setSubSectionsData={setSubSectionsData}
+            subSectionsData={subSectionsData}
+            subSectionId={selectedSubSectionId}
+          />
+          <CheckboxGroupDialog
+            open={openCheckboxGroupDialog}
+            setOpen={setOpenCheckboxGroupDialog}
+            currentCheckboxGroupId={selectedCheckboxGroupId}
+            setSubSectionsData={setSubSectionsData}
+            subSectionsData={subSectionsData}
+            subSectionId={selectedSubSectionId}
+          />
+        </>
+      )}
     </div>
   );
 };
