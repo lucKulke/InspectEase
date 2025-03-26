@@ -33,7 +33,7 @@ export const MainContent = ({
   setSubSectionsData,
 }: MainContentProps) => {
   return (
-    <div className="w-full border-2 rounded-r-xl p-4 border-black ">
+    <div className="w-full border-2 rounded-r-xl p-4 border-gray-800 ">
       <AnimatePresence mode="wait">
         <motion.ul
           key={JSON.stringify(mainSubSections)} // Ensures re-animation on change

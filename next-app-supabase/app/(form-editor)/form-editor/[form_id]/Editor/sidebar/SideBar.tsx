@@ -508,7 +508,10 @@ export const FormSideBar = ({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className={`w-64 overflow-hidden`}>
+                        <div
+                          className={`w-64 overflow-hidden`}
+                          onClick={() => scrollToSection(mainSubSection.id)}
+                        >
                           <p className="truncate text-ellipsis whitespace-nowrap text-black">
                             {mainSubSection.name}
                           </p>
@@ -572,7 +575,10 @@ export const FormSideBar = ({
                     >
                       <ContextMenu modal={false}>
                         <ContextMenuTrigger>
-                          <div className="flex items-center bg-white border p-4 space-x-2 rounded-md cursor-grab">
+                          <div
+                            className="flex items-center bg-white border p-4 space-x-2 rounded-md cursor-grab"
+                            onClick={() => scrollToSection(subSection.id)}
+                          >
                             <span className="text-gray-500 font-bold ">
                               {subSection.order_number}.
                             </span>

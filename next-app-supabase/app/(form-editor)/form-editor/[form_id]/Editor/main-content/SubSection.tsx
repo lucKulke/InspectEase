@@ -124,7 +124,7 @@ export const SubSection = ({
     return 0;
   }
   return (
-    <div className="border-2  rounded-xl p-2">
+    <div className="border-2 hover:border-black rounded-xl p-2">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger>
