@@ -34,7 +34,7 @@ export async function createInspectionForm(
   objectId: UUID,
   metadata: Record<UUID, string>,
   file: File,
-  annotations: AnnotationData[]
+  annotations: AnnotationData[] | null
 ): Promise<{ inspectionForm: any; inspectionFormError: SupabaseError | null }> {
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderCreate(supabase);
@@ -111,35 +111,35 @@ export async function createInspectionForm(
 
   // step 4: create form annotations
 
-  const newAnnotations: IInspectableObjectInspectionFormAnnotationInsert[] = [];
+  // const newAnnotations: IInspectableObjectInspectionFormAnnotationInsert[] = [];
 
-  annotations.forEach((annotation) => {
-    newAnnotations.push({
-      inspection_form_id: inspectableObjectInspectionForm.id,
-      page: annotation.pageNumber,
-      type: annotation.type,
-      content: annotation.contents,
-      x1: annotation.rect["x1"],
-      x2: annotation.rect["x2"],
-      y1: annotation.rect["y1"],
-      y2: annotation.rect["y2"],
-    });
-    annotation;
-  });
+  // annotations.forEach((annotation) => {
+  //   newAnnotations.push({
+  //     inspection_form_id: inspectableObjectInspectionForm.id,
+  //     page: annotation.pageNumber,
+  //     type: annotation.type,
+  //     content: annotation.contents,
+  //     x1: annotation.rect["x1"],
+  //     x2: annotation.rect["x2"],
+  //     y1: annotation.rect["y1"],
+  //     y2: annotation.rect["y2"],
+  //   });
+  //   annotation;
+  // });
 
-  const {
-    inspectableObjectInspectionFormAnnotations,
-    inspectableObjectInspectionFormAnnotationsError,
-  } = await dbActions.createInspectableObjectInspectionFormAnnotations(
-    newAnnotations
-  );
+  // const {
+  //   inspectableObjectInspectionFormAnnotations,
+  //   inspectableObjectInspectionFormAnnotationsError,
+  // } = await dbActions.createInspectableObjectInspectionFormAnnotations(
+  //   newAnnotations
+  // );
 
-  if (inspectableObjectInspectionFormAnnotationsError) {
-    return {
-      inspectionForm: null,
-      inspectionFormError: inspectableObjectInspectionFormAnnotationsError,
-    };
-  }
+  // if (inspectableObjectInspectionFormAnnotationsError) {
+  //   return {
+  //     inspectionForm: null,
+  //     inspectionFormError: inspectableObjectInspectionFormAnnotationsError,
+  //   };
+  // }
 
   return {
     inspectionForm: inspectableObjectInspectionForm,
