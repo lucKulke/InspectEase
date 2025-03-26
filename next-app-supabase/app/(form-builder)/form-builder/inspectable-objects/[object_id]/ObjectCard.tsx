@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import {
   IInspectableObjectProfileObjPropertyResponse,
   IInspectableObjectProfileResponse,
+  IInspectableObjectPropertyInsert,
   IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
   IInspectableObjectWithPropertiesAndProfileResponse,
@@ -36,9 +37,13 @@ import { profileIcons } from "@/lib/availableIcons";
 import { UUID } from "crypto";
 import { PenLine } from "lucide-react";
 import { useState } from "react";
-import { updateObjectProperty } from "./actions";
+import {
+  assignFirstValueToObjectProperty,
+  updateObjectProperty,
+} from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { useRouter } from "next/navigation";
+import { string } from "zod";
 
 interface ObjectCardProps {
   objectInfo: IInspectableObjectWithPropertiesAndProfileResponse[] | null;
@@ -58,6 +63,7 @@ export const ObjectCard = ({
   const [currentObjectPropValue, setCurrentObjectPropValue] =
     useState<string>("");
   const [oldObjectPropValue, setOldObjectPropValue] = useState<string>();
+  const [selectedProfileId, setSelectedProfileId] = useState<UUID>();
 
   const objectProps: Record<UUID, IInspectableObjectPropertyResponse> = {};
   objectInfo[0].inspectable_object_property.forEach((objectProp) => {
@@ -81,16 +87,15 @@ export const ObjectCard = ({
         `Error: ${updatedInspectableObjectPropertyError.message} (${updatedInspectableObjectPropertyError.code})`,
         "error"
       );
-      return;
+    } else if (currentObjectPropValue) {
+      showNotification(
+        "Update object prop",
+        `Successfully updated '${currentObjectPropValue}' to '${updatedInspectableObjectProperty?.value}'`,
+        "info"
+      );
+
+      router.refresh();
     }
-
-    showNotification(
-      "Update object prop",
-      `Successfully updated '${currentObjectPropValue}' to '${updatedInspectableObjectProperty?.value}'`,
-      "info"
-    );
-
-    router.refresh();
   };
 
   function compare(
@@ -103,6 +108,38 @@ export const ObjectCard = ({
 
     return 0;
   }
+
+  const handleNewValueProp = async (
+    objectId: UUID,
+    profilePropId: UUID,
+    value: string
+  ) => {
+    setOpenUpdateDialog(false);
+    const prop: IInspectableObjectPropertyInsert = {
+      object_id: objectId,
+      profile_property_id: profilePropId,
+      value: value,
+    };
+
+    const { inspectableObjectPropertys, inspectableObjectPropertysError } =
+      await assignFirstValueToObjectProperty(prop);
+
+    if (inspectableObjectPropertysError) {
+      showNotification(
+        "Update object prop",
+        `Error: ${inspectableObjectPropertysError.message} (${inspectableObjectPropertysError.code})`,
+        "error"
+      );
+    } else if (currentObjectPropValue) {
+      showNotification(
+        "Update object prop",
+        `Successfully updated '${inspectableObjectPropertys[0]}' to '${inspectableObjectPropertys[0]?.value}'`,
+        "info"
+      );
+      setSelectedProfileId(undefined);
+      router.refresh();
+    }
+  };
 
   return (
     <div>
@@ -121,15 +158,23 @@ export const ObjectCard = ({
             {objectProfileProps.sort(compare).map((profileProp) => (
               <li key={profileProp.id} className="flex group space-x-2">
                 <h2 className="font-bold">{profileProp.name}:</h2>
-                <p>{objectProps[profileProp.id].value}</p>
+                <p>{objectProps[profileProp.id]?.value}</p>
                 <button
                   onClick={() => {
-                    setOpenUpdateDialog(true);
-                    setSelectObjectPropId(objectProps[profileProp.id].id);
-                    setOldObjectPropValue(objectProps[profileProp.id].value);
-                    setCurrentObjectPropValue(
-                      objectProps[profileProp.id].value
-                    );
+                    if (objectProps[profileProp.id]) {
+                      setOpenUpdateDialog(true);
+                      setSelectObjectPropId(objectProps[profileProp.id].id);
+                      setOldObjectPropValue(objectProps[profileProp.id].value);
+                      setCurrentObjectPropValue(
+                        objectProps[profileProp.id].value
+                      );
+                    } else {
+                      setOpenUpdateDialog(true);
+                      setSelectObjectPropId(undefined);
+                      setSelectedProfileId(profileProp.id);
+                      setOldObjectPropValue("");
+                      setCurrentObjectPropValue("");
+                    }
                   }}
                 >
                   <PenLine
@@ -159,7 +204,16 @@ export const ObjectCard = ({
             {oldObjectPropValue !== currentObjectPropValue ? (
               <Button
                 onClick={() => {
-                  handleUpdateProp();
+                  if (selectObjectPropId) {
+                    handleUpdateProp();
+                  } else {
+                    if (selectedProfileId)
+                      handleNewValueProp(
+                        objectInfo[0].id,
+                        selectedProfileId,
+                        currentObjectPropValue
+                      );
+                  }
                 }}
               >
                 Save changes
