@@ -176,7 +176,10 @@ export const CheckboxManager = ({
 
     setGroups(
       groups.map((group) => {
-        if (selectedGroupId === group.id) {
+        if (
+          selectedGroupId === group.id &&
+          !group.subSectionIds.includes(subSectionId)
+        ) {
           group.subSectionIds.push(subSectionId);
         }
         return group;
@@ -206,6 +209,7 @@ export const CheckboxManager = ({
     }
 
     setAssignedSubSections(copyOfAssignedSubSections);
+    console.log("groups", groups);
     console.log("assigned sub sections", copyOfAssignedSubSections);
   };
 
@@ -581,10 +585,13 @@ export const CheckboxManager = ({
                       {selectedGroupId &&
                         mainSection.inspectable_object_inspection_form_sub_section.map(
                           (subSection) => {
-                            const isInAssigneSubSections =
-                              assignedSubSections[subSection.id]?.includes(
-                                selectedGroupId
-                              );
+                            const isInAssigneSubSections = assignedSubSections[
+                              subSection.id
+                            ]
+                              ? assignedSubSections[subSection.id].includes(
+                                  selectedGroupId
+                                )
+                              : false;
 
                             return (
                               <div
