@@ -23,24 +23,42 @@ import {
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { Label } from "@radix-ui/react-dropdown-menu";
 import { UUID } from "crypto";
-import { PenLine } from "lucide-react";
+import { PenLine, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNotification } from "@/app/context/NotificationContext";
-import { assignFirstValueToFormProperty, updateFormProperty } from "./actions";
+import {
+  assignFirstValueToFormProperty,
+  deleteEntireForm,
+  updateFormProperty,
+} from "./actions";
 import { useRouter } from "next/navigation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 
 interface FormMetadataCardProps {
   formId: UUID;
   formMetadata: Record<UUID, IInspectableObjectInspectionFormPropertyResponse>;
   profileFormTypeWithProps: IInspectableObjectProfileFormTypeWithProps;
+  objId: UUID;
 }
 export const FormMetadataCard = ({
   formId,
   formMetadata,
   profileFormTypeWithProps,
+  objId,
 }: FormMetadataCardProps) => {
   const { showNotification } = useNotification();
   const router = useRouter();
@@ -121,14 +139,55 @@ export const FormMetadataCard = ({
       router.refresh();
     }
   };
+
+  const handleDeleteEntireForm = async () => {
+    const { deletedForm, deletedFormError } = await deleteEntireForm(formId);
+    if (deletedFormError) {
+      showNotification(
+        "Delete form",
+        `Error: ${deletedFormError.message} (${deletedFormError.code})`,
+        "error"
+      );
+    } else if (deletedForm) {
+      showNotification(
+        "Delete form",
+        `Successfully deleted form with id '${deletedForm.id}'`,
+        "info"
+      );
+
+      router.push(formBuilderLinks["inspectableObjects"].href + "/" + objId);
+    }
+  };
   return (
     <>
       <Card>
-        <CardHeader>
-          <CardTitle>
-            {profileFormTypeWithProps?.name}: {formId}
-          </CardTitle>
-        </CardHeader>
+        <div className="flex justify-between items-center">
+          <CardHeader>
+            <CardTitle>{profileFormTypeWithProps?.name}</CardTitle>
+            <CardDescription>{formId}</CardDescription>
+          </CardHeader>
+
+          <AlertDialog>
+            <AlertDialogTrigger>
+              <Trash2 className="text-red-500 mr-4 hover:text-red-700"></Trash2>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the
+                  form and all its data from our servers.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteEntireForm}>
+                  Continue
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
         <CardContent>
           <ul>
             {profileFormTypeWithProps?.inspectable_object_profile_form_type_property

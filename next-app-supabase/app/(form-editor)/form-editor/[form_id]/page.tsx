@@ -124,6 +124,7 @@ export default async function FormEditorPage({
           formId={formId}
           formMetadata={formMetadata}
           profileFormTypeWithProps={inspectableObjectProfileFormTypeWithProps}
+          objId={inspectableObjectInspectionFormWithProps.object_id}
         ></FormMetadataCard>
       </div>
       <div>

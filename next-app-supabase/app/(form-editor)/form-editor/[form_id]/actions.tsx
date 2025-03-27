@@ -1,5 +1,6 @@
 "use server";
 import { DBActionsFormBuilderCreate } from "@/lib/database/form-builder/formBuilderCreate";
+import { DBActionsFormBuilderDelete } from "@/lib/database/form-builder/formBuilderDelete";
 import { IInspectableObjectInspectionFormPropertyInsert } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { DBActionsFormBuilderUpdate } from "@/lib/database/form-builder/formBuilderUpdate";
 import { createClient } from "@/utils/supabase/server";
@@ -19,4 +20,11 @@ export async function assignFirstValueToFormProperty(
   const dbActions = new DBActionsFormBuilderCreate(supabase);
 
   return await dbActions.createInspectableObjectInspectionFormProperty(prop);
+}
+
+export async function deleteEntireForm(formId: UUID) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderDelete(supabase);
+
+  return await dbActions.deleteEntireForm(formId);
 }
