@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
   IFormCheckboxTaskResponse,
+  IInspectableObjectInspectionFormResponse,
   IInspectableObjectInspectionFormSubSectionInsert,
   IInspectableObjectInspectionFormSubSectionResponse,
   IInspectableObjectProfileFormPropertyResponse,
@@ -256,6 +257,27 @@ export class DBActionsFormBuilderDelete {
     return {
       deletedFormCheckbox: data ? data[0] : null,
       deletedFormCheckboxError: error as SupabaseError | null,
+    };
+  }
+
+  async deleteEntireForm(formId: UUID): Promise<{
+    deletedForm: IInspectableObjectInspectionFormResponse | null;
+    deletedFormError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_inspection_form")
+      .delete()
+      .eq("id", formId)
+      .select();
+
+    console.log("delete entire form in db:", data);
+    if (error) {
+      console.error("delete entire form in db error:", error);
+    }
+
+    return {
+      deletedForm: data ? data[0] : null,
+      deletedFormError: error as SupabaseError | null,
     };
   }
 }
