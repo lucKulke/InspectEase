@@ -5,6 +5,7 @@ import {
   IFormCheckboxResponse,
   IFormCheckboxTaskInsert,
   IFormCheckboxTaskResponse,
+  IFormTextInputFieldInsert,
   IInspectableObjectInsert,
   IInspectableObjectInspectionFormAnnotationInsert,
   IInspectableObjectInspectionFormAnnotationResponse,
@@ -456,6 +457,26 @@ export class DBActionsFormBuilderCreate {
     return {
       formCheckboxTask: data ? data[0] : null,
       formCheckboxTaskError: error as SupabaseError | null,
+    };
+  }
+
+  async createFormTextInputField(fields: IFormTextInputFieldInsert[]): Promise<{
+    formTextInputFields: IFormTextInputFieldInsert[] | null;
+    formTextInputFieldsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_text_input_field")
+      .insert(fields)
+      .select();
+
+    console.log("create form text input fields in db:", data);
+    if (error) {
+      console.error("create form text input fields in db error: ", error);
+    }
+
+    return {
+      formTextInputFields: data,
+      formTextInputFieldsError: error as SupabaseError | null,
     };
   }
 }

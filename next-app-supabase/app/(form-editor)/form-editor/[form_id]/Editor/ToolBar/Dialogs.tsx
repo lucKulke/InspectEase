@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/tooltip";
 import { UUID } from "crypto";
 import { CheckboxManager } from "./CheckboxManager";
+import { TextFieldManager } from "./TextFieldManager";
 
 interface CreateMainSectionDialogProps {
   open: boolean;
@@ -239,6 +240,40 @@ export const CreateCheckboxDialog = ({
           setOpen={setOpen}
           refetchSubSectionsData={refetchSubSectionsData}
         ></CheckboxManager>
+        <DialogFooter></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+interface CreateTextInputFieldDialogProps {
+  open: boolean;
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  sections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
+
+  refetchSubSectionsData: () => Promise<void>;
+}
+
+export const CreateTextInputFieldDialog = ({
+  open,
+  setOpen,
+  sections,
+  refetchSubSectionsData,
+}: CreateTextInputFieldDialogProps) => {
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-[800px]">
+        <DialogHeader>
+          <DialogTitle>Manage Text Input Fields</DialogTitle>
+          <DialogDescription>
+            Create text input field and assign them to sections.
+          </DialogDescription>
+        </DialogHeader>
+        <TextFieldManager
+          refetchSubSectionsData={refetchSubSectionsData}
+          setOpen={setOpen}
+          sections={sections}
+        ></TextFieldManager>
         <DialogFooter></DialogFooter>
       </DialogContent>
     </Dialog>

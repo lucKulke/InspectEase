@@ -38,6 +38,7 @@ import {
   CreateCheckboxDialog,
   CreateMainSectionDialog,
   CreateSubSectionDialog,
+  CreateTextInputFieldDialog,
 } from "./Dialogs";
 
 interface ToolBarProps {
@@ -83,6 +84,9 @@ export const ToolBar = ({
     useState<boolean>(false);
   const [openCreateCheckboxDialog, setOpenCreateCheckboxDialog] =
     useState<boolean>(false);
+  const [openCreateTextInputFieldDialog, setOpenCreateTextInputFieldDialog] =
+    useState<boolean>(false);
+
   const handleCreateMainSection = async (name: string, description: string) => {
     const {
       inspectableObjectInspectionFormMainSection,
@@ -188,7 +192,9 @@ export const ToolBar = ({
           <DropdownMenuItem onClick={() => setOpenCreateCheckboxDialog(true)}>
             Checkbox
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setOpenCreateSubSectionDialog(true)}>
+          <DropdownMenuItem
+            onClick={() => setOpenCreateTextInputFieldDialog(true)}
+          >
             Text input
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -243,6 +249,12 @@ export const ToolBar = ({
         setOpen={setOpenCreateCheckboxDialog}
         sections={sideBarData}
       ></CreateCheckboxDialog>
+      <CreateTextInputFieldDialog
+        refetchSubSectionsData={refetchSubSectionsData}
+        open={openCreateTextInputFieldDialog}
+        setOpen={setOpenCreateTextInputFieldDialog}
+        sections={sideBarData}
+      ></CreateTextInputFieldDialog>
     </div>
   );
 };

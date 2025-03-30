@@ -248,13 +248,13 @@ export interface IFormCheckboxResponse extends IFormCheckboxInsert {
 
 export interface IFormTextInputFieldInsert {
   sub_section_id: UUID;
-  description: string;
+  label: string;
+  placeholder_text: string;
   order_number: number;
-  nullable: boolean;
-  annotation_id: UUID;
+  annotation_id: UUID | null;
 }
 
-export interface IFormTextInputFieldResponse {
+export interface IFormTextInputFieldResponse extends IFormTextInputFieldInsert {
   id: UUID;
   created_at: Date | string;
 }
