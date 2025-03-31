@@ -82,6 +82,7 @@ interface SubSectionProps {
   >;
   setOpenTaskDialog: React.Dispatch<React.SetStateAction<boolean>>;
   setOpenCheckboxGroupDialog: React.Dispatch<React.SetStateAction<boolean>>;
+  setOpenTextInputFieldDialog: React.Dispatch<React.SetStateAction<boolean>>;
   setSelectedCheckboxGroupId: React.Dispatch<
     React.SetStateAction<UUID | undefined>
   >;
@@ -101,6 +102,7 @@ export const SubSection = ({
   setOpenCheckboxGroupDialog,
   setSelectedCheckboxGroupId,
   setSelectedSubSectionId,
+  setOpenTextInputFieldDialog,
 }: SubSectionProps) => {
   const { showNotification } = useNotification();
 
@@ -268,7 +270,7 @@ export const SubSection = ({
         );
       })}
       {sectionData.form_text_input_field.length > 0 && <Separator />}
-      <ContextMenu>
+      <ContextMenu modal={false}>
         <ContextMenuTrigger>
           <Card className="m-4">
             <CardHeader>
@@ -307,7 +309,14 @@ export const SubSection = ({
           </Card>
         </ContextMenuTrigger>
         <ContextMenuContent>
-          <ContextMenuItem onClick={() => {}}>update</ContextMenuItem>
+          <ContextMenuItem
+            onClick={() => {
+              setSelectedSubSectionId(subSectionId);
+              setOpenTextInputFieldDialog(true);
+            }}
+          >
+            update
+          </ContextMenuItem>
           <ContextMenuItem className="text-red-500 flex justify-between">
             delete <Trash2></Trash2>
           </ContextMenuItem>

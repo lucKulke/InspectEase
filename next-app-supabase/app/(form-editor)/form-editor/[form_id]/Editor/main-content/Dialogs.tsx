@@ -17,6 +17,7 @@ import {
   IFormCheckboxResponse,
   IFormCheckboxTaskInsert,
   IFormCheckboxTaskResponse,
+  IFormTextInputFieldResponse,
   IInspectableObjectInspectionFormSubSectionWithData,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import {
@@ -459,6 +460,82 @@ export const CheckboxGroupDialog = ({
               ))}
           </Reorder.Group>
         )}
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+interface TextInputFieldsDialogProps {
+  open: boolean;
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  subSectionsData: Record<
+    UUID,
+    IInspectableObjectInspectionFormSubSectionWithData
+  >;
+  setSubSectionsData: React.Dispatch<
+    React.SetStateAction<
+      Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>
+    >
+  >;
+  subSectionId: UUID;
+}
+
+export const TextInputFieldsDialog = ({
+  open,
+  setOpen,
+  setSubSectionsData,
+  subSectionsData,
+  subSectionId,
+}: TextInputFieldsDialogProps) => {
+  const handleTextInputFieldReorder = (
+    newOrder: IFormTextInputFieldResponse[]
+  ) => {};
+
+  function compareTextInputFieldOrderNumbers(
+    a: IFormTextInputFieldResponse,
+    b: IFormTextInputFieldResponse
+  ) {
+    if (a.order_number < b.order_number) return -1;
+
+    if (a.order_number > b.order_number) return 1;
+
+    return 0;
+  }
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>test</DialogTitle>
+          <DialogDescription>sdafasdf</DialogDescription>
+        </DialogHeader>
+        <Reorder.Group
+          axis="y"
+          values={subSectionsData[subSectionId].form_text_input_field}
+          onReorder={handleTextInputFieldReorder}
+          className="p-2 space-y-3"
+        >
+          {subSectionsData[subSectionId].form_text_input_field
+            .sort(compareTextInputFieldOrderNumbers)
+            .map((field) => (
+              <Reorder.Item
+                key={field.id}
+                value={field}
+                className="flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-grab"
+                dragConstraints={{ top: 0, bottom: 0 }}
+              >
+                <div className="flex items-center space-x-3">
+                  <Input
+                    id={`preview-${field.id}`}
+                    placeholder={field.placeholder_text}
+                  />
+                  <Label htmlFor={`preview-${field.id}`}>{field.label}</Label>
+                </div>
+                <button onClick={() => handleCheckboxDelete(field.id)}>
+                  <Trash2 className="text-red-500 cursor-pointer"></Trash2>
+                </button>
+              </Reorder.Item>
+            ))}
+        </Reorder.Group>
       </DialogContent>
     </Dialog>
   );

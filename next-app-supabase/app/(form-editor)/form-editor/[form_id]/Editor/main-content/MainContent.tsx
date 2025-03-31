@@ -13,7 +13,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CheckboxGroupDialog, TaskDialog } from "./Dialogs";
+import {
+  CheckboxGroupDialog,
+  TaskDialog,
+  TextInputFieldsDialog,
+} from "./Dialogs";
 
 interface MainContentProps {
   mainSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
@@ -36,6 +40,13 @@ export const MainContent = ({
   const [openTaskDialog, setOpenTaskDialog] = useState<boolean>(false);
   const [openCheckboxGroupDialog, setOpenCheckboxGroupDialog] =
     useState<boolean>(false);
+  const [openTextInputFieldDialog, setOpenTextInputFieldDialog] =
+    useState<boolean>(false);
+
+  useEffect(() => {
+    "changed " + openTextInputFieldDialog;
+  }, [openTextInputFieldDialog]);
+
   const [selectedCheckboxGroupId, setSelectedCheckboxGroupId] =
     useState<UUID>();
 
@@ -80,6 +91,9 @@ export const MainContent = ({
                         setSubSectionsData={setSubSectionsData}
                         setOpenTaskDialog={setOpenTaskDialog}
                         setOpenCheckboxGroupDialog={setOpenCheckboxGroupDialog}
+                        setOpenTextInputFieldDialog={
+                          setOpenTextInputFieldDialog
+                        }
                         setSelectedCheckboxGroupId={setSelectedCheckboxGroupId}
                         setSelectedSubSectionId={setSelectedSubSectionId}
                       />
@@ -111,6 +125,15 @@ export const MainContent = ({
             subSectionId={selectedSubSectionId}
           />
         </>
+      )}
+      {selectedSubSectionId && (
+        <TextInputFieldsDialog
+          setOpen={setOpenTextInputFieldDialog}
+          open={openTextInputFieldDialog}
+          setSubSectionsData={setSubSectionsData}
+          subSectionsData={subSectionsData}
+          subSectionId={selectedSubSectionId}
+        />
       )}
     </div>
   );
