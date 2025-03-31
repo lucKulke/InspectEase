@@ -30,7 +30,7 @@ import {
 } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Reorder } from "framer-motion";
 
 import { Checkbox } from "@/components/ui/checkbox";
@@ -503,11 +503,41 @@ export const TextInputFieldsDialog = ({
   }
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
           <DialogTitle>test</DialogTitle>
           <DialogDescription>sdafasdf</DialogDescription>
         </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="new-text-input-field-dialog-label">
+            New Text Input Field
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="new-text-input-field-dialog-label"
+              placeholder="Enter text input field label"
+              // value={newTextFieldLabel}
+              // onChange={(e) => setNewTextFieldLabel(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleCreateTextInputField();
+                }
+              }}
+            />
+            <Input
+              id="new-text-input-field-dialog-placeholder"
+              placeholder="Enter text input field placeholder (optional)"
+
+              // value={newTextFieldPlaceHolder}
+              // onChange={(e) => setNewTextFieldPlaceHolder(e.target.value)}
+            />
+
+            <Button onClick={() => {}}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add
+            </Button>
+          </div>
+        </div>
         <Reorder.Group
           axis="y"
           values={subSectionsData[subSectionId].form_text_input_field}
@@ -527,6 +557,7 @@ export const TextInputFieldsDialog = ({
                   <Input
                     id={`preview-${field.id}`}
                     placeholder={field.placeholder_text}
+                    disabled={true}
                   />
                   <Label htmlFor={`preview-${field.id}`}>{field.label}</Label>
                 </div>
