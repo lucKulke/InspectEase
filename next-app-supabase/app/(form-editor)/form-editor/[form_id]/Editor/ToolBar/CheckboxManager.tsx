@@ -37,6 +37,7 @@ import { UUID } from "crypto";
 import { createFormCheckboxes, createFromCheckboxGroups } from "../actions";
 import { SupabaseError } from "@/lib/globalInterfaces";
 import { useNotification } from "@/app/context/NotificationContext";
+import { scrollToSection } from "@/utils/general";
 
 interface CheckboxItem {
   id: string;
@@ -243,60 +244,67 @@ export const CheckboxManager = ({
   //   console.log("checkboxes", checkboxes);
   // }, [checkboxes]);
 
-  const handleCreateCheckboxGroups =
-    async (): Promise<SupabaseError | null> => {
-      console.log("groups", groups);
-      for (let outerindex = 0; outerindex < groups.length; outerindex++) {
-        const group = groups[outerindex];
+  const handleCreateCheckboxGroups = async (): Promise<{
+    error: SupabaseError | null;
+    id: string | null;
+  }> => {
+    console.log("groups", groups);
 
+    let sampleCheckboxId: string | null = "";
+
+    for (let outerindex = 0; outerindex < groups.length; outerindex++) {
+      const group = groups[outerindex];
+
+      for (
+        let innerindex = 0;
+        innerindex < group.subSectionIds.length;
+        innerindex++
+      ) {
+        const subSectionId = group.subSectionIds[innerindex];
+
+        const newGroup: IFormCheckboxGroupInsert = {
+          name: group.name,
+          sub_section_id: subSectionId as UUID,
+        };
+
+        const { formCheckboxGroups, formCheckboxGroupsError } =
+          await createFromCheckboxGroups([newGroup]);
+
+        if (!formCheckboxGroups)
+          return { error: formCheckboxGroupsError, id: null };
+
+        const groupInDB = formCheckboxGroups[0];
+
+        const associatedCheckboxes = checkboxes.filter(
+          (checkbox) => checkbox.group_id === group.id
+        );
+
+        const newCheckboxesForDB: IFormCheckboxInsert[] = [];
         for (
-          let innerindex = 0;
-          innerindex < group.subSectionIds.length;
-          innerindex++
+          let checkboxIndex = 0;
+          checkboxIndex < associatedCheckboxes.length;
+          checkboxIndex++
         ) {
-          const subSectionId = group.subSectionIds[innerindex];
+          const checkbox = associatedCheckboxes[checkboxIndex];
 
-          const newGroup: IFormCheckboxGroupInsert = {
-            name: group.name,
-            sub_section_id: subSectionId as UUID,
+          const newCheckbox: IFormCheckboxInsert = {
+            group_id: groupInDB.id as UUID,
+            label: checkbox.label,
+            order_number: checkbox.order_number,
+            annotation_id: null,
           };
 
-          const { formCheckboxGroups, formCheckboxGroupsError } =
-            await createFromCheckboxGroups([newGroup]);
-
-          if (!formCheckboxGroups) return formCheckboxGroupsError;
-
-          const groupInDB = formCheckboxGroups[0];
-
-          const associatedCheckboxes = checkboxes.filter(
-            (checkbox) => checkbox.group_id === group.id
-          );
-
-          const newCheckboxesForDB: IFormCheckboxInsert[] = [];
-          for (
-            let checkboxIndex = 0;
-            checkboxIndex < associatedCheckboxes.length;
-            checkboxIndex++
-          ) {
-            const checkbox = associatedCheckboxes[checkboxIndex];
-
-            const newCheckbox: IFormCheckboxInsert = {
-              group_id: groupInDB.id as UUID,
-              label: checkbox.label,
-              order_number: checkbox.order_number,
-              annotation_id: null,
-            };
-
-            newCheckboxesForDB.push(newCheckbox);
-          }
-          const { formCheckboxes, formCheckboxesError } =
-            await createFormCheckboxes(newCheckboxesForDB);
-
-          if (!formCheckboxes) return formCheckboxGroupsError;
+          newCheckboxesForDB.push(newCheckbox);
         }
+        const { formCheckboxes, formCheckboxesError } =
+          await createFormCheckboxes(newCheckboxesForDB);
+        sampleCheckboxId = subSectionId;
+        if (!formCheckboxes)
+          return { error: formCheckboxGroupsError, id: null };
       }
-      return null;
-    };
+    }
+    return { error: null, id: sampleCheckboxId };
+  };
 
   return (
     <div>
@@ -624,7 +632,7 @@ export const CheckboxManager = ({
             {atLeastOneSubSectionSelected ? (
               <Button
                 onClick={async () => {
-                  const error = await handleCreateCheckboxGroups();
+                  const { error, id } = await handleCreateCheckboxGroups();
                   if (error) {
                     showNotification(
                       "Checkbox-Manager",
@@ -639,6 +647,9 @@ export const CheckboxManager = ({
                     );
                     refetchSubSectionsData();
                     setOpen(false);
+                    if (id) {
+                      scrollToSection(id as UUID);
+                    }
                   }
                 }}
               >

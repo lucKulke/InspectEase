@@ -27,6 +27,7 @@ import {
   deleteCheckboxTask,
   updateCheckboxesOrderNumber,
   updateCheckboxTaskOrder,
+  updateTextInputFieldOrder,
 } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 
@@ -187,56 +188,63 @@ export const TaskDialog = ({
             section.
           </DialogDescription>
         </DialogHeader>
-
-        <div>
-          <Label htmlFor={`task-dialog-${currentCheckboxGroupId}`}>
-            New Task
-          </Label>
-          <div className="flex items-center space-x-2">
-            <Input
-              id={`task-dialog-${currentCheckboxGroupId}`}
-              value={newTaskDescription}
-              onChange={(e) => setNewTaskDescription(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleCreateTask();
-              }}
-            />
-            <Button onClick={() => handleCreateTask()}>Create</Button>
-          </div>
-        </div>
-
-        {currentTaskListLenght() < 1 ? (
-          <div className="border-2 rounded-xl min-h-11 flex items-center justify-center">
-            <p className="text-sm text-slate-500">No task created yet</p>
-          </div>
-        ) : (
-          <Reorder.Group
-            axis="y"
-            values={
-              subSectionsData[subSectionId].form_checkbox_group.filter(
-                (group) => group.id === currentCheckboxGroupId
-              )[0].form_checkbox_task
-            }
-            onReorder={handleTaskReorder}
-            className={`p-2 space-y-3 `}
-          >
-            {subSectionsData[subSectionId].form_checkbox_group
-              .filter((group) => group.id === currentCheckboxGroupId)[0]
-              .form_checkbox_task.sort(compareTaskOrder)
-              .map((task) => (
-                <Reorder.Item
-                  key={task.id}
-                  value={task}
-                  className=" flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-grab "
-                  dragConstraints={{ top: 0, bottom: 0 }}
-                >
-                  <p>- {task.description}</p>
-                  <button onClick={() => handleDeleteTask(task.id)}>
-                    <Trash2 className="text-red-500 "></Trash2>
-                  </button>
-                </Reorder.Item>
-              ))}
-          </Reorder.Group>
+        {currentCheckboxGroupId && (
+          <>
+            <div>
+              <Label htmlFor={`task-dialog-${currentCheckboxGroupId}`}>
+                New Task
+              </Label>
+              <div className="flex items-center space-x-2">
+                <Input
+                  id={`task-dialog-${currentCheckboxGroupId}`}
+                  value={newTaskDescription}
+                  onChange={(e) => setNewTaskDescription(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreateTask();
+                  }}
+                />
+                <Button onClick={() => handleCreateTask()}>Create</Button>
+              </div>
+            </div>
+            {currentTaskListLenght() < 1 ? (
+              <div className="border-2 rounded-xl min-h-11 flex items-center justify-center">
+                <p className="text-sm text-slate-500">No task created yet</p>
+              </div>
+            ) : (
+              <Reorder.Group
+                axis="y"
+                values={
+                  subSectionsData[subSectionId].form_checkbox_group.filter(
+                    (group) => group.id === currentCheckboxGroupId
+                  )[0].form_checkbox_task
+                }
+                onReorder={handleTaskReorder}
+                className={`p-2 space-y-3 `}
+              >
+                {subSectionsData[subSectionId].form_checkbox_group
+                  .filter((group) => group.id === currentCheckboxGroupId)[0]
+                  .form_checkbox_task.sort(compareTaskOrder)
+                  .map((task) => (
+                    <Reorder.Item
+                      key={task.id}
+                      value={task}
+                      className=" flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-grab "
+                      dragConstraints={{ top: 0, bottom: 0 }}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <p className="text-slate-700 font-bold">
+                          {task.order_number}.
+                        </p>
+                        <p>{task.description}</p>
+                      </div>
+                      <button onClick={() => handleDeleteTask(task.id)}>
+                        <Trash2 className="text-red-500 "></Trash2>
+                      </button>
+                    </Reorder.Item>
+                  ))}
+              </Reorder.Group>
+            )}
+          </>
         )}
       </DialogContent>
     </Dialog>
@@ -381,84 +389,88 @@ export const CheckboxGroupDialog = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[800px]">
-        <DialogHeader>
-          <DialogTitle>
-            Manage Checkbox Group{" "}
-            {
-              subSectionsData[subSectionId].form_checkbox_group.filter(
-                (group) => group.id === currentCheckboxGroupId
-              )[0].name
-            }
-          </DialogTitle>
-          <DialogDescription>
-            Create/Update {currentCheckboxGroup().length}
-            checkbox
-            {currentCheckboxGroup().length !== 1 ? "es" : ""}
-          </DialogDescription>
-        </DialogHeader>
-        <div>
-          <Label htmlFor={`task-dialog-${currentCheckboxGroupId}`}>
-            New Checkbox
-          </Label>
-          <div className="flex items-center space-x-2">
-            <Input
-              id={`task-dialog-${currentCheckboxGroupId}`}
-              value={newCheckboxLabel}
-              onChange={(e) => setNewCheckboxLabel(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleCreateCheckbox();
-              }}
-            />
-            <Button
-              onClick={() => {
-                handleCreateCheckbox();
-              }}
-            >
-              Create
-            </Button>
-          </div>
-        </div>
-        {currentCheckboxGroup().length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No checkboxes in this group.
-          </p>
-        ) : (
-          <Reorder.Group
-            axis="y"
-            values={
-              subSectionsData[subSectionId].form_checkbox_group.filter(
-                (group) => group.id === currentCheckboxGroupId
-              )[0].form_checkbox
-            }
-            onReorder={handleCheckboxesReorder}
-            className="p-2 space-y-3"
-          >
-            {currentCheckboxGroup()
-              .sort(compareCheckboxOrderNumbers)
-              .map((checkbox) => (
-                <Reorder.Item
-                  key={checkbox.id}
-                  value={checkbox}
-                  className="flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-grab"
-                  dragConstraints={{ top: 0, bottom: 0 }}
+        {currentCheckboxGroupId && (
+          <>
+            <DialogHeader>
+              <DialogTitle>
+                Manage Checkbox Group{" "}
+                {
+                  subSectionsData[subSectionId].form_checkbox_group.filter(
+                    (group) => group.id === currentCheckboxGroupId
+                  )[0].name
+                }
+              </DialogTitle>
+              <DialogDescription>
+                Create/Update {currentCheckboxGroup().length}
+                checkbox
+                {currentCheckboxGroup().length !== 1 ? "es" : ""}
+              </DialogDescription>
+            </DialogHeader>
+            <div>
+              <Label htmlFor={`task-dialog-${currentCheckboxGroupId}`}>
+                New Checkbox
+              </Label>
+              <div className="flex items-center space-x-2">
+                <Input
+                  id={`task-dialog-${currentCheckboxGroupId}`}
+                  value={newCheckboxLabel}
+                  onChange={(e) => setNewCheckboxLabel(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreateCheckbox();
+                  }}
+                />
+                <Button
+                  onClick={() => {
+                    handleCreateCheckbox();
+                  }}
                 >
-                  <div className="flex items-center space-x-3">
-                    <Checkbox
-                      checked={true}
-                      id={`preview-${currentCheckboxGroupId}-${checkbox.id}`}
-                    />
-                    <Label
-                      htmlFor={`preview-${currentCheckboxGroupId}-${checkbox.id}`}
+                  Create
+                </Button>
+              </div>
+            </div>
+            {currentCheckboxGroup().length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No checkboxes in this group.
+              </p>
+            ) : (
+              <Reorder.Group
+                axis="y"
+                values={
+                  subSectionsData[subSectionId].form_checkbox_group.filter(
+                    (group) => group.id === currentCheckboxGroupId
+                  )[0].form_checkbox
+                }
+                onReorder={handleCheckboxesReorder}
+                className="p-2 space-y-3"
+              >
+                {currentCheckboxGroup()
+                  .sort(compareCheckboxOrderNumbers)
+                  .map((checkbox) => (
+                    <Reorder.Item
+                      key={checkbox.id}
+                      value={checkbox}
+                      className="flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-grab"
+                      dragConstraints={{ top: 0, bottom: 0 }}
                     >
-                      {checkbox.label}
-                    </Label>
-                  </div>
-                  <button onClick={() => handleCheckboxDelete(checkbox.id)}>
-                    <Trash2 className="text-red-500 cursor-pointer"></Trash2>
-                  </button>
-                </Reorder.Item>
-              ))}
-          </Reorder.Group>
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={true}
+                          id={`preview-${currentCheckboxGroupId}-${checkbox.id}`}
+                        />
+                        <Label
+                          htmlFor={`preview-${currentCheckboxGroupId}-${checkbox.id}`}
+                        >
+                          {checkbox.label}
+                        </Label>
+                      </div>
+                      <button onClick={() => handleCheckboxDelete(checkbox.id)}>
+                        <Trash2 className="text-red-500 cursor-pointer"></Trash2>
+                      </button>
+                    </Reorder.Item>
+                  ))}
+              </Reorder.Group>
+            )}
+          </>
         )}
       </DialogContent>
     </Dialog>
@@ -487,9 +499,49 @@ export const TextInputFieldsDialog = ({
   subSectionsData,
   subSectionId,
 }: TextInputFieldsDialogProps) => {
+  const { showNotification } = useNotification();
+
+  const updateTextInputFieldOrderInDB = async (
+    updatedItems: IFormTextInputFieldResponse[]
+  ) => {
+    const { updatedFormTextInputFields, updatedFormTextInputFieldsError } =
+      await updateTextInputFieldOrder(updatedItems);
+
+    if (updatedFormTextInputFieldsError) {
+      showNotification(
+        "Main section order",
+        `Error: ${updatedFormTextInputFieldsError.message} (${updatedFormTextInputFieldsError.code})`,
+        "error"
+      );
+    } else if (updatedFormTextInputFields) {
+    }
+  };
+
+  const debouncedTextInputFieldUpdate = debounce(
+    updateTextInputFieldOrderInDB,
+    500
+  );
+
+  const reorderItems = (newOrder: IFormTextInputFieldResponse[]) => {
+    return newOrder.map((item, index) => ({
+      ...item,
+      order_number: index + 1,
+    }));
+  };
+
   const handleTextInputFieldReorder = (
     newOrder: IFormTextInputFieldResponse[]
-  ) => {};
+  ) => {
+    console.log("reorder");
+    const updatedItems = reorderItems(newOrder);
+
+    const copy = { ...subSectionsData };
+    copy[subSectionId].form_text_input_field = updatedItems;
+
+    setSubSectionsData(copy);
+
+    debouncedTextInputFieldUpdate(updatedItems);
+  };
 
   function compareTextInputFieldOrderNumbers(
     a: IFormTextInputFieldResponse,
@@ -505,8 +557,11 @@ export const TextInputFieldsDialog = ({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
-          <DialogTitle>test</DialogTitle>
-          <DialogDescription>sdafasdf</DialogDescription>
+          <DialogTitle>Text Input Fields</DialogTitle>
+          <DialogDescription>
+            All text input fields for subsection:{" "}
+            {subSectionsData[subSectionId].name}
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
           <Label htmlFor="new-text-input-field-dialog-label">
@@ -554,12 +609,17 @@ export const TextInputFieldsDialog = ({
                 dragConstraints={{ top: 0, bottom: 0 }}
               >
                 <div className="flex items-center space-x-3">
-                  <Input
-                    id={`preview-${field.id}`}
-                    placeholder={field.placeholder_text}
-                    disabled={true}
-                  />
-                  <Label htmlFor={`preview-${field.id}`}>{field.label}</Label>
+                  <p className="text-slate-700 font-bold">
+                    {field.order_number}.
+                  </p>
+                  <div className="flex items-center space-x-3">
+                    <Input
+                      id={`preview-${field.id}`}
+                      placeholder={field.placeholder_text}
+                      disabled={true}
+                    />
+                    <Label htmlFor={`preview-${field.id}`}>{field.label}</Label>
+                  </div>
                 </div>
                 <button onClick={() => handleCheckboxDelete(field.id)}>
                   <Trash2 className="text-red-500 cursor-pointer"></Trash2>

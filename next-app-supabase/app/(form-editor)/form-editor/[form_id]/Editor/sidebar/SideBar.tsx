@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/context-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { scrollToSection } from "@/utils/general";
 
 // Helper function to update order numbers
 
@@ -112,15 +113,6 @@ export const FormSideBar = ({
 
   const [selectedMainSection, setSelectedMainSection] =
     useState<IInspectableObjectInspectionFormMainSectionResponse>();
-
-  const scrollToSection = (id: UUID) => {
-    const section = document.getElementById(id);
-    if (section) {
-      const rect = section.getBoundingClientRect(); // Get section position
-      const scrollOffset = window.scrollY + rect.top - window.innerHeight * 0.2; // 3/4 of viewport
-      window.scrollTo({ top: scrollOffset, behavior: "smooth" });
-    }
-  };
 
   const updateMainSectionOrderInDB = async (
     updatedItems: IInspectableObjectInspectionFormMainSectionWithSubSection[]
@@ -368,7 +360,7 @@ export const FormSideBar = ({
       setMainSubSections(copyOfMainSubSections);
       setNewSubSectionName("");
       setNewSubSectionDescription("");
-      setOpenUpdateSubSectionDialog(false);
+      setOpenCreateSubSectionDialog(false);
       showNotification(
         "Create sub section",
         `Successfully created new sub section with id'${inspectableObjectInspectionFormSubSection.id}'`,

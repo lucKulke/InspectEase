@@ -7,6 +7,7 @@ import {
   IFormCheckboxResponse,
   IFormCheckboxTaskInsert,
   IFormCheckboxTaskResponse,
+  IFormTextInputFieldResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { DBActionsFormBuilderUpdate } from "@/lib/database/form-builder/formBuilderUpdate";
 import { createClient } from "@/utils/supabase/server";
@@ -28,6 +29,15 @@ export async function updateCheckboxTaskOrder(
   const dbActions = new DBActionsFormBuilderUpdate(supabase);
 
   return await dbActions.updateFormCheckboxTasks(checkboxTasks);
+}
+
+export async function updateTextInputFieldOrder(
+  textInputFields: IFormTextInputFieldResponse[]
+) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderUpdate(supabase);
+
+  return await dbActions.updateFormTextInputFields(textInputFields);
 }
 
 export async function createCheckboxTask(newTask: IFormCheckboxTaskInsert) {

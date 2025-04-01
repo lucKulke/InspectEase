@@ -4,6 +4,7 @@ import {
   IFormCheckboxInsert,
   IFormCheckboxResponse,
   IFormCheckboxTaskResponse,
+  IFormTextInputFieldResponse,
   IInspectableObjectInspectionFormMainSectionInsert,
   IInspectableObjectInspectionFormMainSectionResponse,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
@@ -355,6 +356,31 @@ export class DBActionsFormBuilderUpdate {
     return {
       updatedFormCheckboxTasks: data ? data : [],
       updatedFormCheckboxTasksError: error as SupabaseError | null,
+    };
+  }
+
+  async updateFormTextInputFields(
+    checkboxTasks: IFormTextInputFieldResponse[]
+  ): Promise<{
+    updatedFormTextInputFields: IFormTextInputFieldResponse[];
+    updatedFormTextInputFieldsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_text_input_field")
+      .upsert(checkboxTasks)
+      .select();
+
+    console.log("update form text input field order number in db:", data);
+    if (error) {
+      console.error(
+        "update form text input field order number in db error: ",
+        error
+      );
+    }
+
+    return {
+      updatedFormTextInputFields: data ? data : [],
+      updatedFormTextInputFieldsError: error as SupabaseError | null,
     };
   }
 }

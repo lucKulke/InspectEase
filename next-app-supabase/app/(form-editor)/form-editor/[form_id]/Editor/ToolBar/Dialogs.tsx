@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import {
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionInsert,
+  IInspectableObjectInspectionFormSubSectionWithData,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import {
   Select,
@@ -249,7 +250,11 @@ export const CreateCheckboxDialog = ({
 interface CreateTextInputFieldDialogProps {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  sections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
+  sectionsData: Record<
+    `${string}-${string}-${string}-${string}-${string}`,
+    IInspectableObjectInspectionFormSubSectionWithData
+  >;
+  sideBarData: IInspectableObjectInspectionFormMainSectionWithSubSection[];
 
   refetchSubSectionsData: () => Promise<void>;
 }
@@ -257,7 +262,8 @@ interface CreateTextInputFieldDialogProps {
 export const CreateTextInputFieldDialog = ({
   open,
   setOpen,
-  sections,
+  sectionsData,
+  sideBarData,
   refetchSubSectionsData,
 }: CreateTextInputFieldDialogProps) => {
   return (
@@ -272,7 +278,8 @@ export const CreateTextInputFieldDialog = ({
         <TextFieldManager
           refetchSubSectionsData={refetchSubSectionsData}
           setOpen={setOpen}
-          sections={sections}
+          sectionsData={sectionsData}
+          sideBarData={sideBarData}
         ></TextFieldManager>
         <DialogFooter></DialogFooter>
       </DialogContent>

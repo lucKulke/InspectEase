@@ -269,59 +269,63 @@ export const SubSection = ({
           </div>
         );
       })}
-      {sectionData.form_text_input_field.length > 0 && <Separator />}
-      <ContextMenu modal={false}>
-        <ContextMenuTrigger>
-          <Card className="m-4">
-            <CardHeader>
-              <CardTitle>Text Input Fields</CardTitle>
-              <CardDescription>
-                text input fields that can be filled with text
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="p-4 space-y-2">
-                {sectionData.form_text_input_field.map((field) => {
-                  return (
-                    <div
-                      key={field.id}
-                      className="flex items-center justify-between"
-                    >
-                      <div className="flex items-center w-3/4 space-x-2">
-                        <Input
-                          className="w-1/3"
-                          disabled={true}
-                          id={field.id + "input"}
-                          placeholder={field.placeholder_text}
-                        ></Input>
-                        <Label
-                          className="truncate w-2/3"
-                          htmlFor={field.id + "input"}
+      {sectionData.form_text_input_field.length > 0 && (
+        <>
+          <Separator />{" "}
+          <ContextMenu modal={false}>
+            <ContextMenuTrigger>
+              <Card className="m-4">
+                <CardHeader>
+                  <CardTitle>Text Input Fields</CardTitle>
+                  <CardDescription>
+                    text input fields that can be filled with text
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="p-4 space-y-2">
+                    {sectionData.form_text_input_field.map((field) => {
+                      return (
+                        <div
+                          key={field.id}
+                          className="flex items-center justify-between"
                         >
-                          {field.label}
-                        </Label>
-                      </div>
-                    </div>
-                  );
-                })}
-              </ul>
-            </CardContent>
-          </Card>
-        </ContextMenuTrigger>
-        <ContextMenuContent>
-          <ContextMenuItem
-            onClick={() => {
-              setSelectedSubSectionId(subSectionId);
-              setOpenTextInputFieldDialog(true);
-            }}
-          >
-            update
-          </ContextMenuItem>
-          <ContextMenuItem className="text-red-500 flex justify-between">
-            delete <Trash2></Trash2>
-          </ContextMenuItem>
-        </ContextMenuContent>
-      </ContextMenu>
+                          <div className="flex items-center w-3/4 space-x-2">
+                            <Input
+                              className="w-1/3"
+                              disabled={true}
+                              id={field.id + "input"}
+                              placeholder={field.placeholder_text}
+                            ></Input>
+                            <Label
+                              className="truncate w-2/3"
+                              htmlFor={field.id + "input"}
+                            >
+                              {field.label}
+                            </Label>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </ul>
+                </CardContent>
+              </Card>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+              <ContextMenuItem
+                onClick={() => {
+                  setSelectedSubSectionId(subSectionId);
+                  setOpenTextInputFieldDialog(true);
+                }}
+              >
+                update
+              </ContextMenuItem>
+              <ContextMenuItem className="text-red-500 flex justify-between">
+                delete <Trash2></Trash2>
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
+        </>
+      )}
     </div>
   );
 };

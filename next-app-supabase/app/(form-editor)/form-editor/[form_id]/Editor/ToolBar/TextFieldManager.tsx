@@ -12,12 +12,14 @@ import {
   IFormTextInputFieldInsert,
   IFormTextInputFieldResponse,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
+  IInspectableObjectInspectionFormSubSectionWithData,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { UUID } from "crypto";
 import { v4 as uuidv4 } from "uuid";
 import { Checkbox } from "@/components/ui/checkbox";
 import { createFormTextInputField } from "../actions";
 import { useNotification } from "@/app/context/NotificationContext";
+import { scrollToSection } from "@/utils/general";
 
 interface ITextInputField {
   id: UUID;
@@ -26,13 +28,18 @@ interface ITextInputField {
 }
 
 interface TextFieldManagerProps {
-  sections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
+  sideBarData: IInspectableObjectInspectionFormMainSectionWithSubSection[];
+  sectionsData: Record<
+    `${string}-${string}-${string}-${string}-${string}`,
+    IInspectableObjectInspectionFormSubSectionWithData
+  >;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   refetchSubSectionsData: () => Promise<void>;
 }
 
 export const TextFieldManager = ({
-  sections,
+  sideBarData,
+  sectionsData,
   setOpen,
   refetchSubSectionsData,
 }: TextFieldManagerProps) => {
@@ -68,17 +75,26 @@ export const TextFieldManager = ({
 
   const handleCreateTextInputFieldsInDB = async () => {
     const fields: IFormTextInputFieldInsert[] = [];
+
+    let scrollToSubSection: string | null = "";
+
     for (const subSectionId in assignedSubSections) {
+      let orderNumber =
+        sectionsData[subSectionId as UUID].form_text_input_field.length;
+
       assignedSubSections[subSectionId].forEach((fieldId) => {
         const field = textFieldList.filter((field) => field.id === fieldId)[0];
         fields.push({
           sub_section_id: subSectionId as UUID,
           label: field.label,
           placeholder_text: field.placeHolder,
-          order_number: 0,
+          order_number: orderNumber + 1,
           annotation_id: null,
         });
+
+        orderNumber++;
       });
+      scrollToSubSection = subSectionId;
     }
 
     const { formTextInputFields, formTextInputFieldsError } =
@@ -98,10 +114,10 @@ export const TextFieldManager = ({
         }`,
         "info"
       );
+      refetchSubSectionsData();
+      setOpen(false);
+      scrollToSection(scrollToSubSection as UUID);
     }
-
-    refetchSubSectionsData();
-    setOpen(false);
   };
 
   const assignToSubSection = (subSectionId: UUID) => {
@@ -257,7 +273,7 @@ export const TextFieldManager = ({
             </ScrollArea>
             <ScrollArea className="h-[260px] w-1/2 rounded-md border p-4">
               {selectedField &&
-                sections.map((mainSection) => (
+                sideBarData.map((mainSection) => (
                   <div key={mainSection.id}>
                     <p className="text-slate-500 text-sm">{mainSection.name}</p>
                     <Separator></Separator>

@@ -105,7 +105,7 @@ export const Editor = ({
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         setSubSectionsData={setSubSectionsData}
-        subSectionData={subSectionData}
+        subSectionData={subSectionsData}
         refetchSubSectionsData={refetchSubSectionsData}
       ></ToolBar>
     </div>

@@ -155,6 +155,7 @@ export const ToolBar = ({
           break;
         }
       }
+
       setSubSectionsData((prev) => {
         const copy = { ...prev };
 
@@ -253,7 +254,8 @@ export const ToolBar = ({
         refetchSubSectionsData={refetchSubSectionsData}
         open={openCreateTextInputFieldDialog}
         setOpen={setOpenCreateTextInputFieldDialog}
-        sections={sideBarData}
+        sectionsData={subSectionData}
+        sideBarData={sideBarData}
       ></CreateTextInputFieldDialog>
     </div>
   );
