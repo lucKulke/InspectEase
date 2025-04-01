@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Home,
   Hammer,
@@ -40,6 +40,7 @@ import {
   CreateSubSectionDialog,
   CreateTextInputFieldDialog,
 } from "./Dialogs";
+import { scrollToSection } from "@/utils/general";
 
 interface ToolBarProps {
   setSideBarData: React.Dispatch<
@@ -87,6 +88,22 @@ export const ToolBar = ({
   const [openCreateTextInputFieldDialog, setOpenCreateTextInputFieldDialog] =
     useState<boolean>(false);
 
+  const [lastCreatedSectionId, setLastCreatedSectionId] = useState<string>("");
+
+  useEffect(() => {
+    if (!openCreateMainSectionDialog) {
+      scrollToSection(lastCreatedSectionId as UUID);
+      setLastCreatedSectionId("");
+    }
+  }, [openCreateMainSectionDialog]);
+
+  useEffect(() => {
+    if (!openCreateSubSectionDialog) {
+      scrollToSection(lastCreatedSectionId as UUID);
+      setLastCreatedSectionId("");
+    }
+  }, [openCreateSubSectionDialog]);
+
   const handleCreateMainSection = async (name: string, description: string) => {
     const {
       inspectableObjectInspectionFormMainSection,
@@ -115,13 +132,14 @@ export const ToolBar = ({
           inspectable_object_inspection_form_sub_section: [],
           form_id: inspectableObjectInspectionFormMainSection.form_id,
         };
-      inspectableObjectInspectionFormMainSection;
+
       setSideBarData((prev) => [...prev, newMainSubSection]);
       showNotification(
         "Create main section",
         `Successfully created new main section with id '${inspectableObjectInspectionFormMainSection.id}'`,
         "info"
       );
+      setLastCreatedSectionId(inspectableObjectInspectionFormMainSection.id);
     }
   };
 
@@ -171,6 +189,7 @@ export const ToolBar = ({
         `Successfully created new sub section with id'${inspectableObjectInspectionFormSubSection.id}'`,
         "info"
       );
+      setLastCreatedSectionId(inspectableObjectInspectionFormSubSection.id);
     }
   };
   return (

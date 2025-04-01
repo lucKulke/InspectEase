@@ -239,6 +239,27 @@ export class DBActionsFormBuilderDelete {
     };
   }
 
+  async deleteTextInputField(fieldId: UUID): Promise<{
+    deletedFormTextInputField: IFormCheckboxTaskResponse | null;
+    deletedFormTextInputFieldError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_text_input_field")
+      .delete()
+      .eq("id", fieldId)
+      .select();
+
+    console.log("delete form text input field in db:", data);
+    if (error) {
+      console.error("delete form text input field in db error:", error);
+    }
+
+    return {
+      deletedFormTextInputField: data ? data[0] : null,
+      deletedFormTextInputFieldError: error as SupabaseError | null,
+    };
+  }
+
   async deleteCheckbox(checkboxId: UUID): Promise<{
     deletedFormCheckbox: IFormCheckboxTaskResponse | null;
     deletedFormCheckboxError: SupabaseError | null;

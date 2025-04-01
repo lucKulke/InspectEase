@@ -17,14 +17,17 @@ import {
   IFormCheckboxResponse,
   IFormCheckboxTaskInsert,
   IFormCheckboxTaskResponse,
+  IFormTextInputFieldInsert,
   IFormTextInputFieldResponse,
   IInspectableObjectInspectionFormSubSectionWithData,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import {
   createCheckbox,
   createCheckboxTask,
+  createTextInputField,
   deleteCheckbox,
   deleteCheckboxTask,
+  deleteTextInputField,
   updateCheckboxesOrderNumber,
   updateCheckboxTaskOrder,
   updateTextInputFieldOrder,
@@ -501,6 +504,9 @@ export const TextInputFieldsDialog = ({
 }: TextInputFieldsDialogProps) => {
   const { showNotification } = useNotification();
 
+  const [newTextFieldLabel, setNewTextFieldLabel] = useState<string>("");
+  const [newTextFieldPlaceHolder, setNewTextFieldPlaceHolder] =
+    useState<string>("");
   const updateTextInputFieldOrderInDB = async (
     updatedItems: IFormTextInputFieldResponse[]
   ) => {
@@ -509,7 +515,7 @@ export const TextInputFieldsDialog = ({
 
     if (updatedFormTextInputFieldsError) {
       showNotification(
-        "Main section order",
+        "Text input field order",
         `Error: ${updatedFormTextInputFieldsError.message} (${updatedFormTextInputFieldsError.code})`,
         "error"
       );
@@ -553,6 +559,54 @@ export const TextInputFieldsDialog = ({
 
     return 0;
   }
+
+  const handleCreateTextInputField = async () => {
+    const newField: IFormTextInputFieldInsert = {
+      label: newTextFieldLabel,
+      placeholder_text: newTextFieldPlaceHolder,
+      sub_section_id: subSectionId,
+      order_number:
+        subSectionsData[subSectionId].form_text_input_field.length + 1,
+      annotation_id: null,
+    };
+    const { formTextInputFields, formTextInputFieldsError } =
+      await createTextInputField(newField);
+
+    if (formTextInputFieldsError) {
+      showNotification(
+        "Text input field create",
+        `Error: ${formTextInputFieldsError.message} (${formTextInputFieldsError.code})`,
+        "error"
+      );
+    } else if (formTextInputFields) {
+      const copy = { ...subSectionsData };
+      copy[subSectionId].form_text_input_field.push(formTextInputFields[0]);
+
+      setSubSectionsData(copy);
+    }
+  };
+
+  const handleDeleteTextField = async (id: UUID) => {
+    const { deletedFormTextInputField, deletedFormTextInputFieldError } =
+      await deleteTextInputField(id);
+    if (deletedFormTextInputFieldError) {
+      showNotification(
+        "Text input field delete",
+        `Error: ${deletedFormTextInputFieldError.message} (${deletedFormTextInputFieldError.code})`,
+        "error"
+      );
+    } else if (deletedFormTextInputField) {
+      const copy = { ...subSectionsData };
+      copy[subSectionId].form_text_input_field = reorderItems(
+        copy[subSectionId].form_text_input_field.filter(
+          (field) => field.id !== deletedFormTextInputField.id
+        )
+      );
+
+      setSubSectionsData(copy);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[800px]">
@@ -571,8 +625,8 @@ export const TextInputFieldsDialog = ({
             <Input
               id="new-text-input-field-dialog-label"
               placeholder="Enter text input field label"
-              // value={newTextFieldLabel}
-              // onChange={(e) => setNewTextFieldLabel(e.target.value)}
+              value={newTextFieldLabel}
+              onChange={(e) => setNewTextFieldLabel(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   handleCreateTextInputField();
@@ -582,12 +636,15 @@ export const TextInputFieldsDialog = ({
             <Input
               id="new-text-input-field-dialog-placeholder"
               placeholder="Enter text input field placeholder (optional)"
-
-              // value={newTextFieldPlaceHolder}
-              // onChange={(e) => setNewTextFieldPlaceHolder(e.target.value)}
+              value={newTextFieldPlaceHolder}
+              onChange={(e) => setNewTextFieldPlaceHolder(e.target.value)}
             />
 
-            <Button onClick={() => {}}>
+            <Button
+              onClick={() => {
+                handleCreateTextInputField();
+              }}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add
             </Button>
@@ -621,7 +678,7 @@ export const TextInputFieldsDialog = ({
                     <Label htmlFor={`preview-${field.id}`}>{field.label}</Label>
                   </div>
                 </div>
-                <button onClick={() => handleCheckboxDelete(field.id)}>
+                <button onClick={() => handleDeleteTextField(field.id)}>
                   <Trash2 className="text-red-500 cursor-pointer"></Trash2>
                 </button>
               </Reorder.Item>

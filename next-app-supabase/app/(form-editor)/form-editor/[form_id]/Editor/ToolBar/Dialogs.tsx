@@ -83,6 +83,8 @@ export const CreateMainSectionDialog = ({
           {newMainSectionName.length > 3 ? (
             <Button
               onClick={() => {
+                setNewMainSectionName("");
+                setNewMainSectionDescription("");
                 create(newMainSectionName, newMainSectionDescription);
               }}
             >
@@ -134,6 +136,9 @@ export const CreateSubSectionDialog = ({
       main_section_id: mainSectionId as UUID,
       order_number: subSectionOrderNumber,
     });
+
+    setName("");
+    setDescription("");
   };
 
   return (

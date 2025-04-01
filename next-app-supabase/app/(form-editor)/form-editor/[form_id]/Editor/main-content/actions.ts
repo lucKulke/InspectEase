@@ -7,6 +7,7 @@ import {
   IFormCheckboxResponse,
   IFormCheckboxTaskInsert,
   IFormCheckboxTaskResponse,
+  IFormTextInputFieldInsert,
   IFormTextInputFieldResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { DBActionsFormBuilderUpdate } from "@/lib/database/form-builder/formBuilderUpdate";
@@ -54,11 +55,27 @@ export async function createCheckbox(newCheckbox: IFormCheckboxInsert) {
   return await dbActions.createFormCheckbox(newCheckbox);
 }
 
+export async function createTextInputField(
+  newField: IFormTextInputFieldInsert
+) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderCreate(supabase);
+
+  return await dbActions.createFormTextInputField([newField]);
+}
+
 export async function deleteCheckboxTask(taskId: UUID) {
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderDelete(supabase);
 
   return await dbActions.deleteCheckboxTask(taskId);
+}
+
+export async function deleteTextInputField(fieldId: UUID) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderDelete(supabase);
+
+  return await dbActions.deleteTextInputField(fieldId);
 }
 
 export async function deleteCheckbox(checkboxId: UUID) {

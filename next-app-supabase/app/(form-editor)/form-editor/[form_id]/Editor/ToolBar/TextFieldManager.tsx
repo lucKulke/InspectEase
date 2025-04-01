@@ -251,7 +251,7 @@ export const TextFieldManager = ({
                         }}
                         className={`flex items-center justify-between border-2 rounded-xl p-2 cursor-pointer ${
                           selectedField === textInputField.id
-                            ? "bg-black border-black text-white"
+                            ? "bg-black border-black text-white shadow-xl"
                             : ""
                         }`}
                       >

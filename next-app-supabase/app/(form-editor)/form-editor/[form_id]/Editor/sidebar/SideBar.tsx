@@ -360,7 +360,6 @@ export const FormSideBar = ({
       setMainSubSections(copyOfMainSubSections);
       setNewSubSectionName("");
       setNewSubSectionDescription("");
-      setOpenCreateSubSectionDialog(false);
       showNotification(
         "Create sub section",
         `Successfully created new sub section with id'${inspectableObjectInspectionFormSubSection.id}'`,

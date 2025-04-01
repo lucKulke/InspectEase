@@ -16,6 +16,7 @@ import {
 import { FormConfigCard } from "./FormConfigCard";
 import { ObjectPropertyCard } from "./ObjectPropertyCard";
 import { profileIcons } from "@/lib/availableIcons";
+import { TextInputFieldTrainingList } from "./TextInputFieldTrainingList";
 
 export default async function InspectableObjectProfilePage({
   params,
@@ -88,11 +89,9 @@ export default async function InspectableObjectProfilePage({
               formTypes={inspectableObjectProfileFormTypes}
             ></FormConfigCard>
           </li>
-          {/* {inspectableObjectProfileWithProps && (
-          <ProfileCard
-            profileData={inspectableObjectProfileWithProps}
-          ></ProfileCard>
-        )} */}
+          <li>
+            <TextInputFieldTrainingList></TextInputFieldTrainingList>
+          </li>
         </ul>
       </div>
     </div>
