@@ -13,6 +13,7 @@ import {
   IInspectableObjectProfileInsert,
   IInspectableObjectProfileResponse,
   IInspectableObjectResponse,
+  IStringExtractionTrainingExampleResponse,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
@@ -362,6 +363,29 @@ export class DBActionsFormBuilderDelete {
     return {
       deletedForm: data ? data[0] : null,
       deletedFormError: error as SupabaseError | null,
+    };
+  }
+
+  async deleteStringExtractionTrainingExamples(toDelete: UUID[]): Promise<{
+    deletedStringExtractionExamples:
+      | IStringExtractionTrainingExampleResponse[]
+      | null;
+    deletedStringExtractionExamplesError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("string_extraction_training_example")
+      .delete()
+      .in("id", toDelete)
+      .select();
+
+    console.log("delete training examples in db:", data);
+    if (error) {
+      console.error("delete training examples in db error:", error);
+    }
+
+    return {
+      deletedStringExtractionExamples: data,
+      deletedStringExtractionExamplesError: error as SupabaseError | null,
     };
   }
 }

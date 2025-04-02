@@ -31,6 +31,8 @@ import {
   IInspectableObjectPropertyInsert,
   IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
+  IStringExtractionTrainingExampleInsert,
+  IStringExtractionTrainingExampleResponse,
   IStringExtractionTrainingInsert,
   IStringExtractionTrainingResponse,
 } from "./formBuilderInterfaces";
@@ -505,6 +507,33 @@ export class DBActionsFormBuilderCreate {
     return {
       stringExtractionTraining: data ? data[0] : null,
       stringExtractionTrainingError: error as SupabaseError | null,
+    };
+  }
+
+  async createNewStringExtractionTrainingExamples(
+    examples: IStringExtractionTrainingExampleInsert[]
+  ): Promise<{
+    stringExtractionTrainingExample:
+      | IStringExtractionTrainingExampleResponse[]
+      | null;
+    stringExtractionTrainingExampleError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("string_extraction_training_example")
+      .insert(examples)
+      .select();
+
+    console.log("create new string extraction training examples in db:", data);
+    if (error) {
+      console.error(
+        "create new string extraction training examples in db error: ",
+        error
+      );
+    }
+
+    return {
+      stringExtractionTrainingExample: data,
+      stringExtractionTrainingExampleError: error as SupabaseError | null,
     };
   }
 }

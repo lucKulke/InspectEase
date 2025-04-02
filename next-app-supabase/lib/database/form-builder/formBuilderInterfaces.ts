@@ -217,6 +217,18 @@ export interface IStringExtractionTrainingResponse
   extends IStringExtractionTrainingInsert {
   id: UUID;
   created_at: Date | string;
+  prompt: string | null;
+}
+export interface IStringExtractionTrainingExampleInsert {
+  training_id: UUID;
+  input: string;
+  output: string;
+}
+
+export interface IStringExtractionTrainingExampleResponse
+  extends IStringExtractionTrainingExampleInsert {
+  id: UUID;
+  created_at: Date | string;
 }
 
 export interface IInspectableObjectInspectionFormSubSectionWithData

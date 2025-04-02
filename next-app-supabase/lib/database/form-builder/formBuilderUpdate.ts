@@ -19,10 +19,12 @@ import {
   IInspectableObjectProfileResponse,
   IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
+  IStringExtractionTrainingExampleResponse,
   ISubSectionCore,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
+import { Example } from "@/app/(form-builder)/form-builder/inspectable-object-profiles/[profile_id]/string-extraction-training/[training_id]/ExtractionSection";
 
 export class DBActionsFormBuilderUpdate {
   private supabase: SupabaseClient<any, string, any>;
@@ -381,6 +383,35 @@ export class DBActionsFormBuilderUpdate {
     return {
       updatedFormTextInputFields: data ? data : [],
       updatedFormTextInputFieldsError: error as SupabaseError | null,
+    };
+  }
+
+  async updateStringExtractionExamples(
+    exampleData: {
+      input: string;
+      output: string;
+    },
+    exampleId: UUID
+  ): Promise<{
+    updatedStringExtractionExample:
+      | IStringExtractionTrainingExampleResponse[]
+      | null;
+    updatedStringExtractionExampleError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("string_extraction_training_example")
+      .update(exampleData)
+      .eq("id", exampleId)
+      .select();
+
+    console.log("update string extraction example in db:", data);
+    if (error) {
+      console.error("update string extraction example in db error: ", error);
+    }
+
+    return {
+      updatedStringExtractionExample: data ? data[0] : null,
+      updatedStringExtractionExampleError: error as SupabaseError | null,
     };
   }
 }

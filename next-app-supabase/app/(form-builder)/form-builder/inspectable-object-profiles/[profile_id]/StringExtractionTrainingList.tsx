@@ -23,13 +23,18 @@ import { useNotification } from "@/app/context/NotificationContext";
 import { UUID } from "crypto";
 import { useRouter } from "next/navigation";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
+import { IStringExtractionTrainingResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
+import { Logs } from "lucide-react";
+import Link from "next/link";
 
 interface StringExtractionTrainingListProps {
   profileId: UUID;
+  trainingList: IStringExtractionTrainingResponse[] | null;
 }
 
 export const StringExtractionTrainingList = ({
   profileId,
+  trainingList,
 }: StringExtractionTrainingListProps) => {
   const { showNotification } = useNotification();
   const router = useRouter();
@@ -89,7 +94,28 @@ export const StringExtractionTrainingList = ({
               </Button>
             </div>
 
-            <ul className="space-y-7 mt-7"></ul>
+            <ul className="space-y-3 mt-5">
+              {trainingList &&
+                trainingList.map((training) => (
+                  <li
+                    className="flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-point"
+                    key={training.id}
+                  >
+                    <p>{training.name}</p>
+                    <Link
+                      href={
+                        formBuilderLinks["inspectableObjectProfiles"].href +
+                        "/" +
+                        profileId +
+                        "/string-extraction-training/" +
+                        training.id
+                      }
+                    >
+                      <Logs></Logs>
+                    </Link>
+                  </li>
+                ))}
+            </ul>
           </CardContent>
         </Card>
 
@@ -115,6 +141,7 @@ export const StringExtractionTrainingList = ({
                 />
               </div>
             </div>
+
             <DialogFooter>
               {newTrainingsLabel.length > 3 ? (
                 <Button onClick={() => handleCreateNewTraining()}>

@@ -51,6 +51,12 @@ export default async function InspectableObjectProfilePage({
       ></ErrorHandler>
     );
 
+  const { stringExtractionTrainings, stringExtractionTrainingsError } =
+    await dbActions.fetchStringExtractionTrainings(profileId);
+
+  if (stringExtractionTrainingsError)
+    return <ErrorHandler error={stringExtractionTrainingsError}></ErrorHandler>;
+
   if (!inspectableObjectProfileWithObjProps)
     return <div>No data available</div>;
   if (!inspectableObjectProfileFormTypes) return <div>No data available</div>;
@@ -91,6 +97,7 @@ export default async function InspectableObjectProfilePage({
           </li>
           <li>
             <StringExtractionTrainingList
+              trainingList={stringExtractionTrainings}
               profileId={profileId}
             ></StringExtractionTrainingList>
           </li>
