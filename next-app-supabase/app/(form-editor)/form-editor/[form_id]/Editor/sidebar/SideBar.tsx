@@ -108,11 +108,31 @@ export const FormSideBar = ({
   const [newSubSectionDescription, setNewSubSectionDescription] =
     useState<string>("");
 
+  const [lastSelectedSection, setLastSelectedSection] = useState<UUID>();
+
   const [selectedSubSection, setSelectedSubSection] =
     useState<IInspectableObjectInspectionFormSubSectionResponse>();
 
   const [selectedMainSection, setSelectedMainSection] =
     useState<IInspectableObjectInspectionFormMainSectionResponse>();
+
+  useEffect(() => {
+    if (!openCreateSubSectionDialog && lastSelectedSection) {
+      scrollToSection(lastSelectedSection);
+    }
+  }, [openCreateSubSectionDialog]);
+
+  useEffect(() => {
+    if (!openUpdateMainSectionDialog && lastSelectedSection) {
+      scrollToSection(lastSelectedSection);
+    }
+  }, [openUpdateMainSectionDialog]);
+
+  useEffect(() => {
+    if (!openUpdateSubSectionDialog && lastSelectedSection) {
+      scrollToSection(lastSelectedSection);
+    }
+  }, [openUpdateSubSectionDialog]);
 
   const updateMainSectionOrderInDB = async (
     updatedItems: IInspectableObjectInspectionFormMainSectionWithSubSection[]
@@ -195,6 +215,7 @@ export const FormSideBar = ({
     newName: string,
     newDescription: string
   ) => {
+    setLastSelectedSection(mainSection.id);
     console.log("update main section");
     const {
       updatedInspectableObjectInspectionFormMainSection,
@@ -356,7 +377,7 @@ export const FormSideBar = ({
 
         return copy;
       });
-
+      setLastSelectedSection(inspectableObjectInspectionFormSubSection.id);
       setMainSubSections(copyOfMainSubSections);
       setNewSubSectionName("");
       setNewSubSectionDescription("");
@@ -421,6 +442,7 @@ export const FormSideBar = ({
     newName: string,
     newDescription: string
   ) => {
+    setLastSelectedSection(subSection.id);
     const {
       updatedInspectableObjectInspectionFormSubSection,
       updatedInspectableObjectInspectionFormSubSectionError,

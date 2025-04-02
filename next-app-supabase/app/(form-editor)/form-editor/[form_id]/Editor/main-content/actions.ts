@@ -84,3 +84,24 @@ export async function deleteCheckbox(checkboxId: UUID) {
 
   return await dbActions.deleteCheckbox(checkboxId);
 }
+
+export async function deleteAllTasks(groupId: UUID) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderDelete(supabase);
+
+  return await dbActions.deleteAllCheckboxTasks(groupId);
+}
+
+export async function deleteCheckboxGroup(groupId: UUID) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderDelete(supabase);
+
+  return await dbActions.deleteCheckboxGroup(groupId);
+}
+
+export async function deleteAllTextInputFields(subSectionId: UUID) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderDelete(supabase);
+
+  return await dbActions.deleteAllTextInputFields(subSectionId);
+}

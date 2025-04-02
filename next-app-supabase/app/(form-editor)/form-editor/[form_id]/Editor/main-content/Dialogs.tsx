@@ -76,9 +76,19 @@ export const TaskDialog = ({
   const [newTaskDescription, setNewTaskDescription] = useState<string>("");
 
   const currentTaskListLenght = () => {
-    return subSectionsData[subSectionId].form_checkbox_group.filter(
+    const checkboxGroup = subSectionsData[
+      subSectionId
+    ].form_checkbox_group.filter(
       (group) => group.id === currentCheckboxGroupId
-    )[0].form_checkbox_task.length;
+    )[0];
+
+    if (checkboxGroup) {
+      return subSectionsData[subSectionId].form_checkbox_group.filter(
+        (group) => group.id === currentCheckboxGroupId
+      )[0].form_checkbox_task.length;
+    } else {
+      return 0;
+    }
   };
 
   const handleCreateTask = async () => {
@@ -104,28 +114,6 @@ export const TaskDialog = ({
         .filter((group) => group.id === currentCheckboxGroupId)[0]
         .form_checkbox_task.push(formCheckboxTask);
 
-      setSubSectionsData(copy);
-    }
-  };
-
-  const handleDeleteTask = async (taskId: UUID) => {
-    const { deletedFormCheckboxTask, deletedFormCheckboxTaskError } =
-      await deleteCheckboxTask(taskId);
-    if (deletedFormCheckboxTaskError) {
-      showNotification(
-        "Delete task",
-        `Error: ${deletedFormCheckboxTaskError.message} (${deletedFormCheckboxTaskError.code})`,
-        "error"
-      );
-    } else if (deletedFormCheckboxTask) {
-      const copy = { ...subSectionsData };
-      copy[subSectionId].form_checkbox_group.filter(
-        (group) => group.id === currentCheckboxGroupId
-      )[0].form_checkbox_task = copy[subSectionId].form_checkbox_group
-        .filter((group) => group.id === currentCheckboxGroupId)[0]
-        .form_checkbox_task.filter(
-          (task) => task.id !== deletedFormCheckboxTask.id
-        );
       setSubSectionsData(copy);
     }
   };
@@ -181,6 +169,43 @@ export const TaskDialog = ({
     debouncedMainSectionUpdate(updatedItems);
   };
 
+  const handleDeleteTask = async (taskId: UUID) => {
+    const { deletedFormCheckboxTask, deletedFormCheckboxTaskError } =
+      await deleteCheckboxTask(taskId);
+    if (deletedFormCheckboxTaskError) {
+      showNotification(
+        "Delete task",
+        `Error: ${deletedFormCheckboxTaskError.message} (${deletedFormCheckboxTaskError.code})`,
+        "error"
+      );
+    } else if (deletedFormCheckboxTask) {
+      const copy = { ...subSectionsData };
+
+      const newOrder = reorderItems(
+        copy[subSectionId].form_checkbox_group
+          .filter((group) => group.id === currentCheckboxGroupId)[0]
+          .form_checkbox_task.filter(
+            (task) => task.id !== deletedFormCheckboxTask.id
+          )
+      );
+
+      copy[subSectionId].form_checkbox_group.filter(
+        (group) => group.id === currentCheckboxGroupId
+      )[0].form_checkbox_task = newOrder;
+
+      debouncedMainSectionUpdate(newOrder);
+      setSubSectionsData(copy);
+    }
+  };
+
+  function groupExists() {
+    return subSectionsData[subSectionId].form_checkbox_group.filter(
+      (group) => group.id === currentCheckboxGroupId
+    )[0]
+      ? true
+      : false;
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[800px]">
@@ -191,7 +216,7 @@ export const TaskDialog = ({
             section.
           </DialogDescription>
         </DialogHeader>
-        {currentCheckboxGroupId && (
+        {groupExists() && (
           <>
             <div>
               <Label htmlFor={`task-dialog-${currentCheckboxGroupId}`}>
@@ -314,7 +339,6 @@ export const CheckboxGroupDialog = ({
   };
 
   const handleCheckboxesReorder = (newOrder: IFormCheckboxResponse[]) => {
-    console.log("reorder");
     const updatedItems = reorderItems(newOrder);
 
     const copy = { ...subSectionsData };
@@ -389,10 +413,18 @@ export const CheckboxGroupDialog = ({
     }
   };
 
+  function groupExists() {
+    return subSectionsData[subSectionId].form_checkbox_group.filter(
+      (group) => group.id === currentCheckboxGroupId
+    )[0]
+      ? true
+      : false;
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[800px]">
-        {currentCheckboxGroupId && (
+        {groupExists() && (
           <>
             <DialogHeader>
               <DialogTitle>
@@ -538,7 +570,6 @@ export const TextInputFieldsDialog = ({
   const handleTextInputFieldReorder = (
     newOrder: IFormTextInputFieldResponse[]
   ) => {
-    console.log("reorder");
     const updatedItems = reorderItems(newOrder);
 
     const copy = { ...subSectionsData };
@@ -597,12 +628,15 @@ export const TextInputFieldsDialog = ({
       );
     } else if (deletedFormTextInputField) {
       const copy = { ...subSectionsData };
-      copy[subSectionId].form_text_input_field = reorderItems(
+
+      const newOrder = reorderItems(
         copy[subSectionId].form_text_input_field.filter(
           (field) => field.id !== deletedFormTextInputField.id
         )
       );
+      copy[subSectionId].form_text_input_field = newOrder;
 
+      debouncedTextInputFieldUpdate(newOrder);
       setSubSectionsData(copy);
     }
   };

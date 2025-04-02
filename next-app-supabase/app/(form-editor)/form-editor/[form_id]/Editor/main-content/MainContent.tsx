@@ -18,6 +18,20 @@ import {
   TaskDialog,
   TextInputFieldsDialog,
 } from "./Dialogs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
+import { deleteAllTextInputFields, deleteCheckboxGroup } from "./actions";
+import { useNotification } from "@/app/context/NotificationContext";
 
 interface MainContentProps {
   mainSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
@@ -37,6 +51,9 @@ export const MainContent = ({
   subSectionsData,
   setSubSectionsData,
 }: MainContentProps) => {
+  const { showNotification } = useNotification();
+  const [openDeleteAllTasksDialog, setOpenDeleteAllTasksDialog] =
+    useState<boolean>(false);
   const [openTaskDialog, setOpenTaskDialog] = useState<boolean>(false);
   const [openCheckboxGroupDialog, setOpenCheckboxGroupDialog] =
     useState<boolean>(false);
@@ -51,6 +68,58 @@ export const MainContent = ({
     useState<UUID>();
 
   const [selectedSubSectionId, setSelectedSubSectionId] = useState<UUID>();
+
+  const handleDelteCheckboxGroup = async (
+    groupId: UUID,
+    subSectionId: UUID
+  ) => {
+    const { deletedFormCheckboxGroup, deletedFormCheckboxGroupError } =
+      await deleteCheckboxGroup(groupId);
+
+    if (deletedFormCheckboxGroupError) {
+      showNotification(
+        "Delte checkbox group",
+        `Error: ${deletedFormCheckboxGroupError.message} (${deletedFormCheckboxGroupError.code})`,
+        "error"
+      );
+    } else if (deletedFormCheckboxGroup) {
+      const copy = { ...subSectionsData };
+      copy[subSectionId].form_checkbox_group = copy[
+        subSectionId
+      ].form_checkbox_group.filter((group) => group.id !== groupId);
+
+      setSubSectionsData(copy);
+      showNotification(
+        "Delte checkbox group",
+        `Successfully deleted checkbox group '${groupId}'`,
+        "info"
+      );
+    }
+  };
+
+  const handleDeleteAllTextInputFields = async (subSectionId: UUID) => {
+    const { deletedFormTextInputFields, deletedFormTextInputFieldsError } =
+      await deleteAllTextInputFields(subSectionId);
+    if (deletedFormTextInputFieldsError) {
+      showNotification(
+        "Delte text input fields",
+        `Error: ${deletedFormTextInputFieldsError.message} (${deletedFormTextInputFieldsError.code})`,
+        "error"
+      );
+    } else if (deletedFormTextInputFields) {
+      const copy = { ...subSectionsData };
+      copy[subSectionId].form_checkbox_group = copy[
+        subSectionId
+      ].form_text_input_field = [];
+
+      setSubSectionsData(copy);
+      showNotification(
+        "Delte text input fields",
+        `Successfully deleted all text input fields for sub section '${subSectionId}'`,
+        "info"
+      );
+    }
+  };
 
   return (
     <div className="w-full border-2 rounded-r-xl p-4 border-gray-800 ">
@@ -94,6 +163,10 @@ export const MainContent = ({
                         setOpenTextInputFieldDialog={
                           setOpenTextInputFieldDialog
                         }
+                        handleDelteCheckboxGroup={handleDelteCheckboxGroup}
+                        handleDeleteAllTextInputFields={
+                          handleDeleteAllTextInputFields
+                        }
                         setSelectedCheckboxGroupId={setSelectedCheckboxGroupId}
                         setSelectedSubSectionId={setSelectedSubSectionId}
                       />
@@ -124,6 +197,24 @@ export const MainContent = ({
             subSectionsData={subSectionsData}
             subSectionId={selectedSubSectionId}
           />
+          {/* <AlertDialog
+            open={openDeleteAllTasksDialog}
+            onOpenChange={setOpenDeleteAllTasksDialog}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will delete all tasks at
+                  once.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel >Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => handleDeleteAllTasks()}>Continue</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog> */}
         </>
       )}
       {selectedSubSectionId && (

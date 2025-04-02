@@ -29,15 +29,17 @@ export const TextInputFieldTrainingList = () => {
       <div>
         <Card>
           <CardHeader>
-            <CardTitle>Form types</CardTitle>
-            <CardDescription>config the form types</CardDescription>
+            <CardTitle>Text Extraction Training</CardTitle>
+            <CardDescription>
+              train ai to extract the correct substrings
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center">
               <p className="text-sm text-slate-600">Types</p>
               <Button
                 onClick={() => {
-                  setOpenCreateFormTypeDialog(true);
+                  setOpenCreateNewTrainingDialog(true);
                 }}
               >
                 Create
@@ -78,7 +80,6 @@ export const TextInputFieldTrainingList = () => {
           </DialogContent>
         </Dialog>
       </div>
-      );
     </div>
   );
 };

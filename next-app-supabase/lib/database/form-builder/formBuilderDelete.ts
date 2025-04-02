@@ -1,6 +1,8 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  IFormCheckboxGroupResponse,
   IFormCheckboxTaskResponse,
+  IFormTextInputFieldResponse,
   IInspectableObjectInspectionFormResponse,
   IInspectableObjectInspectionFormSubSectionInsert,
   IInspectableObjectInspectionFormSubSectionResponse,
@@ -281,6 +283,67 @@ export class DBActionsFormBuilderDelete {
     };
   }
 
+  async deleteAllCheckboxTasks(groupId: UUID): Promise<{
+    deletedFormCheckboxTasks: IFormCheckboxTaskResponse[] | null;
+    deletedFormCheckboxTasksError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_checkbox_task")
+      .delete()
+      .eq("group_id", groupId)
+      .select();
+
+    console.log("delete all form checkbox tasks in db:", data);
+    if (error) {
+      console.error("delete all form checkbox tasks in db error:", error);
+    }
+
+    return {
+      deletedFormCheckboxTasks: data,
+      deletedFormCheckboxTasksError: error as SupabaseError | null,
+    };
+  }
+  async deleteCheckboxGroup(groupId: UUID): Promise<{
+    deletedFormCheckboxGroup: IFormCheckboxGroupResponse[] | null;
+    deletedFormCheckboxGroupError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_checkbox_group")
+      .delete()
+      .eq("id", groupId)
+      .select();
+
+    console.log("delete checkbox group in db:", data);
+    if (error) {
+      console.error("delete checkbox group in db error:", error);
+    }
+
+    return {
+      deletedFormCheckboxGroup: data,
+      deletedFormCheckboxGroupError: error as SupabaseError | null,
+    };
+  }
+
+  async deleteAllTextInputFields(subSectionId: UUID): Promise<{
+    deletedFormTextInputFields: IFormTextInputFieldResponse[] | null;
+    deletedFormTextInputFieldsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_text_input_field")
+      .delete()
+      .eq("sub_section_id", subSectionId)
+      .select();
+
+    console.log("delete text input fields in db:", data);
+    if (error) {
+      console.error("delete text input fields in db error:", error);
+    }
+
+    return {
+      deletedFormTextInputFields: data,
+      deletedFormTextInputFieldsError: error as SupabaseError | null,
+    };
+  }
   async deleteEntireForm(formId: UUID): Promise<{
     deletedForm: IInspectableObjectInspectionFormResponse | null;
     deletedFormError: SupabaseError | null;

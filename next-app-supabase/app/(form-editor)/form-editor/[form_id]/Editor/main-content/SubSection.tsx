@@ -30,7 +30,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useNotification } from "@/app/context/NotificationContext";
 import { Spinner } from "@/components/Spinner";
 
-import { updateCheckboxesOrderNumber } from "./actions";
+import {
+  deleteAllTasks,
+  deleteCheckbox,
+  deleteCheckboxGroup,
+  updateCheckboxesOrderNumber,
+} from "./actions";
 import { flushSync } from "react-dom";
 import {
   Card,
@@ -80,6 +85,7 @@ interface SubSectionProps {
       Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>
     >
   >;
+
   setOpenTaskDialog: React.Dispatch<React.SetStateAction<boolean>>;
   setOpenCheckboxGroupDialog: React.Dispatch<React.SetStateAction<boolean>>;
   setOpenTextInputFieldDialog: React.Dispatch<React.SetStateAction<boolean>>;
@@ -91,6 +97,11 @@ interface SubSectionProps {
       `${string}-${string}-${string}-${string}-${string}` | undefined
     >
   >;
+  handleDelteCheckboxGroup: (
+    groupId: UUID,
+    subSectionId: UUID
+  ) => Promise<void>;
+  handleDeleteAllTextInputFields: (subSectionId: UUID) => Promise<void>;
 }
 
 export const SubSection = ({
@@ -103,6 +114,8 @@ export const SubSection = ({
   setSelectedCheckboxGroupId,
   setSelectedSubSectionId,
   setOpenTextInputFieldDialog,
+  handleDelteCheckboxGroup,
+  handleDeleteAllTextInputFields,
 }: SubSectionProps) => {
   const { showNotification } = useNotification();
 
@@ -127,6 +140,31 @@ export const SubSection = ({
 
     return 0;
   }
+
+  const handleDelteAllTasks = async (groupId: UUID) => {
+    const { deletedFormCheckboxTasks, deletedFormCheckboxTasksError } =
+      await deleteAllTasks(groupId);
+    if (deletedFormCheckboxTasksError) {
+      showNotification(
+        "Delte all tasks",
+        `Error: ${deletedFormCheckboxTasksError.message} (${deletedFormCheckboxTasksError.code})`,
+        "error"
+      );
+    } else if (deletedFormCheckboxTasks) {
+      const copy = { ...sectionData };
+      copy.form_checkbox_group.filter(
+        (group) => group.id === groupId
+      )[0].form_checkbox_task = [];
+
+      setSectionData(copy);
+      showNotification(
+        "Delte all tasks",
+        `Successfully deleted all tasks for checkbox group '${groupId}'`,
+        "info"
+      );
+    }
+  };
+
   return (
     <div className="border-2 hover:border-black rounded-xl p-2">
       <TooltipProvider>
@@ -177,7 +215,12 @@ export const SubSection = ({
                     >
                       update
                     </ContextMenuItem>
-                    <ContextMenuItem className="text-red-500 flex justify-between">
+                    <ContextMenuItem
+                      className="text-red-500 flex justify-between"
+                      onClick={() => {
+                        handleDelteAllTasks(group.id);
+                      }}
+                    >
                       delete <Trash2></Trash2>
                     </ContextMenuItem>
                   </ContextMenuContent>
@@ -261,7 +304,12 @@ export const SubSection = ({
                 >
                   update
                 </ContextMenuItem>
-                <ContextMenuItem className="text-red-500 flex justify-between">
+                <ContextMenuItem
+                  className="text-red-500 flex justify-between"
+                  onClick={() =>
+                    handleDelteCheckboxGroup(group.id, subSectionId)
+                  }
+                >
                   delete <Trash2></Trash2>
                 </ContextMenuItem>
               </ContextMenuContent>
@@ -319,7 +367,10 @@ export const SubSection = ({
               >
                 update
               </ContextMenuItem>
-              <ContextMenuItem className="text-red-500 flex justify-between">
+              <ContextMenuItem
+                className="text-red-500 flex justify-between"
+                onClick={() => handleDeleteAllTextInputFields(subSectionId)}
+              >
                 delete <Trash2></Trash2>
               </ContextMenuItem>
             </ContextMenuContent>
