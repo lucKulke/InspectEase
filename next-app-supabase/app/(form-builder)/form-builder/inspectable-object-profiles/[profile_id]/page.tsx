@@ -16,7 +16,7 @@ import {
 import { FormConfigCard } from "./FormConfigCard";
 import { ObjectPropertyCard } from "./ObjectPropertyCard";
 import { profileIcons } from "@/lib/availableIcons";
-import { TextInputFieldTrainingList } from "./TextInputFieldTrainingList";
+import { StringExtractionTrainingList } from "./StringExtractionTrainingList";
 
 export default async function InspectableObjectProfilePage({
   params,
@@ -90,7 +90,9 @@ export default async function InspectableObjectProfilePage({
             ></FormConfigCard>
           </li>
           <li>
-            <TextInputFieldTrainingList></TextInputFieldTrainingList>
+            <StringExtractionTrainingList
+              profileId={profileId}
+            ></StringExtractionTrainingList>
           </li>
         </ul>
       </div>

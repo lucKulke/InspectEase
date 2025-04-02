@@ -18,11 +18,54 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-export const TextInputFieldTrainingList = () => {
+import { createNewStringExtractionTraining } from "./actions";
+import { useNotification } from "@/app/context/NotificationContext";
+import { UUID } from "crypto";
+import { useRouter } from "next/navigation";
+import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
+
+interface StringExtractionTrainingListProps {
+  profileId: UUID;
+}
+
+export const StringExtractionTrainingList = ({
+  profileId,
+}: StringExtractionTrainingListProps) => {
+  const { showNotification } = useNotification();
+  const router = useRouter();
   const [openCreateNewTrainingDialog, setOpenCreateNewTrainingDialog] =
     useState<boolean>(false);
 
   const [newTrainingsLabel, setNewTrainingsLabel] = useState<string>("");
+
+  const handleCreateNewTraining = async () => {
+    const { stringExtractionTraining, stringExtractionTrainingError } =
+      await createNewStringExtractionTraining({
+        name: newTrainingsLabel,
+        profile_id: profileId,
+      });
+
+    if (stringExtractionTrainingError) {
+      showNotification(
+        "Create new training",
+        `Error: ${stringExtractionTrainingError.message} (${stringExtractionTrainingError.code})`,
+        "error"
+      );
+    } else if (stringExtractionTraining) {
+      showNotification(
+        "Create new training",
+        `Successfully create new training with id '${stringExtractionTraining.id}'`,
+        "info"
+      );
+      router.push(
+        formBuilderLinks["inspectableObjectProfiles"].href +
+          "/" +
+          profileId +
+          "/string-extraction-training/" +
+          stringExtractionTraining.id
+      );
+    }
+  };
 
   return (
     <div>
@@ -36,7 +79,7 @@ export const TextInputFieldTrainingList = () => {
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center">
-              <p className="text-sm text-slate-600">Types</p>
+              <p className="text-sm text-slate-600">Trainings</p>
               <Button
                 onClick={() => {
                   setOpenCreateNewTrainingDialog(true);
@@ -73,9 +116,15 @@ export const TextInputFieldTrainingList = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button disabled variant="outline">
-                Save changes
-              </Button>
+              {newTrainingsLabel.length > 3 ? (
+                <Button onClick={() => handleCreateNewTraining()}>
+                  Create
+                </Button>
+              ) : (
+                <Button disabled variant="outline">
+                  Create
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>

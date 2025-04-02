@@ -8,6 +8,7 @@ import {
   IInspectableObjectProfileFormTypePropertyResponse,
   IInspectableObjectProfileObjPropertyInsert,
   IInspectableObjectProfileObjPropertyResponse,
+  IStringExtractionTrainingInsert,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { DBActionsFormBuilderCreate } from "@/lib/database/form-builder/formBuilderCreate";
 import { DBActionsFormBuilderUpdate } from "@/lib/database/form-builder/formBuilderUpdate";
@@ -116,4 +117,13 @@ export async function deleteFormType(formTypeId: UUID) {
   const dbActions = new DBActionsFormBuilderDelete(supabase);
 
   return await dbActions.deleteProfileFormType(formTypeId);
+}
+
+export async function createNewStringExtractionTraining(
+  newTraining: IStringExtractionTrainingInsert
+) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderCreate(supabase);
+
+  return await dbActions.createNewStringExtractionTraining(newTraining);
 }

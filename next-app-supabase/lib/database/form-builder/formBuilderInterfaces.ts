@@ -208,7 +208,16 @@ export interface IInspectableObjectInspectionFormSubSectionResponse
   created_at: Date | string;
 }
 
-// test ######
+export interface IStringExtractionTrainingInsert {
+  name: string;
+  profile_id: UUID;
+}
+
+export interface IStringExtractionTrainingResponse
+  extends IStringExtractionTrainingInsert {
+  id: UUID;
+  created_at: Date | string;
+}
 
 export interface IInspectableObjectInspectionFormSubSectionWithData
   extends IInspectableObjectInspectionFormSubSectionInsert {

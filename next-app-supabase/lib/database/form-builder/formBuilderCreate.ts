@@ -31,6 +31,8 @@ import {
   IInspectableObjectPropertyInsert,
   IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
+  IStringExtractionTrainingInsert,
+  IStringExtractionTrainingResponse,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
@@ -478,6 +480,31 @@ export class DBActionsFormBuilderCreate {
     return {
       formTextInputFields: data,
       formTextInputFieldsError: error as SupabaseError | null,
+    };
+  }
+
+  async createNewStringExtractionTraining(
+    newTraining: IStringExtractionTrainingInsert
+  ): Promise<{
+    stringExtractionTraining: IStringExtractionTrainingResponse | null;
+    stringExtractionTrainingError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("string_extraction_training")
+      .insert(newTraining)
+      .select();
+
+    console.log("create new string extraction training in db:", data);
+    if (error) {
+      console.error(
+        "create new string extraction training in db error: ",
+        error
+      );
+    }
+
+    return {
+      stringExtractionTraining: data ? data[0] : null,
+      stringExtractionTrainingError: error as SupabaseError | null,
     };
   }
 }
