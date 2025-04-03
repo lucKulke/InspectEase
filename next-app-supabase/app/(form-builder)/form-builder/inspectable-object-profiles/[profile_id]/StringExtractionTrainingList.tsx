@@ -15,16 +15,28 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { createNewStringExtractionTraining } from "./actions";
+import {
+  createNewStringExtractionTraining,
+  deleteStringExtractionTraining,
+} from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { UUID } from "crypto";
 import { useRouter } from "next/navigation";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 import { IStringExtractionTrainingResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
-import { Logs } from "lucide-react";
+import { Ellipsis, Logs, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 interface StringExtractionTrainingListProps {
@@ -40,6 +52,9 @@ export const StringExtractionTrainingList = ({
   const router = useRouter();
   const [openCreateNewTrainingDialog, setOpenCreateNewTrainingDialog] =
     useState<boolean>(false);
+  const [list, setList] = useState<IStringExtractionTrainingResponse[]>(
+    trainingList ? trainingList : []
+  );
 
   const [newTrainingsLabel, setNewTrainingsLabel] = useState<string>("");
 
@@ -72,6 +87,29 @@ export const StringExtractionTrainingList = ({
     }
   };
 
+  const handleDeleteStringExtractionTraining = async (trainingId: UUID) => {
+    console.log("id", trainingId);
+    const {
+      deletedStringExtractionTraining,
+      deletedStringExtractionTrainingError,
+    } = await deleteStringExtractionTraining(trainingId);
+
+    if (deletedStringExtractionTrainingError) {
+      showNotification(
+        "Delete training",
+        `Error: ${deletedStringExtractionTrainingError.message} (${deletedStringExtractionTrainingError.code})`,
+        "error"
+      );
+    } else if (deletedStringExtractionTraining) {
+      showNotification(
+        "Delete training",
+        `Successfully deleted training with id '${deletedStringExtractionTraining.id}'`,
+        "info"
+      );
+      setList(list.filter((training) => training.id !== trainingId));
+    }
+  };
+
   return (
     <div>
       <div>
@@ -95,24 +133,45 @@ export const StringExtractionTrainingList = ({
             </div>
 
             <ul className="space-y-3 mt-5">
-              {trainingList &&
-                trainingList.map((training) => (
+              {list &&
+                list.map((training) => (
                   <li
                     className="flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-point"
                     key={training.id}
                   >
                     <p>{training.name}</p>
-                    <Link
-                      href={
-                        formBuilderLinks["inspectableObjectProfiles"].href +
-                        "/" +
-                        profileId +
-                        "/string-extraction-training/" +
-                        training.id
-                      }
-                    >
-                      <Logs></Logs>
-                    </Link>
+
+                    <DropdownMenu modal={false}>
+                      <DropdownMenuTrigger>
+                        <Ellipsis className="text-slate-500 "></Ellipsis>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>
+                          <Link
+                            href={
+                              formBuilderLinks["inspectableObjectProfiles"]
+                                .href +
+                              "/" +
+                              profileId +
+                              "/string-extraction-training/" +
+                              training.id
+                            }
+                          >
+                            view
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() =>
+                            handleDeleteStringExtractionTraining(training.id)
+                          }
+                        >
+                          delete <Trash2></Trash2>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </li>
                 ))}
             </ul>

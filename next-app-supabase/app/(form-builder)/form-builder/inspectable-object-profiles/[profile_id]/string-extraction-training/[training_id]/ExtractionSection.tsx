@@ -29,6 +29,7 @@ import {
   fetchExistingExamples,
   insertNewExamples,
   updateExamples,
+  updateStringExtractionTrainingPrompt,
 } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { Spinner } from "@/components/Spinner";
@@ -118,7 +119,22 @@ export const ExtractionSection = ({
     setSomethingChanged(false);
     try {
       if (newPrompt !== prompt) {
-        const {} = updateTextExtractionTrainingPrompt();
+        const {
+          updatedStringExtractionTrainingPrompt,
+          updatedStringExtractionTrainingPromptError,
+        } = await updateStringExtractionTrainingPrompt(newPrompt, trainingId);
+
+        if (updatedStringExtractionTrainingPromptError) {
+          showNotification(
+            "fetch examples",
+            `Error: ${updatedStringExtractionTrainingPromptError.message} (${updatedStringExtractionTrainingPromptError.code})`,
+            "error"
+          );
+          throw updatedStringExtractionTrainingPromptError;
+        } else if (updatedStringExtractionTrainingPrompt) {
+          if (updatedStringExtractionTrainingPrompt.prompt)
+            setPrompt(updatedStringExtractionTrainingPrompt.prompt);
+        }
       }
       const {
         stringExtractionTrainingExamples,
@@ -193,7 +209,7 @@ export const ExtractionSection = ({
   };
 
   return (
-    <main className="container mx-auto py-8 px-4">
+    <main className="container mx-auto py-2 px-4">
       <h1 className="text-3xl font-bold mb-6">
         AI String Extraction Trainer: {stringExtractionTraining?.name}
       </h1>
@@ -218,14 +234,6 @@ export const ExtractionSection = ({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p
-                className={`text-sm text-slate-500 ${
-                  newPrompt.length > 5 && "opacity-0"
-                }`}
-              >
-                (min 6 chars)
-              </p>
-
               <Textarea
                 placeholder="E.g., Extract the measurement value from the text."
                 value={newPrompt}

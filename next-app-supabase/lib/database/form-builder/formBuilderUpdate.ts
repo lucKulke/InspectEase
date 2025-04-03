@@ -20,6 +20,7 @@ import {
   IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
   IStringExtractionTrainingExampleResponse,
+  IStringExtractionTrainingResponse,
   ISubSectionCore,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
@@ -412,6 +413,32 @@ export class DBActionsFormBuilderUpdate {
     return {
       updatedStringExtractionExample: data ? data[0] : null,
       updatedStringExtractionExampleError: error as SupabaseError | null,
+    };
+  }
+  async updateStringExtractionTrainingPrompt(
+    prompt: string,
+    trainingId: UUID
+  ): Promise<{
+    updatedStringExtractionTrainingPrompt: IStringExtractionTrainingResponse | null;
+    updatedStringExtractionTrainingPromptError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("string_extraction_training")
+      .update({ prompt: prompt })
+      .eq("id", trainingId)
+      .select();
+
+    console.log("update string extraction training prompt in db:", data);
+    if (error) {
+      console.error(
+        "update string extraction training prompt in db error: ",
+        error
+      );
+    }
+
+    return {
+      updatedStringExtractionTrainingPrompt: data ? data[0] : null,
+      updatedStringExtractionTrainingPromptError: error as SupabaseError | null,
     };
   }
 }

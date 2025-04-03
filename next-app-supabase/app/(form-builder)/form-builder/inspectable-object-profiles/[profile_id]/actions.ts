@@ -127,3 +127,10 @@ export async function createNewStringExtractionTraining(
 
   return await dbActions.createNewStringExtractionTraining(newTraining);
 }
+
+export async function deleteStringExtractionTraining(trainingId: UUID) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderDelete(supabase);
+
+  return await dbActions.deleteStringExtractionTraining(trainingId);
+}

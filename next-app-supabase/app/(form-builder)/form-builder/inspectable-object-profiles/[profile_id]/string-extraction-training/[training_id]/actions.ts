@@ -42,3 +42,16 @@ export async function insertNewExamples(
 
   return await dbActions.createNewStringExtractionTrainingExamples(toInsert);
 }
+
+export async function updateStringExtractionTrainingPrompt(
+  newPrompt: string,
+  trainingId: UUID
+) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderUpdate(supabase);
+
+  return await dbActions.updateStringExtractionTrainingPrompt(
+    newPrompt,
+    trainingId
+  );
+}

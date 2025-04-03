@@ -14,6 +14,7 @@ import {
   IInspectableObjectProfileResponse,
   IInspectableObjectResponse,
   IStringExtractionTrainingExampleResponse,
+  IStringExtractionTrainingResponse,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
@@ -386,6 +387,27 @@ export class DBActionsFormBuilderDelete {
     return {
       deletedStringExtractionExamples: data,
       deletedStringExtractionExamplesError: error as SupabaseError | null,
+    };
+  }
+
+  async deleteStringExtractionTraining(trainingId: UUID): Promise<{
+    deletedStringExtractionTraining: IStringExtractionTrainingResponse | null;
+    deletedStringExtractionTrainingError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("string_extraction_training")
+      .delete()
+      .eq("id", trainingId)
+      .select();
+
+    console.log("delete training in db:", data);
+    if (error) {
+      console.error("delete training in db error:", error);
+    }
+
+    return {
+      deletedStringExtractionTraining: data ? data[0] : null,
+      deletedStringExtractionTrainingError: error as SupabaseError | null,
     };
   }
 }

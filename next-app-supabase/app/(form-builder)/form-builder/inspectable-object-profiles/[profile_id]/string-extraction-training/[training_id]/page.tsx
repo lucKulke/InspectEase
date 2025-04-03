@@ -3,6 +3,9 @@ import { ExtractionSection } from "./ExtractionSection";
 import { createClient } from "@/utils/supabase/server";
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import { ErrorHandler } from "@/components/ErrorHandler";
+import Link from "next/link";
+import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
+import { ArrowBigLeft } from "lucide-react";
 
 export default async function TextInputFieldTrainingPage({
   params,
@@ -34,10 +37,20 @@ export default async function TextInputFieldTrainingPage({
     );
 
   return (
-    <ExtractionSection
-      stringExtractionTraining={stringExtractionTraining}
-      stringExtractionTrainingExamples={stringExtractionTrainingExamples}
-      trainingId={trainingId}
-    ></ExtractionSection>
+    <div>
+      <Link
+        className="flex items-center mb-2"
+        href={
+          formBuilderLinks["inspectableObjectProfiles"].href + "/" + profileId
+        }
+      >
+        <ArrowBigLeft /> Back to profile
+      </Link>
+      <ExtractionSection
+        stringExtractionTraining={stringExtractionTraining}
+        stringExtractionTrainingExamples={stringExtractionTrainingExamples}
+        trainingId={trainingId}
+      ></ExtractionSection>
+    </div>
   );
 }
