@@ -28,6 +28,7 @@ import {
   delteExamples,
   fetchExistingExamples,
   insertNewExamples,
+  requestToChatGPT,
   updateExamples,
   updateStringExtractionTrainingPrompt,
 } from "./actions";
@@ -110,6 +111,12 @@ export const ExtractionSection = ({
 
   const hasChanges = () => {
     return JSON.stringify(examples) !== JSON.stringify(dbExamples);
+  };
+
+  const llmRequest = async () => {
+    const output = await requestToChatGPT(testInput, prompt, examples);
+    console.log("output", output);
+    setTestOutput(output);
   };
 
   const saveTrainingsData = async () => {
@@ -341,7 +348,9 @@ export const ExtractionSection = ({
               </div>
               <div className="flex justify-end">
                 <Button
-                  onClick={() => {}}
+                  onClick={() => {
+                    llmRequest();
+                  }}
                   disabled={isLoading || !testInput}
                   className="w-full md:w-auto"
                 >

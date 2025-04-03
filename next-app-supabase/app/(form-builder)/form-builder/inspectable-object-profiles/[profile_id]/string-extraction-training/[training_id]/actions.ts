@@ -8,6 +8,8 @@ import { DBActionsFormBuilderDelete } from "@/lib/database/form-builder/formBuil
 import { DBActionsFormBuilderUpdate } from "@/lib/database/form-builder/formBuilderUpdate";
 import { IStringExtractionTrainingExampleInsert } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { DBActionsFormBuilderCreate } from "@/lib/database/form-builder/formBuilderCreate";
+import OpenAI from "openai";
+import { ResponseInput } from "openai/resources/responses/responses.mjs";
 
 export async function fetchExistingExamples(trainingId: UUID) {
   const supabase = await createClient("form_builder");
@@ -54,4 +56,32 @@ export async function updateStringExtractionTrainingPrompt(
     newPrompt,
     trainingId
   );
+}
+
+export async function requestToChatGPT(
+  message: string,
+  prompt: string,
+  examples: Example[]
+) {
+  const client = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY, // Ensure this is stored in .env.local
+  });
+
+  const messages: { role: string; content: string }[] = [];
+  examples.forEach((example) => {
+    messages.push({ role: "user", content: example.input });
+    messages.push({ role: "assistant", content: example.output });
+  });
+
+  messages.push({ role: "user", content: message });
+
+  console.log(messages);
+
+  const response = await client.responses.create({
+    model: "gpt-3.5-turbo",
+    instructions: prompt,
+    input: messages as ResponseInput,
+  });
+
+  return response.output_text;
 }
