@@ -3,9 +3,11 @@ import {
   IFormCheckboxGroupWithCheckboxes,
   IFormCheckboxResponse,
   IInspectableObjectInspectionFormSubSectionWithData,
+  IStringExtractionTrainingResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import React, { useEffect, useState } from "react";
 import {
+  AlertTriangle,
   ArrowBigRightDash,
   DiscAlbum,
   Divide,
@@ -26,6 +28,15 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { UUID } from "crypto";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { useNotification } from "@/app/context/NotificationContext";
 import { Spinner } from "@/components/Spinner";
@@ -102,6 +113,7 @@ interface SubSectionProps {
     subSectionId: UUID
   ) => Promise<void>;
   handleDeleteAllTextInputFields: (subSectionId: UUID) => Promise<void>;
+  trainingList: IStringExtractionTrainingResponse[] | undefined;
 }
 
 export const SubSection = ({
@@ -116,6 +128,7 @@ export const SubSection = ({
   setOpenTextInputFieldDialog,
   handleDelteCheckboxGroup,
   handleDeleteAllTextInputFields,
+  trainingList,
 }: SubSectionProps) => {
   const { showNotification } = useNotification();
 
@@ -333,25 +346,72 @@ export const SubSection = ({
                   <ul className="p-4 space-y-2">
                     {sectionData.form_text_input_field.map((field) => {
                       return (
-                        <div
+                        <li
+                          className="flex items-center ml-3 space-x-2"
                           key={field.id}
-                          className="flex items-center justify-between"
                         >
-                          <div className="flex items-center w-3/4 space-x-2">
-                            <Input
-                              className="w-1/3"
-                              disabled={true}
-                              id={field.id + "input"}
-                              placeholder={field.placeholder_text}
-                            ></Input>
-                            <Label
-                              className="truncate w-2/3"
-                              htmlFor={field.id + "input"}
-                            >
-                              {field.label}
-                            </Label>
-                          </div>
-                        </div>
+                          <Card className="flex w-full items-center justify-between  p-2">
+                            <div className="flex items-center w-full space-x-2">
+                              <Input
+                                className="w-1/2"
+                                disabled={true}
+                                id={field.id + "input"}
+                                placeholder={field.placeholder_text}
+                              ></Input>
+                              <Label
+                                className="truncate w-2/3"
+                                htmlFor={field.id + "input"}
+                              >
+                                {field.label}
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <p className="text-sm text-slate-500">
+                                Training:
+                              </p>
+                              <Select
+                                disabled={true}
+                                value={
+                                  field.training_id ? field.training_id : ""
+                                }
+                              >
+                                <SelectTrigger className="w-[180px]">
+                                  <SelectValue placeholder="" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectGroup>
+                                    <SelectLabel>Profile</SelectLabel>
+                                    {trainingList &&
+                                      trainingList.map((training) => (
+                                        <SelectItem
+                                          key={training.id}
+                                          value={training.id}
+                                        >
+                                          {training.name}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectGroup>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </Card>
+                          {!field.training_id ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <AlertTriangle></AlertTriangle>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>
+                                    No string extraction training selected...
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            <AlertTriangle className="opacity-0"></AlertTriangle>
+                          )}
+                        </li>
                       );
                     })}
                   </ul>

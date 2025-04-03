@@ -2,6 +2,7 @@
 import {
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionWithData,
+  IStringExtractionTrainingResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import React, { useEffect, useState } from "react";
 import { SubSection } from "./SubSection";
@@ -44,12 +45,14 @@ interface MainContentProps {
       Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>
     >
   >;
+  trainingList: IStringExtractionTrainingResponse[] | undefined;
 }
 
 export const MainContent = ({
   mainSubSections,
   subSectionsData,
   setSubSectionsData,
+  trainingList,
 }: MainContentProps) => {
   const { showNotification } = useNotification();
   const [openDeleteAllTasksDialog, setOpenDeleteAllTasksDialog] =
@@ -169,6 +172,7 @@ export const MainContent = ({
                         }
                         setSelectedCheckboxGroupId={setSelectedCheckboxGroupId}
                         setSelectedSubSectionId={setSelectedSubSectionId}
+                        trainingList={trainingList}
                       />
                     </li>
                   )
@@ -197,24 +201,6 @@ export const MainContent = ({
             subSectionsData={subSectionsData}
             subSectionId={selectedSubSectionId}
           />
-          {/* <AlertDialog
-            open={openDeleteAllTasksDialog}
-            onOpenChange={setOpenDeleteAllTasksDialog}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will delete all tasks at
-                  once.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel >Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => handleDeleteAllTasks()}>Continue</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog> */}
         </>
       )}
       {selectedSubSectionId && (

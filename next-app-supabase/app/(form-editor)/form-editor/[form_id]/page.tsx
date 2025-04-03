@@ -16,6 +16,7 @@ import { FormSection } from "./Editor/FormSection";
 import Link from "next/link";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 import { ArrowBigLeft } from "lucide-react";
+import { fetchStringExtractionTrainings } from "./Editor/main-content/actions";
 
 export default async function FormEditorPage({
   params,
@@ -73,6 +74,9 @@ export default async function FormEditorPage({
       formMetadata[inspectionFormProp.form_type_prop_id] = inspectionFormProp;
     }
   );
+
+  const { trainingList, error } = await fetchStringExtractionTrainings(formId);
+  if (error) return <ErrorHandler error={error}></ErrorHandler>;
 
   const {
     inspectableObjectInspectionFormMainSectionsWithSubSectionData,
@@ -135,6 +139,7 @@ export default async function FormEditorPage({
           bucketResponse={bucketResponse}
           formId={formId}
           subSectionData={subSectionData}
+          trainingList={trainingList}
         />
       </div>
       {/* <PDFViewer></PDFViewer> */}

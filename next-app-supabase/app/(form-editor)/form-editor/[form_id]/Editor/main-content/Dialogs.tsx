@@ -20,6 +20,7 @@ import {
   IFormTextInputFieldInsert,
   IFormTextInputFieldResponse,
   IInspectableObjectInspectionFormSubSectionWithData,
+  IStringExtractionTrainingResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import {
   createCheckbox,
@@ -28,14 +29,27 @@ import {
   deleteCheckbox,
   deleteCheckboxTask,
   deleteTextInputField,
+  fetchStringExtractionTrainings,
   updateCheckboxesOrderNumber,
   updateCheckboxTaskOrder,
   updateTextInputFieldOrder,
+  updateTextInputFieldTraining,
 } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 import { Plus, Trash2 } from "lucide-react";
 import { Reorder } from "framer-motion";
+import { validate as isValidUUID } from "uuid";
 
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -539,6 +553,10 @@ export const TextInputFieldsDialog = ({
   const [newTextFieldLabel, setNewTextFieldLabel] = useState<string>("");
   const [newTextFieldPlaceHolder, setNewTextFieldPlaceHolder] =
     useState<string>("");
+
+  const [trainingsList, setTrainingsList] = useState<
+    IStringExtractionTrainingResponse[]
+  >([]);
   const updateTextInputFieldOrderInDB = async (
     updatedItems: IFormTextInputFieldResponse[]
   ) => {
@@ -599,6 +617,7 @@ export const TextInputFieldsDialog = ({
       order_number:
         subSectionsData[subSectionId].form_text_input_field.length + 1,
       annotation_id: null,
+      training_id: null,
     };
     const { formTextInputFields, formTextInputFieldsError } =
       await createTextInputField(newField);
@@ -638,6 +657,23 @@ export const TextInputFieldsDialog = ({
 
       debouncedTextInputFieldUpdate(newOrder);
       setSubSectionsData(copy);
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      console.log("open");
+      fetchStringExtractionTrainingList();
+    }
+  }, [open]);
+
+  const fetchStringExtractionTrainingList = async () => {
+    const { trainingList, error } = await fetchStringExtractionTrainings(
+      "97ad081e-a315-4a39-b534-4cd3883e92bb"
+    );
+    if (error) {
+    } else if (trainingList) {
+      setTrainingsList(trainingList);
     }
   };
 
@@ -712,6 +748,12 @@ export const TextInputFieldsDialog = ({
                     <Label htmlFor={`preview-${field.id}`}>{field.label}</Label>
                   </div>
                 </div>
+                <TrainingsSelector
+                  field={field}
+                  trainingsList={trainingsList}
+                  setSubSectionsData={setSubSectionsData}
+                  subSectionId={subSectionId}
+                ></TrainingsSelector>
                 <button onClick={() => handleDeleteTextField(field.id)}>
                   <Trash2 className="text-red-500 cursor-pointer"></Trash2>
                 </button>
@@ -720,5 +762,75 @@ export const TextInputFieldsDialog = ({
         </Reorder.Group>
       </DialogContent>
     </Dialog>
+  );
+};
+
+interface TrainingsSelectorProps {
+  field: IFormTextInputFieldResponse;
+  trainingsList: IStringExtractionTrainingResponse[];
+  setSubSectionsData: React.Dispatch<
+    React.SetStateAction<
+      Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>
+    >
+  >;
+  subSectionId: UUID;
+}
+
+const TrainingsSelector = ({
+  field,
+  trainingsList,
+  setSubSectionsData,
+  subSectionId,
+}: TrainingsSelectorProps) => {
+  const { showNotification } = useNotification();
+  const [selectedTraining, setSelectedTraining] = useState(
+    field.training_id ? field.training_id : ""
+  );
+
+  const handleUpdateTextInputFieldTraining = async (trainingId: string) => {
+    if (isValidUUID(trainingId)) {
+      const { updatedFormTextInputField, updatedFormTextInputFieldError } =
+        await updateTextInputFieldTraining(field.id, trainingId as UUID);
+
+      if (updatedFormTextInputFieldError) {
+        showNotification(
+          "Text input field update training id",
+          `Error: ${updatedFormTextInputFieldError.message} (${updatedFormTextInputFieldError.code})`,
+          "error"
+        );
+      } else if (updatedFormTextInputField) {
+        setSelectedTraining(trainingId);
+
+        setSubSectionsData((subSectionsData) => {
+          const copy = { ...subSectionsData };
+
+          copy[subSectionId].form_text_input_field.filter(
+            (textInputField) => textInputField.id === field.id
+          )[0].training_id = trainingId as UUID;
+          return copy;
+        });
+      }
+    }
+  };
+
+  return (
+    <Select
+      value={selectedTraining}
+      onValueChange={(value) => handleUpdateTextInputFieldTraining(value)}
+    >
+      <SelectTrigger className="w-[180px]">
+        <SelectValue placeholder="Select a training" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          <SelectLabel>Profile</SelectLabel>
+          {trainingsList.map((training) => (
+            <SelectItem key={training.id} value={training.id}>
+              {training.name}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
   );
 };

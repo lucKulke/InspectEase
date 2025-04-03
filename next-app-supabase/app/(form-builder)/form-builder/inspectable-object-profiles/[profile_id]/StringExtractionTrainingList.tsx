@@ -150,6 +150,7 @@ export const StringExtractionTrainingList = ({
                         <DropdownMenuSeparator />
                         <DropdownMenuItem>
                           <Link
+                            className="w-full h-full"
                             href={
                               formBuilderLinks["inspectableObjectProfiles"]
                                 .href +

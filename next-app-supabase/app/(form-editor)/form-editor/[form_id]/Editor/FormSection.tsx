@@ -8,6 +8,7 @@ import { UUID } from "crypto";
 import {
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionWithData,
+  IStringExtractionTrainingResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { MainContent } from "./main-content/MainContent";
 import { GripVertical, SeparatorVertical } from "lucide-react";
@@ -29,6 +30,7 @@ interface MainFormSectionProps {
       Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>
     >
   >;
+  trainingList: IStringExtractionTrainingResponse[] | undefined;
 }
 
 export const FormSection = ({
@@ -37,6 +39,7 @@ export const FormSection = ({
   setMainSectionsWithSubSections,
   subSectionsData,
   setSubSectionsData,
+  trainingList,
 }: MainFormSectionProps) => {
   const [width, setWidth] = useState(400); // Initial sidebar width
   const isResizing = useRef(false);
@@ -96,6 +99,7 @@ export const FormSection = ({
         mainSubSections={mainSectionsWithSubSections}
         subSectionsData={subSectionsData}
         setSubSectionsData={setSubSectionsData}
+        trainingList={trainingList}
       ></MainContent>
     </div>
   );

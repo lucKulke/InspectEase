@@ -273,6 +273,7 @@ export interface IFormTextInputFieldInsert {
   placeholder_text: string;
   order_number: number;
   annotation_id: UUID | null;
+  training_id: UUID | null;
 }
 
 export interface IFormTextInputFieldResponse extends IFormTextInputFieldInsert {

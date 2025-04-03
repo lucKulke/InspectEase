@@ -441,4 +441,31 @@ export class DBActionsFormBuilderUpdate {
       updatedStringExtractionTrainingPromptError: error as SupabaseError | null,
     };
   }
+
+  async updateTextInputFieldTraining(
+    field: UUID,
+    trainingId: UUID
+  ): Promise<{
+    updatedFormTextInputField: IFormTextInputFieldResponse | null;
+    updatedFormTextInputFieldError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_text_input_field")
+      .update({ training_id: trainingId })
+      .eq("id", field)
+      .select();
+
+    console.log("create new string extraction training examples in db:", data);
+    if (error) {
+      console.error(
+        "create new string extraction training examples in db error: ",
+        error
+      );
+    }
+
+    return {
+      updatedFormTextInputField: data ? data[0] : null,
+      updatedFormTextInputFieldError: error as SupabaseError | null,
+    };
+  }
 }
