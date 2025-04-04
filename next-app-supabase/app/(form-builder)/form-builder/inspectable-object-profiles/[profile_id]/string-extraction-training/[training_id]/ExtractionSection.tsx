@@ -116,7 +116,7 @@ export const ExtractionSection = ({
   const llmRequest = async () => {
     const output = await requestToChatGPT(testInput, prompt, examples);
     console.log("output", output);
-    setTestOutput(output);
+    if (output) setTestOutput(output);
   };
 
   const saveTrainingsData = async () => {
