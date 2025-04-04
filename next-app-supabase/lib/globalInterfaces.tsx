@@ -1,3 +1,5 @@
+import { UUID } from "crypto";
+
 export interface SupabaseError {
   code: string;
   details: string | null;
@@ -26,4 +28,11 @@ export interface AnnotationsApiResponse {
   annotations: AnnotationData[];
   filename: string;
   status: string;
+}
+
+export interface IUserProfile {
+  user_id: UUID;
+  first_name: string;
+  last_name: string;
+  openai_token: string;
 }

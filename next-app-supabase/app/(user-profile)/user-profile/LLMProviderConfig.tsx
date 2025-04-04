@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { SetStateAction, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,11 +17,28 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Brain, Cpu, Key, Save } from "lucide-react";
+import { IUserProfile } from "@/lib/globalInterfaces";
+import { User } from "@supabase/supabase-js";
+import { updateUserProfileOpenAiToken } from "./actions";
+import { UUID } from "crypto";
+import { useNotification } from "@/app/context/NotificationContext";
 
-export const LLMConfigPage = () => {
+interface LLMConfigPageProps {
+  profileData: IUserProfile;
+  setProfileData: React.Dispatch<SetStateAction<IUserProfile>>;
+  user: User;
+}
+
+export const LLMConfigPage = ({
+  profileData,
+  user,
+  setProfileData,
+}: LLMConfigPageProps) => {
+  const { showNotification } = useNotification();
   const { toast } = useToast();
+
   const [credentials, setCredentials] = useState({
-    openai: "",
+    openai: profileData.openai_token ?? "",
     anthropic: "",
     cohere: "",
     mistral: "",
@@ -34,15 +51,34 @@ export const LLMConfigPage = () => {
     }));
   };
 
-  const saveCredentials = () => {
+  const saveCredentials = async () => {
     // In a real app, you would securely store these credentials
     // This is just a demo implementation
     localStorage.setItem("llm-credentials", JSON.stringify(credentials));
+    const { updatedProfile, updatedProfileError } =
+      await updateUserProfileOpenAiToken(credentials.openai, user.id as UUID);
+    if (updatedProfileError) {
+      showNotification(
+        "Update user profile",
+        `Error: ${updatedProfileError.message} (${updatedProfileError.code})`,
+        "error"
+      );
+    } else if (updatedProfile) {
+      showNotification(
+        "Update user profile",
+        `Successfully updated user profile`,
+        "info"
+      );
+      setCredentials((prev) => {
+        prev.openai = updatedProfile.openai_token;
+        return prev;
+      });
 
-    toast({
-      title: "Credentials saved",
-      description: "Your API keys have been saved successfully.",
-    });
+      setProfileData((prev) => {
+        prev.openai_token = updatedProfile.openai_token;
+        return prev;
+      });
+    }
   };
 
   return (

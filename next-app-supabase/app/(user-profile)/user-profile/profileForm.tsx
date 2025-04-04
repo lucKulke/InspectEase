@@ -31,9 +31,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { LLMConfigPage } from "./LLMProviderConfig";
+import { User as SupbaseUser } from "@supabase/supabase-js";
+import { IUserProfile } from "@/lib/globalInterfaces";
+import { updateUserProfile } from "./actions";
+import { UUID } from "crypto";
+import { useNotification } from "@/app/context/NotificationContext";
 
 const profileFormSchema = z.object({
-  name: z
+  first_name: z
+    .string()
+    .min(2, {
+      message: "Name must be at least 2 characters.",
+    })
+    .max(30, {
+      message: "Name must not be longer than 30 characters.",
+    }),
+  last_name: z
     .string()
     .min(2, {
       message: "Name must be at least 2 characters.",
@@ -45,17 +58,6 @@ const profileFormSchema = z.object({
     .string()
     .min(1, { message: "This field is required." })
     .email("This is not a valid email."),
-  bio: z.string().max(160).optional(),
-  urls: z
-    .object({
-      website: z
-        .string()
-        .url({ message: "Please enter a valid URL." })
-        .optional()
-        .or(z.literal("")),
-      twitter: z.string().optional().or(z.literal("")),
-    })
-    .optional(),
 });
 
 const securityFormSchema = z
@@ -75,26 +77,30 @@ const securityFormSchema = z
     path: ["confirmPassword"],
   });
 
-type ProfileFormValues = z.infer<typeof profileFormSchema>;
+export type ProfileFormValues = z.infer<typeof profileFormSchema>;
 type SecurityFormValues = z.infer<typeof securityFormSchema>;
 
 // This can come from your database or API.
-const defaultValues: Partial<ProfileFormValues> = {
-  name: "John Doe",
-  email: "john.doe@example.com",
-  bio: "I'm a software developer based in New York. I enjoy building web applications and learning new technologies.",
-  urls: {
-    website: "https://example.com",
-    twitter: "@johndoe",
-  },
-};
 
-export const ProfileForm = () => {
+interface ProfileFormProps {
+  profileData: IUserProfile;
+  user: SupbaseUser;
+}
+
+export const ProfileForm = ({ profileData, user }: ProfileFormProps) => {
+  const { showNotification } = useNotification();
   const [activeTab, setActiveTab] = useState("personal");
+  const [profile, setProfile] = useState<IUserProfile>(profileData);
+
+  const [values, setValues] = useState<ProfileFormValues>({
+    first_name: profile.first_name ?? "",
+    last_name: profile.last_name ?? "",
+    email: user.email ?? "",
+  });
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
-    defaultValues,
+    values,
     mode: "onChange",
   });
 
@@ -108,11 +114,44 @@ export const ProfileForm = () => {
     mode: "onChange",
   });
 
-  function onProfileSubmit(data: ProfileFormValues) {
-    // In a real app, you would send this data to your backend
-    console.log(data);
-    // Show success message
-    alert("Profile updated successfully!");
+  async function onProfileSubmit(data: ProfileFormValues) {
+    // Check if any changes were made
+    const hasChanges =
+      data.first_name !== profile.first_name ||
+      data.last_name !== profile.last_name ||
+      data.email !== user.email;
+
+    if (!hasChanges) {
+      alert("No changes detected.");
+      return;
+    }
+
+    // Update the user's profile in Supabase
+    // Ensure this matches your database structure
+    const { updatedProfile, updatedProfileError } = await updateUserProfile(
+      data,
+      user.id as UUID
+    );
+
+    if (updatedProfileError) {
+      showNotification(
+        "Update user profile",
+        `Error: ${updatedProfileError.message} (${updatedProfileError.code})`,
+        "error"
+      );
+    } else if (updatedProfile) {
+      showNotification(
+        "Update user profile",
+        `Successfully updated user profile`,
+        "info"
+      );
+
+      setValues((prev) => {
+        prev.first_name = updatedProfile.first_name;
+        prev.last_name = updatedProfile.last_name;
+        return prev;
+      });
+    }
   }
 
   function onSecuritySubmit(data: SecurityFormValues) {
@@ -190,18 +229,33 @@ export const ProfileForm = () => {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FormField
                     control={profileForm.control}
-                    name="name"
+                    name="first_name"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Your name" {...field} />
+                          <Input placeholder="Your first name" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
+                    control={profileForm.control}
+                    name="last_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Your name" {...field} />
+                        </FormControl>
+
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    disabled={true}
                     control={profileForm.control}
                     name="email"
                     render={({ field }) => (
@@ -209,57 +263,6 @@ export const ProfileForm = () => {
                         <FormLabel>Email</FormLabel>
                         <FormControl>
                           <Input placeholder="Your email" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={profileForm.control}
-                  name="bio"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Bio</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Tell us a little bit about yourself"
-                          className="resize-none"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Brief description for your profile. URLs are
-                        hyperlinked.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <FormField
-                    control={profileForm.control}
-                    name="urls.website"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Website</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={profileForm.control}
-                    name="urls.twitter"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Twitter</FormLabel>
-                        <FormControl>
-                          <Input placeholder="@username" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -456,7 +459,11 @@ export const ProfileForm = () => {
         </Card>
       </TabsContent>
       <TabsContent value="aiApi" className="space-y-6">
-        <LLMConfigPage></LLMConfigPage>
+        <LLMConfigPage
+          user={user}
+          profileData={profile}
+          setProfileData={setProfile}
+        ></LLMConfigPage>
       </TabsContent>
     </Tabs>
   );
