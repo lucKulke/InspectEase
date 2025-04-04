@@ -539,6 +539,7 @@ interface TextInputFieldsDialogProps {
     >
   >;
   subSectionId: UUID;
+  trainingList: IStringExtractionTrainingResponse[] | undefined;
 }
 
 export const TextInputFieldsDialog = ({
@@ -547,6 +548,7 @@ export const TextInputFieldsDialog = ({
   setSubSectionsData,
   subSectionsData,
   subSectionId,
+  trainingList,
 }: TextInputFieldsDialogProps) => {
   const { showNotification } = useNotification();
 
@@ -556,7 +558,8 @@ export const TextInputFieldsDialog = ({
 
   const [trainingsList, setTrainingsList] = useState<
     IStringExtractionTrainingResponse[]
-  >([]);
+  >(trainingList ?? []);
+
   const updateTextInputFieldOrderInDB = async (
     updatedItems: IFormTextInputFieldResponse[]
   ) => {
@@ -657,23 +660,6 @@ export const TextInputFieldsDialog = ({
 
       debouncedTextInputFieldUpdate(newOrder);
       setSubSectionsData(copy);
-    }
-  };
-
-  useEffect(() => {
-    if (open) {
-      console.log("open");
-      fetchStringExtractionTrainingList();
-    }
-  }, [open]);
-
-  const fetchStringExtractionTrainingList = async () => {
-    const { trainingList, error } = await fetchStringExtractionTrainings(
-      "97ad081e-a315-4a39-b534-4cd3883e92bb"
-    );
-    if (error) {
-    } else if (trainingList) {
-      setTrainingsList(trainingList);
     }
   };
 

@@ -210,6 +210,7 @@ export const MainContent = ({
           setSubSectionsData={setSubSectionsData}
           subSectionsData={subSectionsData}
           subSectionId={selectedSubSectionId}
+          trainingList={trainingList}
         />
       )}
     </div>
