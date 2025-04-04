@@ -9,6 +9,9 @@ export async function middleware(request: NextRequest) {
   if (pathname === "/login") {
     return NextResponse.next();
   }
+  if (pathname === "/auth/confirm") {
+    return NextResponse.next();
+  }
 
   // Update user's auth session
   return await updateSession(request);
