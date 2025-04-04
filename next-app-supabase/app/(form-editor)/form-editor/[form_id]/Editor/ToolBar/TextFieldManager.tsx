@@ -90,6 +90,7 @@ export const TextFieldManager = ({
           placeholder_text: field.placeHolder,
           order_number: orderNumber + 1,
           annotation_id: null,
+          training_id: null,
         });
 
         orderNumber++;
