@@ -24,11 +24,6 @@ export const Objects = async ({ profile }: ObjectsProps) => {
       ></ErrorHandler>
     );
 
-  const tempPropOrder: Record<UUID, number> = {};
-  inspectableObjectProfilePropertys.forEach((prop) => {
-    tempPropOrder[prop.id] = prop.order_number;
-  });
-
   const { inspectableObjectsWitProps, inspectableObjectsWitPropsError } =
     await dbActions.fetchInspectableObjectsByProfileIdWithProperties(
       profile.id
@@ -43,7 +38,6 @@ export const Objects = async ({ profile }: ObjectsProps) => {
       <InspectableObjectsTable
         profile={profile}
         profileProps={inspectableObjectProfilePropertys}
-        tempPropOrder={tempPropOrder}
         objectsWithProps={inspectableObjectsWitProps}
       ></InspectableObjectsTable>
     </div>

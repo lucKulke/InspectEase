@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Home,
   Hammer,
@@ -38,7 +38,9 @@ import {
   CreateCheckboxDialog,
   CreateMainSectionDialog,
   CreateSubSectionDialog,
+  CreateTextInputFieldDialog,
 } from "./Dialogs";
+import { scrollToSection } from "@/utils/general";
 
 interface ToolBarProps {
   setSideBarData: React.Dispatch<
@@ -83,6 +85,25 @@ export const ToolBar = ({
     useState<boolean>(false);
   const [openCreateCheckboxDialog, setOpenCreateCheckboxDialog] =
     useState<boolean>(false);
+  const [openCreateTextInputFieldDialog, setOpenCreateTextInputFieldDialog] =
+    useState<boolean>(false);
+
+  const [lastCreatedSectionId, setLastCreatedSectionId] = useState<string>("");
+
+  useEffect(() => {
+    if (!openCreateMainSectionDialog) {
+      scrollToSection(lastCreatedSectionId as UUID);
+      setLastCreatedSectionId("");
+    }
+  }, [openCreateMainSectionDialog]);
+
+  useEffect(() => {
+    if (!openCreateSubSectionDialog) {
+      scrollToSection(lastCreatedSectionId as UUID);
+      setLastCreatedSectionId("");
+    }
+  }, [openCreateSubSectionDialog]);
+
   const handleCreateMainSection = async (name: string, description: string) => {
     const {
       inspectableObjectInspectionFormMainSection,
@@ -111,13 +132,14 @@ export const ToolBar = ({
           inspectable_object_inspection_form_sub_section: [],
           form_id: inspectableObjectInspectionFormMainSection.form_id,
         };
-      inspectableObjectInspectionFormMainSection;
+
       setSideBarData((prev) => [...prev, newMainSubSection]);
       showNotification(
         "Create main section",
         `Successfully created new main section with id '${inspectableObjectInspectionFormMainSection.id}'`,
         "info"
       );
+      setLastCreatedSectionId(inspectableObjectInspectionFormMainSection.id);
     }
   };
 
@@ -151,6 +173,7 @@ export const ToolBar = ({
           break;
         }
       }
+
       setSubSectionsData((prev) => {
         const copy = { ...prev };
 
@@ -166,6 +189,7 @@ export const ToolBar = ({
         `Successfully created new sub section with id'${inspectableObjectInspectionFormSubSection.id}'`,
         "info"
       );
+      setLastCreatedSectionId(inspectableObjectInspectionFormSubSection.id);
     }
   };
   return (
@@ -188,7 +212,9 @@ export const ToolBar = ({
           <DropdownMenuItem onClick={() => setOpenCreateCheckboxDialog(true)}>
             Checkbox
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setOpenCreateSubSectionDialog(true)}>
+          <DropdownMenuItem
+            onClick={() => setOpenCreateTextInputFieldDialog(true)}
+          >
             Text input
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -243,6 +269,13 @@ export const ToolBar = ({
         setOpen={setOpenCreateCheckboxDialog}
         sections={sideBarData}
       ></CreateCheckboxDialog>
+      <CreateTextInputFieldDialog
+        refetchSubSectionsData={refetchSubSectionsData}
+        open={openCreateTextInputFieldDialog}
+        setOpen={setOpenCreateTextInputFieldDialog}
+        sectionsData={subSectionData}
+        sideBarData={sideBarData}
+      ></CreateTextInputFieldDialog>
     </div>
   );
 };

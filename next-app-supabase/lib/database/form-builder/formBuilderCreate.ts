@@ -5,6 +5,8 @@ import {
   IFormCheckboxResponse,
   IFormCheckboxTaskInsert,
   IFormCheckboxTaskResponse,
+  IFormTextInputFieldInsert,
+  IFormTextInputFieldResponse,
   IInspectableObjectInsert,
   IInspectableObjectInspectionFormAnnotationInsert,
   IInspectableObjectInspectionFormAnnotationResponse,
@@ -29,6 +31,10 @@ import {
   IInspectableObjectPropertyInsert,
   IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
+  IStringExtractionTrainingExampleInsert,
+  IStringExtractionTrainingExampleResponse,
+  IStringExtractionTrainingInsert,
+  IStringExtractionTrainingResponse,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
@@ -386,7 +392,7 @@ export class DBActionsFormBuilderCreate {
     const { data, error } = await this.supabase
       .from("form_checkbox")
       .insert(newFormCheckboxes)
-      .select(`*`);
+      .select();
 
     console.log("create form checkboxes in db:", data);
     if (error) {
@@ -456,6 +462,78 @@ export class DBActionsFormBuilderCreate {
     return {
       formCheckboxTask: data ? data[0] : null,
       formCheckboxTaskError: error as SupabaseError | null,
+    };
+  }
+
+  async createFormTextInputField(fields: IFormTextInputFieldInsert[]): Promise<{
+    formTextInputFields: IFormTextInputFieldResponse[] | null;
+    formTextInputFieldsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_text_input_field")
+      .insert(fields)
+      .select();
+
+    console.log("create form text input fields in db:", data);
+    if (error) {
+      console.error("create form text input fields in db error: ", error);
+    }
+
+    return {
+      formTextInputFields: data,
+      formTextInputFieldsError: error as SupabaseError | null,
+    };
+  }
+
+  async createNewStringExtractionTraining(
+    newTraining: IStringExtractionTrainingInsert
+  ): Promise<{
+    stringExtractionTraining: IStringExtractionTrainingResponse | null;
+    stringExtractionTrainingError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("string_extraction_training")
+      .insert(newTraining)
+      .select();
+
+    console.log("create new string extraction training in db:", data);
+    if (error) {
+      console.error(
+        "create new string extraction training in db error: ",
+        error
+      );
+    }
+
+    return {
+      stringExtractionTraining: data ? data[0] : null,
+      stringExtractionTrainingError: error as SupabaseError | null,
+    };
+  }
+
+  async createNewStringExtractionTrainingExamples(
+    examples: IStringExtractionTrainingExampleInsert[]
+  ): Promise<{
+    stringExtractionTrainingExample:
+      | IStringExtractionTrainingExampleResponse[]
+      | null;
+    stringExtractionTrainingExampleError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("string_extraction_training_example")
+      .insert(examples)
+      .select();
+
+    console.log("create new string extraction training examples in db:", data);
+    if (error) {
+      console.error(
+        "create new string extraction training examples in db error: ",
+        error
+      );
+    }
+
+    return {
+      stringExtractionTrainingExample: data,
+      stringExtractionTrainingExampleError: error as SupabaseError | null,
     };
   }
 }

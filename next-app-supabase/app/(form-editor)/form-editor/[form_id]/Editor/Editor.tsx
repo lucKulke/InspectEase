@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionWithData,
+  IStringExtractionTrainingResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { motion, AnimatePresence } from "framer-motion";
 import React, { useState } from "react";
@@ -25,6 +26,7 @@ interface EditorProps {
     UUID,
     IInspectableObjectInspectionFormSubSectionWithData
   >;
+  trainingList: IStringExtractionTrainingResponse[] | undefined;
 }
 
 export const Editor = ({
@@ -32,6 +34,7 @@ export const Editor = ({
   bucketResponse,
   formId,
   subSectionData,
+  trainingList,
 }: EditorProps) => {
   const { showNotification } = useNotification();
   const [activeTab, setActiveTab] = useState<string>("Editor");
@@ -89,6 +92,7 @@ export const Editor = ({
           setMainSectionsWithSubSections={setMainSubSections}
           subSectionsData={subSectionsData}
           setSubSectionsData={setSubSectionsData}
+          trainingList={trainingList}
         ></FormSection>
       ) : (
         <div className="h-screen p-4">
@@ -105,7 +109,7 @@ export const Editor = ({
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         setSubSectionsData={setSubSectionsData}
-        subSectionData={subSectionData}
+        subSectionData={subSectionsData}
         refetchSubSectionsData={refetchSubSectionsData}
       ></ToolBar>
     </div>

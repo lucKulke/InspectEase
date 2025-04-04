@@ -2,6 +2,7 @@
 import {
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionWithData,
+  IStringExtractionTrainingResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import React, { useEffect, useState } from "react";
 import { SubSection } from "./SubSection";
@@ -13,7 +14,25 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CheckboxGroupDialog, TaskDialog } from "./Dialogs";
+import {
+  CheckboxGroupDialog,
+  TaskDialog,
+  TextInputFieldsDialog,
+} from "./Dialogs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
+import { deleteAllTextInputFields, deleteCheckboxGroup } from "./actions";
+import { useNotification } from "@/app/context/NotificationContext";
 
 interface MainContentProps {
   mainSubSections: IInspectableObjectInspectionFormMainSectionWithSubSection[];
@@ -26,20 +45,84 @@ interface MainContentProps {
       Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>
     >
   >;
+  trainingList: IStringExtractionTrainingResponse[] | undefined;
 }
 
 export const MainContent = ({
   mainSubSections,
   subSectionsData,
   setSubSectionsData,
+  trainingList,
 }: MainContentProps) => {
+  const { showNotification } = useNotification();
+  const [openDeleteAllTasksDialog, setOpenDeleteAllTasksDialog] =
+    useState<boolean>(false);
   const [openTaskDialog, setOpenTaskDialog] = useState<boolean>(false);
   const [openCheckboxGroupDialog, setOpenCheckboxGroupDialog] =
     useState<boolean>(false);
+  const [openTextInputFieldDialog, setOpenTextInputFieldDialog] =
+    useState<boolean>(false);
+
+  useEffect(() => {
+    "changed " + openTextInputFieldDialog;
+  }, [openTextInputFieldDialog]);
+
   const [selectedCheckboxGroupId, setSelectedCheckboxGroupId] =
     useState<UUID>();
 
   const [selectedSubSectionId, setSelectedSubSectionId] = useState<UUID>();
+
+  const handleDelteCheckboxGroup = async (
+    groupId: UUID,
+    subSectionId: UUID
+  ) => {
+    const { deletedFormCheckboxGroup, deletedFormCheckboxGroupError } =
+      await deleteCheckboxGroup(groupId);
+
+    if (deletedFormCheckboxGroupError) {
+      showNotification(
+        "Delte checkbox group",
+        `Error: ${deletedFormCheckboxGroupError.message} (${deletedFormCheckboxGroupError.code})`,
+        "error"
+      );
+    } else if (deletedFormCheckboxGroup) {
+      const copy = { ...subSectionsData };
+      copy[subSectionId].form_checkbox_group = copy[
+        subSectionId
+      ].form_checkbox_group.filter((group) => group.id !== groupId);
+
+      setSubSectionsData(copy);
+      showNotification(
+        "Delte checkbox group",
+        `Successfully deleted checkbox group '${groupId}'`,
+        "info"
+      );
+    }
+  };
+
+  const handleDeleteAllTextInputFields = async (subSectionId: UUID) => {
+    const { deletedFormTextInputFields, deletedFormTextInputFieldsError } =
+      await deleteAllTextInputFields(subSectionId);
+    if (deletedFormTextInputFieldsError) {
+      showNotification(
+        "Delte text input fields",
+        `Error: ${deletedFormTextInputFieldsError.message} (${deletedFormTextInputFieldsError.code})`,
+        "error"
+      );
+    } else if (deletedFormTextInputFields) {
+      const copy = { ...subSectionsData };
+      copy[subSectionId].form_checkbox_group = copy[
+        subSectionId
+      ].form_text_input_field = [];
+
+      setSubSectionsData(copy);
+      showNotification(
+        "Delte text input fields",
+        `Successfully deleted all text input fields for sub section '${subSectionId}'`,
+        "info"
+      );
+    }
+  };
 
   return (
     <div className="w-full border-2 rounded-r-xl p-4 border-gray-800 ">
@@ -80,8 +163,16 @@ export const MainContent = ({
                         setSubSectionsData={setSubSectionsData}
                         setOpenTaskDialog={setOpenTaskDialog}
                         setOpenCheckboxGroupDialog={setOpenCheckboxGroupDialog}
+                        setOpenTextInputFieldDialog={
+                          setOpenTextInputFieldDialog
+                        }
+                        handleDelteCheckboxGroup={handleDelteCheckboxGroup}
+                        handleDeleteAllTextInputFields={
+                          handleDeleteAllTextInputFields
+                        }
                         setSelectedCheckboxGroupId={setSelectedCheckboxGroupId}
                         setSelectedSubSectionId={setSelectedSubSectionId}
+                        trainingList={trainingList}
                       />
                     </li>
                   )
@@ -111,6 +202,15 @@ export const MainContent = ({
             subSectionId={selectedSubSectionId}
           />
         </>
+      )}
+      {selectedSubSectionId && (
+        <TextInputFieldsDialog
+          setOpen={setOpenTextInputFieldDialog}
+          open={openTextInputFieldDialog}
+          setSubSectionsData={setSubSectionsData}
+          subSectionsData={subSectionsData}
+          subSectionId={selectedSubSectionId}
+        />
       )}
     </div>
   );

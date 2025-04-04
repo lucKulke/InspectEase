@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import {
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionInsert,
+  IInspectableObjectInspectionFormSubSectionWithData,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import {
   Select,
@@ -30,6 +31,7 @@ import {
 } from "@/components/ui/tooltip";
 import { UUID } from "crypto";
 import { CheckboxManager } from "./CheckboxManager";
+import { TextFieldManager } from "./TextFieldManager";
 
 interface CreateMainSectionDialogProps {
   open: boolean;
@@ -81,6 +83,8 @@ export const CreateMainSectionDialog = ({
           {newMainSectionName.length > 3 ? (
             <Button
               onClick={() => {
+                setNewMainSectionName("");
+                setNewMainSectionDescription("");
                 create(newMainSectionName, newMainSectionDescription);
               }}
             >
@@ -132,6 +136,9 @@ export const CreateSubSectionDialog = ({
       main_section_id: mainSectionId as UUID,
       order_number: subSectionOrderNumber,
     });
+
+    setName("");
+    setDescription("");
   };
 
   return (
@@ -239,6 +246,46 @@ export const CreateCheckboxDialog = ({
           setOpen={setOpen}
           refetchSubSectionsData={refetchSubSectionsData}
         ></CheckboxManager>
+        <DialogFooter></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+interface CreateTextInputFieldDialogProps {
+  open: boolean;
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  sectionsData: Record<
+    `${string}-${string}-${string}-${string}-${string}`,
+    IInspectableObjectInspectionFormSubSectionWithData
+  >;
+  sideBarData: IInspectableObjectInspectionFormMainSectionWithSubSection[];
+
+  refetchSubSectionsData: () => Promise<void>;
+}
+
+export const CreateTextInputFieldDialog = ({
+  open,
+  setOpen,
+  sectionsData,
+  sideBarData,
+  refetchSubSectionsData,
+}: CreateTextInputFieldDialogProps) => {
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-[800px]">
+        <DialogHeader>
+          <DialogTitle>Manage Text Input Fields</DialogTitle>
+          <DialogDescription>
+            Create text input field and assign them to sections.
+          </DialogDescription>
+        </DialogHeader>
+        <TextFieldManager
+          refetchSubSectionsData={refetchSubSectionsData}
+          setOpen={setOpen}
+          sectionsData={sectionsData}
+          sideBarData={sideBarData}
+        ></TextFieldManager>
         <DialogFooter></DialogFooter>
       </DialogContent>
     </Dialog>

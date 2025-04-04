@@ -4,6 +4,7 @@ import {
   IFormCheckboxInsert,
   IFormCheckboxResponse,
   IFormCheckboxTaskResponse,
+  IFormTextInputFieldResponse,
   IInspectableObjectInspectionFormMainSectionInsert,
   IInspectableObjectInspectionFormMainSectionResponse,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
@@ -18,10 +19,13 @@ import {
   IInspectableObjectProfileResponse,
   IInspectableObjectPropertyResponse,
   IInspectableObjectResponse,
+  IStringExtractionTrainingExampleResponse,
+  IStringExtractionTrainingResponse,
   ISubSectionCore,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
+import { Example } from "@/app/(form-builder)/form-builder/inspectable-object-profiles/[profile_id]/string-extraction-training/[training_id]/ExtractionSection";
 
 export class DBActionsFormBuilderUpdate {
   private supabase: SupabaseClient<any, string, any>;
@@ -355,6 +359,113 @@ export class DBActionsFormBuilderUpdate {
     return {
       updatedFormCheckboxTasks: data ? data : [],
       updatedFormCheckboxTasksError: error as SupabaseError | null,
+    };
+  }
+
+  async updateFormTextInputFields(
+    checkboxTasks: IFormTextInputFieldResponse[]
+  ): Promise<{
+    updatedFormTextInputFields: IFormTextInputFieldResponse[];
+    updatedFormTextInputFieldsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_text_input_field")
+      .upsert(checkboxTasks)
+      .select();
+
+    console.log("update form text input field order number in db:", data);
+    if (error) {
+      console.error(
+        "update form text input field order number in db error: ",
+        error
+      );
+    }
+
+    return {
+      updatedFormTextInputFields: data ? data : [],
+      updatedFormTextInputFieldsError: error as SupabaseError | null,
+    };
+  }
+
+  async updateStringExtractionExamples(
+    exampleData: {
+      input: string;
+      output: string;
+    },
+    exampleId: UUID
+  ): Promise<{
+    updatedStringExtractionExample:
+      | IStringExtractionTrainingExampleResponse[]
+      | null;
+    updatedStringExtractionExampleError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("string_extraction_training_example")
+      .update(exampleData)
+      .eq("id", exampleId)
+      .select();
+
+    console.log("update string extraction example in db:", data);
+    if (error) {
+      console.error("update string extraction example in db error: ", error);
+    }
+
+    return {
+      updatedStringExtractionExample: data ? data[0] : null,
+      updatedStringExtractionExampleError: error as SupabaseError | null,
+    };
+  }
+  async updateStringExtractionTrainingPrompt(
+    prompt: string,
+    trainingId: UUID
+  ): Promise<{
+    updatedStringExtractionTrainingPrompt: IStringExtractionTrainingResponse | null;
+    updatedStringExtractionTrainingPromptError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("string_extraction_training")
+      .update({ prompt: prompt })
+      .eq("id", trainingId)
+      .select();
+
+    console.log("update string extraction training prompt in db:", data);
+    if (error) {
+      console.error(
+        "update string extraction training prompt in db error: ",
+        error
+      );
+    }
+
+    return {
+      updatedStringExtractionTrainingPrompt: data ? data[0] : null,
+      updatedStringExtractionTrainingPromptError: error as SupabaseError | null,
+    };
+  }
+
+  async updateTextInputFieldTraining(
+    field: UUID,
+    trainingId: UUID
+  ): Promise<{
+    updatedFormTextInputField: IFormTextInputFieldResponse | null;
+    updatedFormTextInputFieldError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_text_input_field")
+      .update({ training_id: trainingId })
+      .eq("id", field)
+      .select();
+
+    console.log("create new string extraction training examples in db:", data);
+    if (error) {
+      console.error(
+        "create new string extraction training examples in db error: ",
+        error
+      );
+    }
+
+    return {
+      updatedFormTextInputField: data ? data[0] : null,
+      updatedFormTextInputFieldError: error as SupabaseError | null,
     };
   }
 }

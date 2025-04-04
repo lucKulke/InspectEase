@@ -56,6 +56,8 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { scrollToSection } from "@/utils/general";
 
 // Helper function to update order numbers
 
@@ -106,20 +108,31 @@ export const FormSideBar = ({
   const [newSubSectionDescription, setNewSubSectionDescription] =
     useState<string>("");
 
+  const [lastSelectedSection, setLastSelectedSection] = useState<UUID>();
+
   const [selectedSubSection, setSelectedSubSection] =
     useState<IInspectableObjectInspectionFormSubSectionResponse>();
 
   const [selectedMainSection, setSelectedMainSection] =
     useState<IInspectableObjectInspectionFormMainSectionResponse>();
 
-  const scrollToSection = (id: UUID) => {
-    const section = document.getElementById(id);
-    if (section) {
-      const rect = section.getBoundingClientRect(); // Get section position
-      const scrollOffset = window.scrollY + rect.top - window.innerHeight * 0.2; // 3/4 of viewport
-      window.scrollTo({ top: scrollOffset, behavior: "smooth" });
+  useEffect(() => {
+    if (!openCreateSubSectionDialog && lastSelectedSection) {
+      scrollToSection(lastSelectedSection);
     }
-  };
+  }, [openCreateSubSectionDialog]);
+
+  useEffect(() => {
+    if (!openUpdateMainSectionDialog && lastSelectedSection) {
+      scrollToSection(lastSelectedSection);
+    }
+  }, [openUpdateMainSectionDialog]);
+
+  useEffect(() => {
+    if (!openUpdateSubSectionDialog && lastSelectedSection) {
+      scrollToSection(lastSelectedSection);
+    }
+  }, [openUpdateSubSectionDialog]);
 
   const updateMainSectionOrderInDB = async (
     updatedItems: IInspectableObjectInspectionFormMainSectionWithSubSection[]
@@ -202,6 +215,7 @@ export const FormSideBar = ({
     newName: string,
     newDescription: string
   ) => {
+    setLastSelectedSection(mainSection.id);
     console.log("update main section");
     const {
       updatedInspectableObjectInspectionFormMainSection,
@@ -363,11 +377,10 @@ export const FormSideBar = ({
 
         return copy;
       });
-
+      setLastSelectedSection(inspectableObjectInspectionFormSubSection.id);
       setMainSubSections(copyOfMainSubSections);
       setNewSubSectionName("");
       setNewSubSectionDescription("");
-      setOpenUpdateSubSectionDialog(false);
       showNotification(
         "Create sub section",
         `Successfully created new sub section with id'${inspectableObjectInspectionFormSubSection.id}'`,
@@ -429,6 +442,7 @@ export const FormSideBar = ({
     newName: string,
     newDescription: string
   ) => {
+    setLastSelectedSection(subSection.id);
     const {
       updatedInspectableObjectInspectionFormSubSection,
       updatedInspectableObjectInspectionFormSubSectionError,
@@ -484,121 +498,123 @@ export const FormSideBar = ({
   }
 
   return (
-    <div>
-      <Reorder.Group
-        axis="y"
-        values={mainSubSections}
-        onReorder={handleMainSectionReorder}
-        className="space-y-2 "
-      >
-        {mainSubSections.sort(compareMainSections).map((mainSubSection) => (
-          <Reorder.Item
-            key={mainSubSection.id}
-            value={mainSubSection}
-            className=" bg-white p-4 rounded-md cursor-grab "
-            dragConstraints={{ top: 0, bottom: 0 }}
-          >
-            <ContextMenu modal={false}>
-              <ContextMenuTrigger>
-                <div className="flex">
-                  <span className="text-gray-500 font-bold w-6">
-                    {mainSubSection.order_number}.
-                  </span>
+    <>
+      <div className="h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden  scrollbar-thin  scrollbar-thumb-gray-400 scrollbar-track-gray-200 pl-1 pr-1">
+        <Reorder.Group
+          axis="y"
+          values={mainSubSections}
+          onReorder={handleMainSectionReorder}
+          className="space-y-2 "
+        >
+          {mainSubSections.sort(compareMainSections).map((mainSubSection) => (
+            <Reorder.Item
+              key={mainSubSection.id}
+              value={mainSubSection}
+              className=" bg-white p-4 rounded-md cursor-grab w-full "
+              dragConstraints={{ top: 0, bottom: 0 }}
+            >
+              <ContextMenu modal={false}>
+                <ContextMenuTrigger className="w-full">
+                  <div className="flex">
+                    <span className="text-gray-500 font-bold w-6">
+                      {mainSubSection.order_number}.
+                    </span>
 
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div
-                          className={`w-64 overflow-hidden`}
-                          onClick={() => scrollToSection(mainSubSection.id)}
-                        >
-                          <p className="truncate text-ellipsis whitespace-nowrap text-black">
-                            {mainSubSection.name}
-                          </p>
-                        </div>
-                      </TooltipTrigger>
-
-                      <TooltipContent>
-                        <p>{mainSubSection.name}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </ContextMenuTrigger>
-              <ContextMenuContent>
-                <ContextMenuItem
-                  onClick={() => {
-                    setSelectedMainSection(mainSubSection);
-                    setNewSubSectionName("");
-                    setNewSubSectionDescription("");
-                    setOpenCreateSubSectionDialog(true);
-                  }}
-                >
-                  create sub section
-                </ContextMenuItem>
-                <ContextMenuItem
-                  onClick={() => {
-                    setSelectedMainSection(mainSubSection);
-                    setNewMainSectionName(mainSubSection.name);
-                    setNewMainSectionDescription(mainSubSection.description);
-                    setOpenUpdateMainSectionDialog(true);
-                  }}
-                >
-                  update
-                </ContextMenuItem>
-                <ContextMenuItem
-                  className="text-red-600"
-                  onClick={() => {
-                    handleDeleteMainSection(mainSubSection.id);
-                  }}
-                >
-                  delete <Trash2></Trash2>
-                </ContextMenuItem>
-              </ContextMenuContent>
-            </ContextMenu>
-            <div>
-              <Reorder.Group
-                axis="y"
-                values={
-                  mainSubSection.inspectable_object_inspection_form_sub_section
-                }
-                onReorder={handleSubSectionReorder}
-                className={`space-y-2  p-2 cursor-default `}
-              >
-                {mainSubSection.inspectable_object_inspection_form_sub_section
-                  .sort(compareSubSections)
-                  .map((subSection) => (
-                    <Reorder.Item
-                      key={subSection.id}
-                      value={subSection}
-                      dragConstraints={{ top: 0, bottom: 0 }}
-                    >
-                      <ContextMenu modal={false}>
-                        <ContextMenuTrigger>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
                           <div
-                            className="flex items-center bg-white border p-4 space-x-2 rounded-md cursor-grab"
-                            onClick={() => scrollToSection(subSection.id)}
+                            className={`overflow-hidden w-80`}
+                            onClick={() => scrollToSection(mainSubSection.id)}
                           >
-                            <span className="text-gray-500 font-bold ">
-                              {subSection.order_number}.
-                            </span>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className={`w-64 overflow-hidden`}>
-                                    <p className="truncate text-ellipsis whitespace-nowrap text-black">
-                                      {subSection.name}
-                                    </p>
-                                  </div>
-                                </TooltipTrigger>
+                            <p className="truncate text-ellipsis whitespace-nowrap text-black">
+                              {mainSubSection.name}
+                            </p>
+                          </div>
+                        </TooltipTrigger>
 
-                                <TooltipContent>
-                                  <p>{subSection.name}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                        <TooltipContent>
+                          <p>{mainSubSection.name}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                  <ContextMenuItem
+                    onClick={() => {
+                      setSelectedMainSection(mainSubSection);
+                      setNewSubSectionName("");
+                      setNewSubSectionDescription("");
+                      setOpenCreateSubSectionDialog(true);
+                    }}
+                  >
+                    create sub section
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    onClick={() => {
+                      setSelectedMainSection(mainSubSection);
+                      setNewMainSectionName(mainSubSection.name);
+                      setNewMainSectionDescription(mainSubSection.description);
+                      setOpenUpdateMainSectionDialog(true);
+                    }}
+                  >
+                    update
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    className="text-red-600"
+                    onClick={() => {
+                      handleDeleteMainSection(mainSubSection.id);
+                    }}
+                  >
+                    delete <Trash2></Trash2>
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
+              <div>
+                <Reorder.Group
+                  axis="y"
+                  values={
+                    mainSubSection.inspectable_object_inspection_form_sub_section
+                  }
+                  onReorder={handleSubSectionReorder}
+                  className={`space-y-2  w-full p-2 cursor-default `}
+                >
+                  {mainSubSection.inspectable_object_inspection_form_sub_section
+                    .sort(compareSubSections)
+                    .map((subSection) => (
+                      <Reorder.Item
+                        key={subSection.id}
+                        value={subSection}
+                        dragConstraints={{ top: 0, bottom: 0 }}
+                        className="w-full"
+                      >
+                        <ContextMenu modal={false}>
+                          <ContextMenuTrigger className="w-full">
+                            <div
+                              className="flex items-center bg-white border p-4 space-x-2 rounded-md cursor-grab"
+                              onClick={() => scrollToSection(subSection.id)}
+                            >
+                              <span className="text-gray-500 font-bold ">
+                                {subSection.order_number}.
+                              </span>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className={` overflow-hidden`}>
+                                      <p className="truncate text-ellipsis whitespace-nowrap text-black">
+                                        {subSection.name}
+                                      </p>
+                                    </div>
+                                  </TooltipTrigger>
 
-                            {/* <TooltipProvider>
+                                  <TooltipContent>
+                                    <p>{subSection.name}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+
+                              {/* <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger>
                                   <p
@@ -615,39 +631,39 @@ export const FormSideBar = ({
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider> */}
-                          </div>
-                        </ContextMenuTrigger>
-                        <ContextMenuContent>
-                          <ContextMenuItem
-                            onClick={() => {
-                              setSelectedSubSection(subSection);
-                              setNewSubSectionName(subSection.name);
-                              setNewSubSectionDescription(
-                                subSection.description
-                              );
-                              setOpenUpdateSubSectionDialog(true);
-                            }}
-                          >
-                            update
-                          </ContextMenuItem>
-                          <ContextMenuItem
-                            className="text-red-600"
-                            onClick={() => {
-                              handleDeleteSubSection(subSection.id);
-                            }}
-                          >
-                            delete <Trash2></Trash2>
-                          </ContextMenuItem>
-                        </ContextMenuContent>
-                      </ContextMenu>
-                    </Reorder.Item>
-                  ))}
-              </Reorder.Group>
-            </div>
-          </Reorder.Item>
-        ))}
-      </Reorder.Group>
-
+                            </div>
+                          </ContextMenuTrigger>
+                          <ContextMenuContent>
+                            <ContextMenuItem
+                              onClick={() => {
+                                setSelectedSubSection(subSection);
+                                setNewSubSectionName(subSection.name);
+                                setNewSubSectionDescription(
+                                  subSection.description
+                                );
+                                setOpenUpdateSubSectionDialog(true);
+                              }}
+                            >
+                              update
+                            </ContextMenuItem>
+                            <ContextMenuItem
+                              className="text-red-600"
+                              onClick={() => {
+                                handleDeleteSubSection(subSection.id);
+                              }}
+                            >
+                              delete <Trash2></Trash2>
+                            </ContextMenuItem>
+                          </ContextMenuContent>
+                        </ContextMenu>
+                      </Reorder.Item>
+                    ))}
+                </Reorder.Group>
+              </div>
+            </Reorder.Item>
+          ))}
+        </Reorder.Group>
+      </div>
       <Dialog
         open={openCreateSubSectionDialog}
         onOpenChange={setOpenCreateSubSectionDialog}
@@ -834,6 +850,6 @@ export const FormSideBar = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 };

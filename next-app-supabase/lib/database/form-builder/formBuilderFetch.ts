@@ -18,6 +18,8 @@ import {
   IInspectableObjectResponse,
   IInspectableObjectWithPropertiesAndProfileResponse,
   IInspectableObjectWithPropertiesResponse,
+  IStringExtractionTrainingExampleResponse,
+  IStringExtractionTrainingResponse,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
@@ -576,6 +578,71 @@ export class DBActionsFormBuilderFetch {
     };
   }
 
-  // need improvement
-  //, single_choice_group(*, single_choice_field(*)), multiple_choice_group(*, multiple_choice_field(*)), text_input_group(*, text_input_field(*))
+  async fetchStringExtractionTrainings(profileId: UUID): Promise<{
+    stringExtractionTrainings: IStringExtractionTrainingResponse[] | null;
+
+    stringExtractionTrainingsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("string_extraction_training")
+      .select()
+      .eq("profile_id", profileId);
+
+    console.log("fetch string extraction trainings in db:", data);
+    if (error) {
+      console.error("fetch string extraction trainings in db error: ", error);
+    }
+
+    return {
+      stringExtractionTrainings: data,
+      stringExtractionTrainingsError: error as SupabaseError | null,
+    };
+  }
+
+  async fetchStringExtractionTraining(trainingId: UUID): Promise<{
+    stringExtractionTraining: IStringExtractionTrainingResponse | null;
+
+    stringExtractionTrainingError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("string_extraction_training")
+      .select()
+      .eq("id", trainingId);
+
+    console.log("fetch string extraction training in db:", data);
+    if (error) {
+      console.error("fetch string extraction training in db error: ", error);
+    }
+
+    return {
+      stringExtractionTraining: data ? data[0] : null,
+      stringExtractionTrainingError: error as SupabaseError | null,
+    };
+  }
+
+  async fetchStringExtractionTrainingExamples(trainingId: UUID): Promise<{
+    stringExtractionTrainingExamples:
+      | IStringExtractionTrainingExampleResponse[]
+      | null;
+
+    stringExtractionTrainingExamplesError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("string_extraction_training_example")
+      .select()
+      .eq("training_id", trainingId);
+
+    console.log("fetch string extraction training examples in db:", data);
+    if (error) {
+      console.error(
+        "fetch string extraction training examples in db error: ",
+        error
+      );
+    }
+
+    return {
+      stringExtractionTrainingExamples: data,
+      stringExtractionTrainingExamplesError: error as SupabaseError | null,
+    };
+  }
 }

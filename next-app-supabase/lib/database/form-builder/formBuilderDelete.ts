@@ -1,6 +1,8 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  IFormCheckboxGroupResponse,
   IFormCheckboxTaskResponse,
+  IFormTextInputFieldResponse,
   IInspectableObjectInspectionFormResponse,
   IInspectableObjectInspectionFormSubSectionInsert,
   IInspectableObjectInspectionFormSubSectionResponse,
@@ -11,6 +13,8 @@ import {
   IInspectableObjectProfileInsert,
   IInspectableObjectProfileResponse,
   IInspectableObjectResponse,
+  IStringExtractionTrainingExampleResponse,
+  IStringExtractionTrainingResponse,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
@@ -239,6 +243,27 @@ export class DBActionsFormBuilderDelete {
     };
   }
 
+  async deleteTextInputField(fieldId: UUID): Promise<{
+    deletedFormTextInputField: IFormCheckboxTaskResponse | null;
+    deletedFormTextInputFieldError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_text_input_field")
+      .delete()
+      .eq("id", fieldId)
+      .select();
+
+    console.log("delete form text input field in db:", data);
+    if (error) {
+      console.error("delete form text input field in db error:", error);
+    }
+
+    return {
+      deletedFormTextInputField: data ? data[0] : null,
+      deletedFormTextInputFieldError: error as SupabaseError | null,
+    };
+  }
+
   async deleteCheckbox(checkboxId: UUID): Promise<{
     deletedFormCheckbox: IFormCheckboxTaskResponse | null;
     deletedFormCheckboxError: SupabaseError | null;
@@ -260,6 +285,67 @@ export class DBActionsFormBuilderDelete {
     };
   }
 
+  async deleteAllCheckboxTasks(groupId: UUID): Promise<{
+    deletedFormCheckboxTasks: IFormCheckboxTaskResponse[] | null;
+    deletedFormCheckboxTasksError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_checkbox_task")
+      .delete()
+      .eq("group_id", groupId)
+      .select();
+
+    console.log("delete all form checkbox tasks in db:", data);
+    if (error) {
+      console.error("delete all form checkbox tasks in db error:", error);
+    }
+
+    return {
+      deletedFormCheckboxTasks: data,
+      deletedFormCheckboxTasksError: error as SupabaseError | null,
+    };
+  }
+  async deleteCheckboxGroup(groupId: UUID): Promise<{
+    deletedFormCheckboxGroup: IFormCheckboxGroupResponse[] | null;
+    deletedFormCheckboxGroupError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_checkbox_group")
+      .delete()
+      .eq("id", groupId)
+      .select();
+
+    console.log("delete checkbox group in db:", data);
+    if (error) {
+      console.error("delete checkbox group in db error:", error);
+    }
+
+    return {
+      deletedFormCheckboxGroup: data,
+      deletedFormCheckboxGroupError: error as SupabaseError | null,
+    };
+  }
+
+  async deleteAllTextInputFields(subSectionId: UUID): Promise<{
+    deletedFormTextInputFields: IFormTextInputFieldResponse[] | null;
+    deletedFormTextInputFieldsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_text_input_field")
+      .delete()
+      .eq("sub_section_id", subSectionId)
+      .select();
+
+    console.log("delete text input fields in db:", data);
+    if (error) {
+      console.error("delete text input fields in db error:", error);
+    }
+
+    return {
+      deletedFormTextInputFields: data,
+      deletedFormTextInputFieldsError: error as SupabaseError | null,
+    };
+  }
   async deleteEntireForm(formId: UUID): Promise<{
     deletedForm: IInspectableObjectInspectionFormResponse | null;
     deletedFormError: SupabaseError | null;
@@ -278,6 +364,50 @@ export class DBActionsFormBuilderDelete {
     return {
       deletedForm: data ? data[0] : null,
       deletedFormError: error as SupabaseError | null,
+    };
+  }
+
+  async deleteStringExtractionTrainingExamples(toDelete: UUID[]): Promise<{
+    deletedStringExtractionExamples:
+      | IStringExtractionTrainingExampleResponse[]
+      | null;
+    deletedStringExtractionExamplesError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("string_extraction_training_example")
+      .delete()
+      .in("id", toDelete)
+      .select();
+
+    console.log("delete training examples in db:", data);
+    if (error) {
+      console.error("delete training examples in db error:", error);
+    }
+
+    return {
+      deletedStringExtractionExamples: data,
+      deletedStringExtractionExamplesError: error as SupabaseError | null,
+    };
+  }
+
+  async deleteStringExtractionTraining(trainingId: UUID): Promise<{
+    deletedStringExtractionTraining: IStringExtractionTrainingResponse | null;
+    deletedStringExtractionTrainingError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("string_extraction_training")
+      .delete()
+      .eq("id", trainingId)
+      .select();
+
+    console.log("delete training in db:", data);
+    if (error) {
+      console.error("delete training in db error:", error);
+    }
+
+    return {
+      deletedStringExtractionTraining: data ? data[0] : null,
+      deletedStringExtractionTrainingError: error as SupabaseError | null,
     };
   }
 }

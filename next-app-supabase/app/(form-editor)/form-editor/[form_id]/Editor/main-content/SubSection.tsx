@@ -3,9 +3,11 @@ import {
   IFormCheckboxGroupWithCheckboxes,
   IFormCheckboxResponse,
   IInspectableObjectInspectionFormSubSectionWithData,
+  IStringExtractionTrainingResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import React, { useEffect, useState } from "react";
 import {
+  AlertTriangle,
   ArrowBigRightDash,
   DiscAlbum,
   Divide,
@@ -26,11 +28,25 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { UUID } from "crypto";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { useNotification } from "@/app/context/NotificationContext";
 import { Spinner } from "@/components/Spinner";
 
-import { updateCheckboxesOrderNumber } from "./actions";
+import {
+  deleteAllTasks,
+  deleteCheckbox,
+  deleteCheckboxGroup,
+  updateCheckboxesOrderNumber,
+} from "./actions";
 import { flushSync } from "react-dom";
 import {
   Card,
@@ -57,6 +73,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { Separator } from "@/components/ui/separator";
 
 const debounce = (func: Function, delay: number) => {
   let timer: NodeJS.Timeout;
@@ -79,8 +96,10 @@ interface SubSectionProps {
       Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>
     >
   >;
+
   setOpenTaskDialog: React.Dispatch<React.SetStateAction<boolean>>;
   setOpenCheckboxGroupDialog: React.Dispatch<React.SetStateAction<boolean>>;
+  setOpenTextInputFieldDialog: React.Dispatch<React.SetStateAction<boolean>>;
   setSelectedCheckboxGroupId: React.Dispatch<
     React.SetStateAction<UUID | undefined>
   >;
@@ -89,6 +108,12 @@ interface SubSectionProps {
       `${string}-${string}-${string}-${string}-${string}` | undefined
     >
   >;
+  handleDelteCheckboxGroup: (
+    groupId: UUID,
+    subSectionId: UUID
+  ) => Promise<void>;
+  handleDeleteAllTextInputFields: (subSectionId: UUID) => Promise<void>;
+  trainingList: IStringExtractionTrainingResponse[] | undefined;
 }
 
 export const SubSection = ({
@@ -100,6 +125,10 @@ export const SubSection = ({
   setOpenCheckboxGroupDialog,
   setSelectedCheckboxGroupId,
   setSelectedSubSectionId,
+  setOpenTextInputFieldDialog,
+  handleDelteCheckboxGroup,
+  handleDeleteAllTextInputFields,
+  trainingList,
 }: SubSectionProps) => {
   const { showNotification } = useNotification();
 
@@ -124,6 +153,31 @@ export const SubSection = ({
 
     return 0;
   }
+
+  const handleDelteAllTasks = async (groupId: UUID) => {
+    const { deletedFormCheckboxTasks, deletedFormCheckboxTasksError } =
+      await deleteAllTasks(groupId);
+    if (deletedFormCheckboxTasksError) {
+      showNotification(
+        "Delte all tasks",
+        `Error: ${deletedFormCheckboxTasksError.message} (${deletedFormCheckboxTasksError.code})`,
+        "error"
+      );
+    } else if (deletedFormCheckboxTasks) {
+      const copy = { ...sectionData };
+      copy.form_checkbox_group.filter(
+        (group) => group.id === groupId
+      )[0].form_checkbox_task = [];
+
+      setSectionData(copy);
+      showNotification(
+        "Delte all tasks",
+        `Successfully deleted all tasks for checkbox group '${groupId}'`,
+        "info"
+      );
+    }
+  };
+
   return (
     <div className="border-2 hover:border-black rounded-xl p-2">
       <TooltipProvider>
@@ -136,7 +190,6 @@ export const SubSection = ({
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-
       {sectionData.form_checkbox_group.map((group) => {
         return (
           <div className="flex space-x-5 p-5 " key={group.id}>
@@ -175,7 +228,12 @@ export const SubSection = ({
                     >
                       update
                     </ContextMenuItem>
-                    <ContextMenuItem className="text-red-500 flex justify-between">
+                    <ContextMenuItem
+                      className="text-red-500 flex justify-between"
+                      onClick={() => {
+                        handleDelteAllTasks(group.id);
+                      }}
+                    >
                       delete <Trash2></Trash2>
                     </ContextMenuItem>
                   </ContextMenuContent>
@@ -259,7 +317,12 @@ export const SubSection = ({
                 >
                   update
                 </ContextMenuItem>
-                <ContextMenuItem className="text-red-500 flex justify-between">
+                <ContextMenuItem
+                  className="text-red-500 flex justify-between"
+                  onClick={() =>
+                    handleDelteCheckboxGroup(group.id, subSectionId)
+                  }
+                >
                   delete <Trash2></Trash2>
                 </ContextMenuItem>
               </ContextMenuContent>
@@ -267,6 +330,113 @@ export const SubSection = ({
           </div>
         );
       })}
+      {sectionData.form_text_input_field.length > 0 && (
+        <>
+          <Separator />{" "}
+          <ContextMenu modal={false}>
+            <ContextMenuTrigger>
+              <Card className="m-4">
+                <CardHeader>
+                  <CardTitle>Text Input Fields</CardTitle>
+                  <CardDescription>
+                    text input fields that can be filled with text
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="p-4 space-y-2">
+                    {sectionData.form_text_input_field.map((field) => {
+                      return (
+                        <li
+                          className="flex items-center ml-3 space-x-2"
+                          key={field.id}
+                        >
+                          <Card className="flex w-full items-center justify-between  p-2">
+                            <div className="flex items-center w-full space-x-2">
+                              <Input
+                                className="w-1/2"
+                                disabled={true}
+                                id={field.id + "input"}
+                                placeholder={field.placeholder_text}
+                              ></Input>
+                              <Label
+                                className="truncate w-2/3"
+                                htmlFor={field.id + "input"}
+                              >
+                                {field.label}
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <p className="text-sm text-slate-500">
+                                Training:
+                              </p>
+                              <Select
+                                disabled={true}
+                                value={
+                                  field.training_id ? field.training_id : ""
+                                }
+                              >
+                                <SelectTrigger className="w-[180px]">
+                                  <SelectValue placeholder="" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectGroup>
+                                    <SelectLabel>Profile</SelectLabel>
+                                    {trainingList &&
+                                      trainingList.map((training) => (
+                                        <SelectItem
+                                          key={training.id}
+                                          value={training.id}
+                                        >
+                                          {training.name}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectGroup>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </Card>
+                          {!field.training_id ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <AlertTriangle></AlertTriangle>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>
+                                    No string extraction training selected...
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            <AlertTriangle className="opacity-0"></AlertTriangle>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </CardContent>
+              </Card>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+              <ContextMenuItem
+                onClick={() => {
+                  setSelectedSubSectionId(subSectionId);
+                  setOpenTextInputFieldDialog(true);
+                }}
+              >
+                update
+              </ContextMenuItem>
+              <ContextMenuItem
+                className="text-red-500 flex justify-between"
+                onClick={() => handleDeleteAllTextInputFields(subSectionId)}
+              >
+                delete <Trash2></Trash2>
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
+        </>
+      )}
     </div>
   );
 };

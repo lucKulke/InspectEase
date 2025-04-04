@@ -8,6 +8,7 @@ import { UUID } from "crypto";
 import {
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionWithData,
+  IStringExtractionTrainingResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { MainContent } from "./main-content/MainContent";
 import { GripVertical, SeparatorVertical } from "lucide-react";
@@ -29,6 +30,7 @@ interface MainFormSectionProps {
       Record<UUID, IInspectableObjectInspectionFormSubSectionWithData>
     >
   >;
+  trainingList: IStringExtractionTrainingResponse[] | undefined;
 }
 
 export const FormSection = ({
@@ -37,11 +39,12 @@ export const FormSection = ({
   setMainSectionsWithSubSections,
   subSectionsData,
   setSubSectionsData,
+  trainingList,
 }: MainFormSectionProps) => {
-  const [width, setWidth] = useState(350); // Initial sidebar width
+  const [width, setWidth] = useState(400); // Initial sidebar width
   const isResizing = useRef(false);
   const startX = useRef(0);
-  const startWidth = useRef(350); // Store initial width during drag start
+  const startWidth = useRef(400); // Store initial width during drag start
 
   const handleMouseDown = (e: React.MouseEvent) => {
     isResizing.current = true;
@@ -96,6 +99,7 @@ export const FormSection = ({
         mainSubSections={mainSectionsWithSubSections}
         subSectionsData={subSectionsData}
         setSubSectionsData={setSubSectionsData}
+        trainingList={trainingList}
       ></MainContent>
     </div>
   );

@@ -5,16 +5,14 @@ import { redirect } from "next/navigation";
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import { UUID } from "crypto";
 import { ErrorHandler } from "@/components/ErrorHandler";
+
+import ProfileData from "./ProfileData";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-import { FormConfigCard } from "./FormConfigCard";
-import { ObjectPropertyCard } from "./ObjectPropertyCard";
 import { profileIcons } from "@/lib/availableIcons";
 
 export default async function InspectableObjectProfilePage({
@@ -50,6 +48,12 @@ export default async function InspectableObjectProfilePage({
       ></ErrorHandler>
     );
 
+  const { stringExtractionTrainings, stringExtractionTrainingsError } =
+    await dbActions.fetchStringExtractionTrainings(profileId);
+
+  if (stringExtractionTrainingsError)
+    return <ErrorHandler error={stringExtractionTrainingsError}></ErrorHandler>;
+
   if (!inspectableObjectProfileWithObjProps)
     return <div>No data available</div>;
   if (!inspectableObjectProfileFormTypes) return <div>No data available</div>;
@@ -57,43 +61,31 @@ export default async function InspectableObjectProfilePage({
   return (
     <div>
       <PageHeading>Profile</PageHeading>
-      <div className="flex justify-center">
-        <ul className="w-1/2 space-y-7">
-          <li>
-            <Card className="min-w-[500px]">
-              <div className="flex justify-between items-center">
-                <CardHeader>
-                  <CardTitle>
-                    {inspectableObjectProfileWithObjProps?.name}
-                  </CardTitle>
-                  <CardDescription>
-                    {inspectableObjectProfileWithObjProps?.description}
-                  </CardDescription>
-                </CardHeader>
-                <div className="m-7">
-                  {inspectableObjectProfileWithObjProps?.icon_key &&
-                    profileIcons[inspectableObjectProfileWithObjProps.icon_key]}
-                </div>
-              </div>
-            </Card>
-          </li>
-          <li>
-            <ObjectPropertyCard
-              profileData={inspectableObjectProfileWithObjProps}
-            ></ObjectPropertyCard>
-          </li>
-          <li>
-            <FormConfigCard
-              profileId={profileId}
-              formTypes={inspectableObjectProfileFormTypes}
-            ></FormConfigCard>
-          </li>
-          {/* {inspectableObjectProfileWithProps && (
-          <ProfileCard
-            profileData={inspectableObjectProfileWithProps}
-          ></ProfileCard>
-        )} */}
-        </ul>
+      <div className="m-10">
+        <Card className="min-w-[500px]">
+          <div className="flex justify-between items-center">
+            <CardHeader>
+              <CardTitle>
+                {inspectableObjectProfileWithObjProps?.name}
+              </CardTitle>
+              <CardDescription>
+                {inspectableObjectProfileWithObjProps?.description}
+              </CardDescription>
+            </CardHeader>
+            <div className="m-7">
+              {inspectableObjectProfileWithObjProps?.icon_key &&
+                profileIcons[inspectableObjectProfileWithObjProps.icon_key]}
+            </div>
+          </div>
+        </Card>
+        <ProfileData
+          profileId={profileId}
+          inspectableObjectProfileWithObjProps={
+            inspectableObjectProfileWithObjProps
+          }
+          inspectableObjectProfileFormTypes={inspectableObjectProfileFormTypes}
+          stringExtractionTrainings={stringExtractionTrainings}
+        ></ProfileData>
       </div>
     </div>
   );

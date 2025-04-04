@@ -5,6 +5,7 @@ import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuild
 import {
   IFormCheckboxGroupInsert,
   IFormCheckboxInsert,
+  IFormTextInputFieldInsert,
   IInspectableObjectInspectionFormMainSectionInsert,
   IInspectableObjectInspectionFormMainSectionResponse,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
@@ -136,4 +137,12 @@ export async function fetchAllFormData(formId: UUID) {
   return await dbActions.fetchInspectableObjectInspectionFormMainSectionsWithSubSections(
     formId
   );
+}
+
+export async function createFormTextInputField(
+  fields: IFormTextInputFieldInsert[]
+) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderCreate(supabase);
+  return await dbActions.createFormTextInputField(fields);
 }
