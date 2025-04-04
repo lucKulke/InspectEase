@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
   if (
     pathname === "/login" ||
     pathname === "/auth/confirm" ||
-    pathname === "/reset-password"
+    pathname === "/auth/reset-password"
   ) {
     return NextResponse.next();
   }
