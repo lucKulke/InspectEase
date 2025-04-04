@@ -47,5 +47,5 @@ export async function signup(data: { email: string; password: string }) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/account");
+  redirect("/login");
 }

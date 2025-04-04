@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
         console.log("is invite");
       }
       console.log("the next path is", nextPath);
+      console.log("type", type);
 
       const redirectTo = request.nextUrl.clone();
       redirectTo.pathname = nextPath;
