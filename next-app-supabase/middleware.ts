@@ -5,11 +5,12 @@ export async function middleware(request: NextRequest) {
   // update user's auth session
   const { pathname } = request.nextUrl;
 
-  // Allow public access to the login page to avoid redirect loops
-  if (pathname === "/login") {
-    return NextResponse.next();
-  }
-  if (pathname === "/auth/confirm") {
+  // Allow public access to login, auth confirmation, and password reset pages
+  if (
+    pathname === "/login" ||
+    pathname === "/auth/confirm" ||
+    pathname === "/reset-password"
+  ) {
     return NextResponse.next();
   }
 
