@@ -18,7 +18,9 @@ export async function GET(request: NextRequest) {
       // If user was invited, send them to reset their password
       if (type === "invite") {
         nextPath = "/auth/reset-password";
+        console.log("is invite");
       }
+      console.log("the next path is", nextPath);
 
       const redirectTo = request.nextUrl.clone();
       redirectTo.pathname = nextPath;
