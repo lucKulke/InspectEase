@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get("type") as EmailOtpType | null;
 
   // Default redirect path (after successful confirmation)
-  let nextPath = "/";
+  let nextPath = "/login";
 
   if (token_hash && type) {
     const supabase = await createClient();
