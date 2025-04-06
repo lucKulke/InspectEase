@@ -8,28 +8,38 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get("type") as EmailOtpType | null;
 
   // Default redirect path (after successful confirmation)
-  let nextPath = "/login";
+  let nextPath = "/auth/login";
 
   if (token_hash && type) {
     const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({ type, token_hash });
 
     if (!error) {
+      console.log("no error in confirm");
       // If user was invited, send them to reset their password
-      if (type === "invite") {
-        nextPath = "/auth/reset-password";
-        console.log("is invite");
+      if (type === "invite" || type === "recovery") {
+        nextPath = "/auth/set-password";
       }
-      console.log("the next path is", nextPath);
-      console.log("type", type);
+      if (type === "email") {
+        nextPath = "/auth/login";
+      }
+    } else {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      const redirectTo = request.nextUrl.clone();
-      redirectTo.pathname = nextPath;
-      redirectTo.searchParams.delete("token_hash");
-      redirectTo.searchParams.delete("type");
-
-      return NextResponse.redirect(redirectTo);
+      const passwordAlreadySet = user?.user_metadata?.password_set;
+      console.log("password set", passwordAlreadySet);
+      if (!passwordAlreadySet) {
+        nextPath = "/auth/set-password";
+      }
     }
+
+    const redirectTo = request.nextUrl.clone();
+    redirectTo.pathname = nextPath;
+    redirectTo.searchParams.delete("token_hash");
+    redirectTo.searchParams.delete("type");
+    return NextResponse.redirect(redirectTo);
   }
 
   // Redirect to an error page if token verification fails

@@ -9,5 +9,9 @@ export async function resetPassword(password: string) {
     password,
   });
 
+  await supabase.auth.updateUser({
+    data: { password_set: true },
+  });
+
   return error;
 }
