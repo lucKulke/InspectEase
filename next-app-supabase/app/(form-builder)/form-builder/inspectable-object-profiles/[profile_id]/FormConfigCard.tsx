@@ -97,7 +97,7 @@ export const FormConfigCard = ({
       showNotification(
         "Delete form type",
         `Error: ${deletedProfileFormTypeError.message} (${deletedProfileFormTypeError.code})`,
-        "info"
+        "error"
       );
       return;
     }
