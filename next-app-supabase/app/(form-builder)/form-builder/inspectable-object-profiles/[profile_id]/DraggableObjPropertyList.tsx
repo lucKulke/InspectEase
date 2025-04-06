@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { UUID } from "crypto";
+import { useRouter } from "next/navigation";
 
 // Helper function to update order numbers
 
@@ -38,6 +39,7 @@ export const DraggableObjPropertyList = ({
   propertyList,
   setPropertyList,
 }: DraggableObjPropertyListProps) => {
+  const router = useRouter();
   const { showNotification } = useNotification();
 
   const updateOrderInDB = async (
@@ -55,6 +57,7 @@ export const DraggableObjPropertyList = ({
         "error"
       );
     }
+    router.refresh();
   };
 
   const debouncedUpdate = debounce(updateOrderInDB, 500);
@@ -117,6 +120,7 @@ export const DraggableObjPropertyList = ({
 
     setPropertyList(updatedList);
     await updateOrderInDB(updatedList);
+    router.refresh();
   };
 
   return (

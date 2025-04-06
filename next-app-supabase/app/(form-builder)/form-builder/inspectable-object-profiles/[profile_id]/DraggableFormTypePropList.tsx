@@ -108,13 +108,13 @@ export const DraggableFormTypePropList = ({
       inspectableObjectProfileFormTypePropError,
     } = await createFormTypeProp(formTypeProp);
     if (inspectableObjectProfileFormTypePropError) {
-    }
-
-    if (inspectableObjectProfileFormTypeProp)
+    } else if (inspectableObjectProfileFormTypeProp) {
       setFormTypeProps([
         ...formTypeProps,
         inspectableObjectProfileFormTypeProp,
       ]);
+      router.refresh();
+    }
   };
 
   const updateOrderInDB = async (
@@ -132,6 +132,7 @@ export const DraggableFormTypePropList = ({
         "error"
       );
     }
+    router.refresh();
   };
 
   const debouncedUpdate = debounce(updateOrderInDB, 500);
@@ -202,6 +203,7 @@ export const DraggableFormTypePropList = ({
       `Successfully deleted property '${deletedInspectableObjectProfileFormTypeProperty.name}' with id '${deletedInspectableObjectProfileFormTypeProperty.id}'`,
       "info"
     );
+    router.refresh();
   };
 
   return (

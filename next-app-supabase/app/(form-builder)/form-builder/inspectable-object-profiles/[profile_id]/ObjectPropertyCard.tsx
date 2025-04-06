@@ -30,6 +30,7 @@ import { profileIcons } from "@/lib/availableIcons";
 import { createProfileObjProperty } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { DraggableObjPropertyList } from "./DraggableObjPropertyList";
+import { useRouter } from "next/navigation";
 
 interface ObjectPropertyCard {
   profileData: IInspectableObjectProfileWithObjProperties;
@@ -37,6 +38,7 @@ interface ObjectPropertyCard {
 
 export const ObjectPropertyCard = ({ profileData }: ObjectPropertyCard) => {
   const { showNotification } = useNotification();
+  const router = useRouter();
 
   const [openAddPropertyDialog, setOpenAddPropertyDialog] =
     useState<boolean>(false);
@@ -74,6 +76,7 @@ export const ObjectPropertyCard = ({ profileData }: ObjectPropertyCard) => {
       ...profilePropertyList,
       inspectableObjectProfileObjProperty,
     ]);
+    router.refresh();
   };
 
   return (
