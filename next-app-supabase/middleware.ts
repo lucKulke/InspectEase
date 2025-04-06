@@ -5,8 +5,14 @@ export async function middleware(request: NextRequest) {
   // update user's auth session
   const { pathname } = request.nextUrl;
 
-  // Allow public access to the login page to avoid redirect loops
-  if (pathname === "/login") {
+  // Allow public access to login, auth confirmation, and password reset pages
+  if (
+    pathname === "/auth/signup" ||
+    pathname === "/auth/login" ||
+    pathname === "/auth/confirm" ||
+    pathname === "/auth/set-password" ||
+    pathname === "/auth/forgot-password"
+  ) {
     return NextResponse.next();
   }
 
@@ -18,7 +24,7 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
+     * - _next/static (st ´4atic files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * Feel free to modify this pattern to include more paths.
