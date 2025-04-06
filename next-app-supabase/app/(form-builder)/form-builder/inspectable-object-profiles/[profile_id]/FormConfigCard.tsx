@@ -53,6 +53,7 @@ import { DraggableObjPropertyList } from "./DraggableObjPropertyList";
 import { DraggableFormTypePropList } from "./DraggableFormTypePropList";
 import { UUID } from "crypto";
 import { Ellipsis, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface FormConfigCardProps {
   profileId: UUID;
@@ -63,6 +64,7 @@ export const FormConfigCard = ({
   formTypes,
   profileId,
 }: FormConfigCardProps) => {
+  const router = useRouter();
   const { showNotification } = useNotification();
   const [openCreateFormTypeDialog, setOpenCreateFormTypeDialog] =
     useState<boolean>(false);
@@ -81,8 +83,10 @@ export const FormConfigCard = ({
       inspectableObjectProfileFormTypeError,
     } = await createFormType(newFormType);
 
-    if (inspectableObjectProfileFormType)
+    if (inspectableObjectProfileFormType) {
       setFormTypesList([...formTypesList, inspectableObjectProfileFormType]);
+      router.refresh();
+    }
   };
 
   const handleDeleteFormType = async (formTypeId: UUID) => {
@@ -93,7 +97,7 @@ export const FormConfigCard = ({
       showNotification(
         "Delete form type",
         `Error: ${deletedProfileFormTypeError.message} (${deletedProfileFormTypeError.code})`,
-        "info"
+        "error"
       );
       return;
     }

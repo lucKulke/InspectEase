@@ -107,6 +107,7 @@ export const StringExtractionTrainingList = ({
         "info"
       );
       setList(list.filter((training) => training.id !== trainingId));
+      router.refresh();
     }
   };
 
