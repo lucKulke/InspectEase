@@ -42,91 +42,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Link from "next/link";
-
-// Mock data - replace with your actual data fetching logic
-const mockObjectGroups = [
-  { id: "cars", name: "Cars" },
-  { id: "trucks", name: "Trucks" },
-  { id: "machinery", name: "Machinery" },
-  { id: "vessels", name: "Pressure Vessels" },
-];
-
-const mockObjects = {
-  cars: [
-    { id: "car1", name: "Toyota Camry", model: "2022", status: "Active" },
-    { id: "car2", name: "Honda Accord", model: "2021", status: "Active" },
-    { id: "car3", name: "Ford Mustang", model: "2023", status: "Maintenance" },
-    { id: "car4", name: "Tesla Model 3", model: "2022", status: "Active" },
-  ],
-  trucks: [
-    { id: "truck1", name: "Ford F-150", model: "2020", status: "Active" },
-    {
-      id: "truck2",
-      name: "Chevrolet Silverado",
-      model: "2021",
-      status: "Maintenance",
-    },
-    { id: "truck3", name: "RAM 1500", model: "2022", status: "Active" },
-  ],
-  machinery: [
-    { id: "mach1", name: "Excavator XC-200", model: "2019", status: "Active" },
-    {
-      id: "mach2",
-      name: "Bulldozer BD-100",
-      model: "2020",
-      status: "Maintenance",
-    },
-    { id: "mach3", name: "Crane CR-300", model: "2021", status: "Active" },
-  ],
-  vessels: [
-    {
-      id: "vessel1",
-      name: "Pressure Vessel A-101",
-      model: "2018",
-      status: "Active",
-    },
-    {
-      id: "vessel2",
-      name: "Heat Exchanger B-203",
-      model: "2019",
-      status: "Maintenance",
-    },
-    {
-      id: "vessel3",
-      name: "Storage Tank D-407",
-      model: "2020",
-      status: "Active",
-    },
-  ],
-};
-
-const mockInspectionPlans = {
-  car1: [
-    { id: "plan1", name: "Annual Safety Inspection" },
-    { id: "plan2", name: "Emissions Test" },
-  ],
-  car2: [
-    { id: "plan3", name: "Brake System Check" },
-    { id: "plan4", name: "Electrical System Inspection" },
-  ],
-  car3: [
-    { id: "plan5", name: "Performance Evaluation" },
-    { id: "plan6", name: "Safety Systems Check" },
-  ],
-  car4: [
-    { id: "plan7", name: "Battery Health Assessment" },
-    { id: "plan8", name: "Autopilot System Verification" },
-  ],
-  // Add plans for other objects as needed
-  truck1: [
-    { id: "plan9", name: "Load Capacity Test" },
-    { id: "plan10", name: "Suspension Inspection" },
-  ],
-  vessel1: [
-    { id: "plan11", name: "Pressure Test Protocol" },
-    { id: "plan12", name: "Wall Thickness Measurement" },
-  ],
-};
+import { UUID } from "crypto";
 
 interface InspectionFormSelectorProps {
   profiles: IInspectableObjectProfileResponse[];
@@ -206,16 +122,9 @@ export const InspectionFormSelector = ({
     setActiveTab(step);
   };
 
-  // Get the selected object details
-  const getSelectedObjectDetails = () => {
-    if (!selectedGroup || !selectedObject) return null;
-
-    const objects =
-      mockObjects[selectedGroup as keyof typeof mockObjects] || [];
-    return objects.find((obj) => obj.id === selectedObject);
+  const handleInspectionFormSelect = (formId: UUID) => {
+    createFillableInspectionForm();
   };
-
-  const selectedObjectDetails = getSelectedObjectDetails();
 
   function compareProfileProps(
     a: IInspectableObjectProfileObjPropertyResponse,
@@ -294,11 +203,7 @@ export const InspectionFormSelector = ({
           <Card>
             <CardHeader>
               <CardTitle>Select Object</CardTitle>
-              <CardDescription>
-                Choose an object from the{" "}
-                {mockObjectGroups.find((g) => g.id === selectedGroup)?.name}{" "}
-                group
-              </CardDescription>
+              <CardDescription>Choose an object from the group</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -381,10 +286,7 @@ export const InspectionFormSelector = ({
           <Card>
             <CardHeader>
               <CardTitle>Select Inspection Plan</CardTitle>
-              <CardDescription>
-                {selectedObjectDetails &&
-                  `Choose an inspection plan for ${selectedObjectDetails.name}`}
-              </CardDescription>
+              <CardDescription>Choose an inspection</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <ul className="space-y-3">
@@ -421,7 +323,10 @@ export const InspectionFormSelector = ({
                                   inspectionForm.form_type_id === formType.id
                               )
                               .map((inspectionForm) => (
-                                <TableRow key={inspectionForm.id}>
+                                <TableRow
+                                  key={inspectionForm.id}
+                                  onClick={() => handleInspectionFormSelect()}
+                                >
                                   {formType.inspectable_object_profile_form_type_property
                                     .sort(compareFormTypeProps)
                                     .map((type) => {
