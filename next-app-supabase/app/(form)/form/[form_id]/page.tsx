@@ -47,8 +47,10 @@ export default async function FormPage({
     );
 
   return (
-    <div className="p-5">
-      <Link href="/form-filler">Back</Link>
+    <div className="">
+      <Link className="ml-2" href="/form-filler">
+        Back
+      </Link>
       <div>
         <MainComp
           formBuildData={
