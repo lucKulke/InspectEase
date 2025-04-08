@@ -43,6 +43,9 @@ import { v4 as uuidv4 } from "uuid";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Link from "next/link";
 import { UUID } from "crypto";
+import { createFillableInspectionForm } from "./actions";
+import { useNotification } from "@/app/context/NotificationContext";
+import { SupabaseError } from "@/lib/globalInterfaces";
 
 interface InspectionFormSelectorProps {
   profiles: IInspectableObjectProfileResponse[];
@@ -59,6 +62,7 @@ export const InspectionFormSelector = ({
   inspectionForms,
   profileFormTypes,
 }: InspectionFormSelectorProps) => {
+  const { showNotification } = useNotification();
   const router = useRouter();
   const [selectedGroup, setSelectedGroup] = useState("");
   const [selectedObject, setSelectedObject] = useState("");
@@ -78,52 +82,21 @@ export const InspectionFormSelector = ({
     setActiveTab("select-plan");
   };
 
-  const handlePlanChange = (value: string) => {
-    setSelectedPlan(value);
-  };
-
-  const handleContinueToForm = () => {
-    if (selectedObject && selectedPlan) {
-      setActiveTab("fill-form");
-    } else {
-      //   toast({
-      //     title: "Selection required",
-      //     description: "Please select an inspection plan",
-      //     variant: "destructive",
-      //   });
-    }
-  };
-
-  const handleSubmit = (formData: any) => {
-    // Here you would submit the form data to your backend
-    console.log("Submitting inspection data:", {
-      groupId: selectedGroup,
-      objectId: selectedObject,
-      planId: selectedPlan,
-      formData,
+  const handleContinueToForm = async () => {
+    const { id, error } = await createFillableInspectionForm({
+      build_id: selectedPlan as UUID,
     });
 
-    // toast({
-    //   title: "Inspection submitted",
-    //   description: "Your inspection has been successfully recorded",
-    // });
-
-    // Reset the form
-    setSelectedGroup("");
-    setSelectedObject("");
-    setSelectedPlan("");
-    setActiveTab("select-group");
-
-    // Optionally redirect to a confirmation page
-    // router.push('/inspection-form/confirmation')
+    if (error) {
+      showNotification("Create text input fields", `Error`, "error");
+      console.log("form id", id);
+    } else if (id) {
+      router.push("/form/" + id);
+    }
   };
 
   const handleBack = (step: string) => {
     setActiveTab(step);
-  };
-
-  const handleInspectionFormSelect = (formId: UUID) => {
-    createFillableInspectionForm();
   };
 
   function compareProfileProps(
@@ -325,7 +298,13 @@ export const InspectionFormSelector = ({
                               .map((inspectionForm) => (
                                 <TableRow
                                   key={inspectionForm.id}
-                                  onClick={() => handleInspectionFormSelect()}
+                                  onClick={() =>
+                                    setSelectedPlan(inspectionForm.id)
+                                  }
+                                  className={`${
+                                    selectedPlan === inspectionForm.id &&
+                                    "bg-slate-400"
+                                  }`}
                                 >
                                   {formType.inspectable_object_profile_form_type_property
                                     .sort(compareFormTypeProps)
@@ -362,7 +341,7 @@ export const InspectionFormSelector = ({
                 Back
               </Button>
               <Button onClick={handleContinueToForm} disabled={!selectedPlan}>
-                Continue to Form <ChevronRight className="ml-2 h-4 w-4" />
+                Continue to new Form <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             </CardFooter>
           </Card>

@@ -12,7 +12,7 @@ export const BackHomeButton = () => {
     <div className="flex justify-between">
       <Link href="/">
         {pathname !== "/" && (
-          <div className="fixed top-4 left-4 p-2 rounded-full bg-gray-200 dark:bg-gray-800 transition-colors duration-200">
+          <div className="mt-4 ml-4 p-2 rounded-full bg-gray-200 dark:bg-gray-800 transition-colors duration-200">
             <Wrench className="w-5 h-5"></Wrench>
           </div>
         )}
