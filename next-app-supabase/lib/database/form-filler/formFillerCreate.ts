@@ -4,6 +4,7 @@ import {
   IFillableCheckboxResponse,
   IFillableFormInsert,
   IFillableFormResponse,
+  IFillableMainCheckboxInsert,
   IFillableTextInputFieldInsert,
   IFillableTextInputFieldResponse,
 } from "./formFillerInterfaces";
@@ -37,6 +38,28 @@ export class DBActionsFormFillerCreate {
     };
   }
 
+  async createNewFillableMainCheckboxes(
+    checkboxes: IFillableMainCheckboxInsert[]
+  ): Promise<{
+    mainCheckboxes: IFillableCheckboxResponse[] | null;
+    mainCheckboxesError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("main_checkbox")
+      .insert(checkboxes)
+      .select();
+
+    console.log("create new fillable main checkboxes in db:", data);
+    if (error) {
+      console.error("create new fillable main checkboxes in db error: ", error);
+    }
+
+    return {
+      mainCheckboxesError: error as SupabaseError | null,
+      mainCheckboxes: data,
+    };
+  }
+
   async createNewFillableCheckboxes(
     checkboxes: IFillableCheckboxInsert[]
   ): Promise<{
@@ -54,8 +77,8 @@ export class DBActionsFormFillerCreate {
     }
 
     return {
-      checkboxes: data,
       checkboxesError: error as SupabaseError | null,
+      checkboxes: data,
     };
   }
 

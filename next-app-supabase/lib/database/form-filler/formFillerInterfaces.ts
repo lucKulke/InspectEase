@@ -10,9 +10,21 @@ export interface IFillableFormResponse extends IFillableFormInsert {
   in_progress: boolean;
 }
 
-export interface IFillableCheckboxInsert {
-  checkbox_build_id: UUID;
+export interface IFillableMainCheckboxInsert {
+  id: UUID;
   fillable_form_id: UUID;
+  checkbox_build_id: UUID;
+}
+
+export interface IFillableMainCheckboxResponse
+  extends IFillableMainCheckboxInsert {
+  created_at: Date | string;
+  checked: boolean;
+}
+
+export interface IFillableCheckboxInsert {
+  build_task_id: UUID;
+  main_checkbox_id: UUID;
 }
 
 export interface IFillableCheckboxResponse extends IFillableCheckboxInsert {
@@ -37,12 +49,17 @@ interface ICheckbox {
   id: UUID;
 }
 
+interface ICheckboxTask {
+  id: UUID;
+}
+
 interface ITextInputField {
   id: UUID;
 }
 
 interface ICheckboxGroup {
   form_checkbox: ICheckbox[];
+  form_checkbox_task: ICheckboxTask[];
 }
 
 interface ISubSection {
@@ -58,4 +75,7 @@ export interface IFormData {
   inspectable_object_inspection_form_main_section: IMainSection[];
 }
 
-//inspectable_object_inspection_form_main_section(inspectable_object_inspection_form_sub_section(form_checkbox_group(form_checkbox(id)),form_text_input_field(id)))
+export interface IMainCheckboxWithSubCheckboxData
+  extends IFillableMainCheckboxResponse {
+  checkbox: IFillableCheckboxResponse[];
+}

@@ -25,12 +25,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { IMainCheckboxWithSubCheckboxData } from "@/lib/database/form-filler/formFillerInterfaces";
 
 interface MainCompProps {
   formBuildData: IInspectableObjectInspectionFormMainSectionWithSubSectionData[];
+  checkboxes: IMainCheckboxWithSubCheckboxData[];
 }
 
-export const MainComp = ({ formBuildData }: MainCompProps) => {
+export const MainComp = ({ formBuildData, checkboxes }: MainCompProps) => {
   const [sections, setSections] =
     useState<IInspectableObjectInspectionFormMainSectionWithSubSectionData[]>(
       formBuildData
@@ -125,7 +127,12 @@ export const MainComp = ({ formBuildData }: MainCompProps) => {
                                                   </TableHead>
                                                   {selectionGroup.form_checkbox.map(
                                                     (checkbox) => (
-                                                      <TableHead className="text-center w-[100px]">
+                                                      <TableHead
+                                                        className="text-center w-[100px]"
+                                                        key={
+                                                          checkbox.id + "head"
+                                                        }
+                                                      >
                                                         {checkbox.label}
                                                       </TableHead>
                                                     )
@@ -135,16 +142,45 @@ export const MainComp = ({ formBuildData }: MainCompProps) => {
                                               <TableBody>
                                                 {selectionGroup.form_checkbox_task.map(
                                                   (task) => (
-                                                    <TableRow>
+                                                    <TableRow
+                                                      key={task.id + "tablerow"}
+                                                    >
                                                       <TableCell className="font-medium text-left py-4">
                                                         {task.description}
                                                       </TableCell>
                                                       {selectionGroup.form_checkbox.map(
-                                                        (checkbox) => (
-                                                          <TableCell className="font-medium text-center whitespace-nowrap py-4">
-                                                            <Checkbox></Checkbox>
-                                                          </TableCell>
-                                                        )
+                                                        (buildCheckbox) => {
+                                                          const currentCheckbox =
+                                                            checkboxes.filter(
+                                                              (mainCheckbox) =>
+                                                                mainCheckbox.checkbox_build_id ===
+                                                                buildCheckbox.id
+                                                            )[0];
+
+                                                          const correctCheckbox =
+                                                            currentCheckbox.checkbox.filter(
+                                                              (subCheckbox) =>
+                                                                subCheckbox.build_task_id ===
+                                                                task.id
+                                                            )[0];
+                                                          return (
+                                                            <TableCell
+                                                              key={
+                                                                correctCheckbox.id +
+                                                                "cell"
+                                                              }
+                                                              className="font-medium text-center whitespace-nowrap py-4"
+                                                            >
+                                                              <Checkbox
+                                                                onClick={() => {
+                                                                  console.log(
+                                                                    correctCheckbox
+                                                                  );
+                                                                }}
+                                                              ></Checkbox>
+                                                            </TableCell>
+                                                          );
+                                                        }
                                                       )}
                                                     </TableRow>
                                                   )

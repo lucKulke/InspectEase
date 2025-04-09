@@ -7,11 +7,12 @@ import { DBActionsFormFillerFetch } from "@/lib/database/form-filler/formFillerF
 import {
   IFillableCheckboxInsert,
   IFillableFormInsert,
+  IFillableMainCheckboxInsert,
   IFillableTextInputFieldInsert,
 } from "@/lib/database/form-filler/formFillerInterfaces";
 import { SupabaseError } from "@/lib/globalInterfaces";
 import { createClient } from "@/utils/supabase/server";
-import { UUID } from "crypto";
+import { randomUUID, UUID } from "crypto";
 
 export async function createFillableInspectionForm(
   newForm: IFillableFormInsert
@@ -59,7 +60,8 @@ export async function createFillableInspectionForm(
       error: formError,
     };
   if (form) {
-    const checkboxList: IFillableCheckboxInsert[] = [];
+    const mainCheckboxList: IFillableMainCheckboxInsert[] = [];
+    const subCheckboxList: IFillableCheckboxInsert[] = [];
     const textInputFieldList: IFillableTextInputFieldInsert[] = [];
 
     fields?.inspectable_object_inspection_form_main_section.forEach(
@@ -67,12 +69,26 @@ export async function createFillableInspectionForm(
         mainSection.inspectable_object_inspection_form_sub_section.forEach(
           (subSection) => {
             subSection.form_checkbox_group.forEach((group) => {
-              group.form_checkbox.forEach((checkbox) =>
-                checkboxList.push({
+              const tempMainCheckboxList: UUID[] = [];
+
+              group.form_checkbox.forEach((checkbox) => {
+                const newId = randomUUID();
+                tempMainCheckboxList.push(newId);
+                mainCheckboxList.push({
+                  id: newId,
                   checkbox_build_id: checkbox.id,
                   fillable_form_id: form.id,
-                })
-              );
+                });
+              });
+
+              group.form_checkbox_task.forEach((task) => {
+                tempMainCheckboxList.forEach((mainCheckboxId) => {
+                  subCheckboxList.push({
+                    build_task_id: task.id,
+                    main_checkbox_id: mainCheckboxId,
+                  });
+                });
+              });
             });
             subSection.form_text_input_field.forEach((field) =>
               textInputFieldList.push({
@@ -85,7 +101,7 @@ export async function createFillableInspectionForm(
       }
     );
 
-    console.log("checkbox list", checkboxList);
+    console.log("checkbox list", mainCheckboxList);
     console.log("text input field list", textInputFieldList);
 
     const { textInputFields, textInputFieldsError } =
@@ -96,8 +112,20 @@ export async function createFillableInspectionForm(
     if (textInputFieldsError) {
       return { id: null, error: textInputFieldsError };
     }
+
+    const { mainCheckboxes, mainCheckboxesError } =
+      await dbActionsFormFillerCreate.createNewFillableMainCheckboxes(
+        mainCheckboxList
+      );
+
+    if (mainCheckboxesError) {
+      return { id: null, error: mainCheckboxesError };
+    }
+
     const { checkboxes, checkboxesError } =
-      await dbActionsFormFillerCreate.createNewFillableCheckboxes(checkboxList);
+      await dbActionsFormFillerCreate.createNewFillableCheckboxes(
+        subCheckboxList
+      );
 
     if (checkboxesError) {
       return { id: null, error: checkboxesError };

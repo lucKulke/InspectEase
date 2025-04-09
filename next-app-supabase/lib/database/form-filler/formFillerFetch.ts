@@ -5,6 +5,7 @@ import {
   IFillableCheckboxResponse,
   IFillableFormResponse,
   IFormData,
+  IMainCheckboxWithSubCheckboxData,
 } from "./formFillerInterfaces";
 
 export class DBActionsFormFillerFetch {
@@ -55,6 +56,30 @@ export class DBActionsFormFillerFetch {
     };
   }
 
+  async fetchCheckboxes(formId: UUID): Promise<{
+    checkboxes: IMainCheckboxWithSubCheckboxData[];
+    checkboxesError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("main_checkbox")
+      .select(
+        `
+        *, checkbox(*)
+        `
+      )
+      .eq("fillable_form_id", formId);
+
+    console.log("fetch fillable checkboxes in db:", data);
+    if (error) {
+      console.error("fetch fillable checkboxes in db error: ", error);
+    }
+
+    return {
+      checkboxes: data ? data : [],
+      checkboxesError: error as SupabaseError | null,
+    };
+  }
+
   async fetchAllCheckboxesAndTextInputFieldsByFormId(formId: UUID): Promise<{
     fields: IFormData | null;
     fieldsError: SupabaseError | null;
@@ -62,7 +87,7 @@ export class DBActionsFormFillerFetch {
     const { data, error } = await this.supabase
       .from("inspectable_object_inspection_form")
       .select(
-        `inspectable_object_inspection_form_main_section(inspectable_object_inspection_form_sub_section(form_checkbox_group(form_checkbox(id)),form_text_input_field(id)))
+        `inspectable_object_inspection_form_main_section(inspectable_object_inspection_form_sub_section(form_checkbox_group(form_checkbox(id), form_checkbox_task(id)),form_text_input_field(id)))
         `
       )
       .eq("id", formId)

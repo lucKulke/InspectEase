@@ -46,6 +46,12 @@ export default async function FormPage({
       ></ErrorHandler>
     );
 
+  const { checkboxes, checkboxesError } =
+    await formFillerDbActions.fetchCheckboxes(form.id);
+
+  if (checkboxesError)
+    return <ErrorHandler error={checkboxesError}></ErrorHandler>;
+
   return (
     <div className="">
       <Link className="ml-2" href="/form-filler">
@@ -56,6 +62,7 @@ export default async function FormPage({
           formBuildData={
             inspectableObjectInspectionFormMainSectionsWithSubSectionData
           }
+          checkboxes={checkboxes}
         ></MainComp>
       </div>
     </div>
