@@ -4,6 +4,7 @@ import { UUID } from "crypto";
 import {
   IFillableCheckboxResponse,
   IFillableFormResponse,
+  IFillableTextInputFieldResponse,
   IFormData,
   IMainCheckboxWithSubCheckboxData,
 } from "./formFillerInterfaces";
@@ -33,6 +34,26 @@ export class DBActionsFormFillerFetch {
     return {
       form: data,
       formError: error as SupabaseError | null,
+    };
+  }
+
+  async fetchTextInputFields(formId: UUID): Promise<{
+    textInputFields: IFillableTextInputFieldResponse[];
+    textInputFieldsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("text_input")
+      .select()
+      .eq("fillable_form_id", formId);
+
+    console.log("fetch fillable form in db:", data);
+    if (error) {
+      console.error("fetch fillable form in db error: ", error);
+    }
+
+    return {
+      textInputFields: data ? data : [],
+      textInputFieldsError: error as SupabaseError | null,
     };
   }
 

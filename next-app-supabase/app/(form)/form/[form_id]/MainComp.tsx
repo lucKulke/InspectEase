@@ -25,18 +25,37 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { IMainCheckboxWithSubCheckboxData } from "@/lib/database/form-filler/formFillerInterfaces";
+import {
+  IFillableTextInputFieldResponse,
+  IMainCheckboxWithSubCheckboxData,
+} from "@/lib/database/form-filler/formFillerInterfaces";
+import {
+  updateCheckboxValue,
+  updateMainCheckboxValue,
+  updateTextInputFieldValue,
+} from "./actions";
+import { TextInputField } from "./TextInputField";
 
 interface MainCompProps {
   formBuildData: IInspectableObjectInspectionFormMainSectionWithSubSectionData[];
   checkboxes: IMainCheckboxWithSubCheckboxData[];
+  textInputFields: IFillableTextInputFieldResponse[];
 }
 
-export const MainComp = ({ formBuildData, checkboxes }: MainCompProps) => {
+export const MainComp = ({
+  formBuildData,
+  checkboxes,
+  textInputFields,
+}: MainCompProps) => {
   const [sections, setSections] =
     useState<IInspectableObjectInspectionFormMainSectionWithSubSectionData[]>(
       formBuildData
     );
+  const [fillableCheckboxes, setFillableCheckboxes] =
+    useState<IMainCheckboxWithSubCheckboxData[]>(checkboxes);
+
+  const [fillableTextInputFields, setFillableTextInputFields] =
+    useState<IFillableTextInputFieldResponse[]>(textInputFields);
 
   const [selectedMainSections, setSelectedMainSections] = useState<UUID[]>([]);
   const [selectedSubSections, setSelectedSubSections] = useState<UUID[]>([]);
@@ -67,6 +86,50 @@ export const MainComp = ({ formBuildData, checkboxes }: MainCompProps) => {
         return copy;
       });
     }
+  };
+
+  const handleCheckCheckbox = (checkboxId: UUID) => {
+    console.log(checkboxId);
+    let selectedCheckbox: { type: "main" | "sub"; value: boolean } | undefined;
+
+    const copy = [...fillableCheckboxes].map((mainCheckbox) => {
+      if (mainCheckbox.id === checkboxId) {
+        mainCheckbox.checked = !mainCheckbox.checked;
+        selectedCheckbox = { type: "main", value: mainCheckbox.checked };
+      } else {
+        mainCheckbox.checkbox = mainCheckbox.checkbox.map((checkbox) => {
+          if (checkbox.id === checkboxId) {
+            checkbox.checked = !checkbox.checked;
+            selectedCheckbox = { type: "sub", value: checkbox.checked };
+          }
+          return checkbox;
+        });
+      }
+      return mainCheckbox;
+    });
+
+    if (!selectedCheckbox) return;
+    setFillableCheckboxes(copy);
+    if (selectedCheckbox.type === "main") {
+      updateMainCheckboxValue(checkboxId, selectedCheckbox.value);
+    } else if (selectedCheckbox.type === "sub") {
+      updateCheckboxValue(checkboxId, selectedCheckbox.value);
+    }
+  };
+
+  const handleTextInputFieldChange = async (
+    textInputFieldId: UUID,
+    value: string
+  ) => {
+    const copy = [...fillableTextInputFields].map((inputField) => {
+      if (inputField.id === textInputFieldId) {
+        inputField.value = value;
+      }
+      return inputField;
+    });
+
+    setFillableTextInputFields(copy);
+    await updateTextInputFieldValue(textInputFieldId, value);
   };
 
   return (
@@ -151,7 +214,7 @@ export const MainComp = ({ formBuildData, checkboxes }: MainCompProps) => {
                                                       {selectionGroup.form_checkbox.map(
                                                         (buildCheckbox) => {
                                                           const currentCheckbox =
-                                                            checkboxes.filter(
+                                                            fillableCheckboxes.filter(
                                                               (mainCheckbox) =>
                                                                 mainCheckbox.checkbox_build_id ===
                                                                 buildCheckbox.id
@@ -172,9 +235,12 @@ export const MainComp = ({ formBuildData, checkboxes }: MainCompProps) => {
                                                               className="font-medium text-center whitespace-nowrap py-4"
                                                             >
                                                               <Checkbox
+                                                                checked={
+                                                                  correctCheckbox.checked
+                                                                }
                                                                 onClick={() => {
-                                                                  console.log(
-                                                                    correctCheckbox
+                                                                  handleCheckCheckbox(
+                                                                    correctCheckbox.id
                                                                   );
                                                                 }}
                                                               ></Checkbox>
@@ -197,21 +263,27 @@ export const MainComp = ({ formBuildData, checkboxes }: MainCompProps) => {
                                   0 && (
                                   <ul className="mt-5">
                                     {subSection.form_text_input_field.map(
-                                      (inputField) => (
-                                        <li key={inputField.id}>
-                                          <Card className="p-3 flex justify-between items-center">
-                                            <p className="w-2/3">
-                                              {inputField.label}
-                                            </p>
-                                            <Input
-                                              className="w-1/3"
-                                              placeholder={
-                                                inputField.placeholder_text
+                                      (inputField) => {
+                                        const fillableInputField =
+                                          fillableTextInputFields.filter(
+                                            (textInput) =>
+                                              textInput.text_input_build_id ===
+                                              inputField.id
+                                          )[0];
+                                        return (
+                                          <li key={inputField.id}>
+                                            <TextInputField
+                                              buildInputField={inputField}
+                                              fillableInputField={
+                                                fillableInputField
                                               }
-                                            ></Input>
-                                          </Card>
-                                        </li>
-                                      )
+                                              handleSaveNewValue={
+                                                handleTextInputFieldChange
+                                              }
+                                            ></TextInputField>
+                                          </li>
+                                        );
+                                      }
                                     )}
                                   </ul>
                                 )}

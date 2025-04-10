@@ -52,6 +52,11 @@ export default async function FormPage({
   if (checkboxesError)
     return <ErrorHandler error={checkboxesError}></ErrorHandler>;
 
+  const { textInputFields, textInputFieldsError } =
+    await formFillerDbActions.fetchTextInputFields(form.id);
+  if (textInputFieldsError)
+    return <ErrorHandler error={textInputFieldsError}></ErrorHandler>;
+
   return (
     <div className="">
       <Link className="ml-2" href="/form-filler">
@@ -63,6 +68,7 @@ export default async function FormPage({
             inspectableObjectInspectionFormMainSectionsWithSubSectionData
           }
           checkboxes={checkboxes}
+          textInputFields={textInputFields}
         ></MainComp>
       </div>
     </div>

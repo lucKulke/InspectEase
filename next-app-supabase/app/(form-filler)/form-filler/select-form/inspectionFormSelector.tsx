@@ -46,6 +46,17 @@ import { UUID } from "crypto";
 import { createFillableInspectionForm } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { SupabaseError } from "@/lib/globalInterfaces";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@radix-ui/react-label";
+import { Input } from "@/components/ui/input";
 
 interface InspectionFormSelectorProps {
   profiles: IInspectableObjectProfileResponse[];
@@ -85,6 +96,7 @@ export const InspectionFormSelector = ({
   const handleContinueToForm = async () => {
     const { id, error } = await createFillableInspectionForm({
       build_id: selectedPlan as UUID,
+      reference_number: "",
     });
 
     if (error) {
@@ -340,9 +352,64 @@ export const InspectionFormSelector = ({
               >
                 Back
               </Button>
-              <Button onClick={handleContinueToForm} disabled={!selectedPlan}>
-                Continue to new Form <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
+              <Dialog>
+                <DialogTrigger>
+                  <Button
+                    onClick={handleContinueToForm}
+                    disabled={!selectedPlan}
+                  >
+                    Continue to new Form{" "}
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <form onSubmit={handleSubmit}>
+                    <DialogHeader>
+                      <DialogTitle>Create New Inspection Form</DialogTitle>
+                      <DialogDescription>
+                        Enter a reference number for the new inspection form.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid gap-2">
+                        <Label
+                          htmlFor="referenceNumber"
+                          className="flex items-center justify-between"
+                        >
+                          Reference Number
+                          <span className="text-xs text-muted-foreground">
+                            (Required)
+                          </span>
+                        </Label>
+                        <Input
+                          id="referenceNumber"
+                          value={referenceNumber}
+                          onChange={(e) => {
+                            setReferenceNumber(e.target.value);
+                            if (error) setError("");
+                          }}
+                          placeholder="e.g., REF-2023-001"
+                          className={error ? "border-red-500" : ""}
+                          autoFocus
+                        />
+                        {error && (
+                          <p className="text-sm text-red-500">{error}</p>
+                        )}
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        type="button"
+                        onClick={() => setOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit">Create Form</Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </CardFooter>
           </Card>
         </TabsContent>

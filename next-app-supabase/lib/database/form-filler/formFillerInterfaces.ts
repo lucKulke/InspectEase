@@ -2,6 +2,7 @@ import { UUID } from "crypto";
 
 export interface IFillableFormInsert {
   build_id: UUID;
+  reference_number: string;
 }
 
 export interface IFillableFormResponse extends IFillableFormInsert {
@@ -39,7 +40,7 @@ export interface IFillableTextInputFieldInsert {
 }
 
 export interface IFillableTextInputFieldResponse
-  extends IFillableCheckboxInsert {
+  extends IFillableTextInputFieldInsert {
   id: UUID;
   created_at: Date | string;
   value: string;
