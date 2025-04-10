@@ -63,6 +63,9 @@ export default async function FormPage({
         Back
       </Link>
       <div>
+        <div className="flex justify-center">
+          <h1 className="font-bold underline">{form.identifier_string}</h1>
+        </div>
         <MainComp
           formBuildData={
             inspectableObjectInspectionFormMainSectionsWithSubSectionData

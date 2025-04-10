@@ -2,7 +2,7 @@ import { UUID } from "crypto";
 
 export interface IFillableFormInsert {
   build_id: UUID;
-  reference_number: string;
+  identifier_string: string;
 }
 
 export interface IFillableFormResponse extends IFillableFormInsert {

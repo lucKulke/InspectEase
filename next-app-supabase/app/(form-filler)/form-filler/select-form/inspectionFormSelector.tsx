@@ -79,6 +79,11 @@ export const InspectionFormSelector = ({
   const [selectedObject, setSelectedObject] = useState("");
   const [selectedPlan, setSelectedPlan] = useState("");
   const [activeTab, setActiveTab] = useState("select-group");
+  const [formIdentifierString, setFormIdentifierString] = useState<string>("");
+  const [formIdentifierStringError, setFormIdentifierStringError] = useState<
+    string | null
+  >(null);
+  const [openDialog, setOpenDialog] = useState<boolean>(false);
 
   const handleGroupChange = (value: string) => {
     setSelectedGroup(value);
@@ -96,7 +101,7 @@ export const InspectionFormSelector = ({
   const handleContinueToForm = async () => {
     const { id, error } = await createFillableInspectionForm({
       build_id: selectedPlan as UUID,
-      reference_number: "",
+      identifier_string: formIdentifierString,
     });
 
     if (error) {
@@ -105,6 +110,17 @@ export const InspectionFormSelector = ({
     } else if (id) {
       router.push("/form/" + id);
     }
+  };
+
+  const handleCreateNewFillableForm = (e: React.FormEvent) => {
+    e.preventDefault();
+    const identifier = formIdentifierString.trim();
+    if (!identifier.trim()) {
+      setFormIdentifierStringError("Identifier string is required");
+      return;
+    }
+
+    handleContinueToForm();
   };
 
   const handleBack = (step: string) => {
@@ -352,48 +368,50 @@ export const InspectionFormSelector = ({
               >
                 Back
               </Button>
-              <Dialog>
-                <DialogTrigger>
-                  <Button
-                    onClick={handleContinueToForm}
-                    disabled={!selectedPlan}
-                  >
+              <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+                <DialogTrigger asChild>
+                  <Button disabled={!selectedPlan}>
                     Continue to new Form{" "}
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
-                  <form onSubmit={handleSubmit}>
+                  <form onSubmit={handleCreateNewFillableForm}>
                     <DialogHeader>
                       <DialogTitle>Create New Inspection Form</DialogTitle>
                       <DialogDescription>
-                        Enter a reference number for the new inspection form.
+                        Enter a identifier string for the new inspection form.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                       <div className="grid gap-2">
                         <Label
-                          htmlFor="referenceNumber"
+                          htmlFor="identifierString"
                           className="flex items-center justify-between"
                         >
-                          Reference Number
+                          Identifier string
                           <span className="text-xs text-muted-foreground">
                             (Required)
                           </span>
                         </Label>
                         <Input
-                          id="referenceNumber"
-                          value={referenceNumber}
+                          id="identifierString"
+                          value={formIdentifierString}
                           onChange={(e) => {
-                            setReferenceNumber(e.target.value);
-                            if (error) setError("");
+                            setFormIdentifierString(e.target.value);
+                            if (formIdentifierStringError)
+                              setFormIdentifierStringError(null);
                           }}
                           placeholder="e.g., REF-2023-001"
-                          className={error ? "border-red-500" : ""}
+                          className={
+                            formIdentifierStringError ? "border-red-500" : ""
+                          }
                           autoFocus
                         />
-                        {error && (
-                          <p className="text-sm text-red-500">{error}</p>
+                        {formIdentifierStringError && (
+                          <p className="text-sm text-red-500">
+                            {formIdentifierStringError}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -401,7 +419,7 @@ export const InspectionFormSelector = ({
                       <Button
                         variant="outline"
                         type="button"
-                        onClick={() => setOpen(false)}
+                        onClick={() => setOpenDialog(false)}
                       >
                         Cancel
                       </Button>
