@@ -2,13 +2,22 @@
 
 import { DBActionsFormBuilderCreate } from "@/lib/database/form-builder/formBuilderCreate";
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
+import {
+  IInspectableObjectInspectionFormMainSectionResponse,
+  IInspectableObjectInspectionFormMainSectionWithSubSectionData,
+  IInspectableObjectInspectionFormSubSectionWithData,
+} from "@/lib/database/form-builder/formBuilderInterfaces";
 import { DBActionsFormFillerCreate } from "@/lib/database/form-filler/formFillerCreate";
 import { DBActionsFormFillerFetch } from "@/lib/database/form-filler/formFillerFetch";
 import {
-  IFillableCheckboxInsert,
+  ICheckboxGroupInsert,
   IFillableFormInsert,
-  IFillableMainCheckboxInsert,
-  IFillableTextInputFieldInsert,
+  IMainCheckboxInsert,
+  IMainSectionInsert,
+  ISubCheckboxInsert,
+  ISubSectionInsert,
+  ITaskInsert,
+  ITextInputInsert,
 } from "@/lib/database/form-filler/formFillerInterfaces";
 import { SupabaseError } from "@/lib/globalInterfaces";
 import { createClient } from "@/utils/supabase/server";
@@ -29,27 +38,23 @@ export async function createFillableInspectionForm(
     formBuilderSupabase
   );
 
-  // const {
-  //   inspectableObjectInspectionFormMainSectionsWithSubSectionData,
-  //   inspectableObjectInspectionFormMainSectionsWithSubSectionDataError,
-  // } =
-  //   await dbActionsFormBuilder.fetchInspectableObjectInspectionFormMainSectionsWithSubSections(
-  //     newForm.build_id
-  //   );
-  // if (inspectableObjectInspectionFormMainSectionsWithSubSectionDataError)
-  //   return {
-  //     id: null,
-  //     error: inspectableObjectInspectionFormMainSectionsWithSubSectionDataError,
-  //   };
-
-  const { fields, fieldsError } =
-    await dbActionsFormFillerFetch.fetchAllCheckboxesAndTextInputFieldsByFormId(
+  const {
+    inspectableObjectInspectionFormMainSectionsWithSubSectionData,
+    inspectableObjectInspectionFormMainSectionsWithSubSectionDataError,
+  } =
+    await dbActionsFormBuilder.fetchInspectableObjectInspectionFormMainSectionsWithSubSections(
       newForm.build_id
     );
-  if (fieldsError)
+
+  if (inspectableObjectInspectionFormMainSectionsWithSubSectionDataError)
     return {
       id: null,
-      error: fieldsError,
+      error: inspectableObjectInspectionFormMainSectionsWithSubSectionDataError,
+    };
+  if (!inspectableObjectInspectionFormMainSectionsWithSubSectionData)
+    return {
+      id: null,
+      error: "unknown fetch error",
     };
 
   const { form, formError } =
@@ -59,80 +64,168 @@ export async function createFillableInspectionForm(
       id: null,
       error: formError,
     };
-  if (form) {
-    const mainCheckboxList: IFillableMainCheckboxInsert[] = [];
-    const subCheckboxList: IFillableCheckboxInsert[] = [];
-    const textInputFieldList: IFillableTextInputFieldInsert[] = [];
+  if (!form)
+    return {
+      id: null,
+      error: "unknown fetch error",
+    };
 
-    fields?.inspectable_object_inspection_form_main_section.forEach(
+  const mainSections: IMainSectionInsert[] = [];
+
+  const subSections: ISubSectionInsert[] = [];
+
+  const checkboxGroups: ICheckboxGroupInsert[] = [];
+
+  const mainCheckboxes: IMainCheckboxInsert[] = [];
+
+  const checkboxTasks: ITaskInsert[] = [];
+
+  const subCheckboxes: ISubCheckboxInsert[] = [];
+
+  const textInputFields: ITextInputInsert[] = [];
+
+  if (inspectableObjectInspectionFormMainSectionsWithSubSectionData) {
+    inspectableObjectInspectionFormMainSectionsWithSubSectionData.forEach(
       (mainSection) => {
+        const newMainSectionId = randomUUID();
+
+        mainSections.push({
+          id: newMainSectionId,
+          form_id: form.id,
+          name: mainSection.name,
+          description: mainSection.description,
+          order_number: mainSection.order_number,
+        });
+
         mainSection.inspectable_object_inspection_form_sub_section.forEach(
           (subSection) => {
-            subSection.form_checkbox_group.forEach((group) => {
-              const tempMainCheckboxList: UUID[] = [];
+            const newSubSectionId = randomUUID();
 
-              group.form_checkbox.forEach((checkbox) => {
-                const newId = randomUUID();
-                tempMainCheckboxList.push(newId);
-                mainCheckboxList.push({
-                  id: newId,
-                  checkbox_build_id: checkbox.id,
-                  fillable_form_id: form.id,
+            subSections.push({
+              id: newSubSectionId,
+              name: subSection.name,
+              description: subSection.description,
+              order_number: subSection.order_number,
+              main_section_id: newMainSectionId,
+            });
+
+            subSection.form_checkbox_group.forEach((checkboxGroup) => {
+              const newCheckboxGroupId = randomUUID();
+              checkboxGroups.push({
+                id: newCheckboxGroupId,
+                name: checkboxGroup.name,
+                sub_section_id: newSubSectionId,
+              });
+
+              checkboxGroup.form_checkbox.forEach((checkbox) => {
+                mainCheckboxes.push({
+                  id: randomUUID(),
+                  label: checkbox.label,
+                  order_number: checkbox.order_number,
+                  group_id: newCheckboxGroupId,
                 });
               });
 
-              group.form_checkbox_task.forEach((task) => {
-                tempMainCheckboxList.forEach((mainCheckboxId) => {
-                  subCheckboxList.push({
-                    build_task_id: task.id,
-                    main_checkbox_id: mainCheckboxId,
-                  });
+              checkboxGroup.form_checkbox_task.forEach((task) => {
+                checkboxTasks.push({
+                  id: randomUUID(),
+                  description: task.description,
+                  group_id: newCheckboxGroupId,
+                  order_number: task.order_number,
+                });
+              });
+
+              subSection.form_text_input_field.forEach((textInput) => {
+                textInputFields.push({
+                  id: randomUUID(),
+                  placeholder_text: textInput.placeholder_text,
+                  sub_section_id: newSubSectionId,
+                  training_id: textInput.training_id,
                 });
               });
             });
-            subSection.form_text_input_field.forEach((field) =>
-              textInputFieldList.push({
-                text_input_build_id: field.id,
-                fillable_form_id: form.id,
-              })
-            );
           }
         );
       }
     );
-
-    console.log("checkbox list", mainCheckboxList);
-    console.log("text input field list", textInputFieldList);
-
-    const { textInputFields, textInputFieldsError } =
-      await dbActionsFormFillerCreate.createNewFillableTextInputFields(
-        textInputFieldList
-      );
-
-    if (textInputFieldsError) {
-      return { id: null, error: textInputFieldsError };
-    }
-
-    const { mainCheckboxes, mainCheckboxesError } =
-      await dbActionsFormFillerCreate.createNewFillableMainCheckboxes(
-        mainCheckboxList
-      );
-
-    if (mainCheckboxesError) {
-      return { id: null, error: mainCheckboxesError };
-    }
-
-    const { checkboxes, checkboxesError } =
-      await dbActionsFormFillerCreate.createNewFillableCheckboxes(
-        subCheckboxList
-      );
-
-    if (checkboxesError) {
-      return { id: null, error: checkboxesError };
-    }
-
-    return { id: form.id, error: null };
   }
 
-  return { id: null, error: "unknown" };
+  checkboxGroups.forEach((group) => {
+    const tasks = checkboxTasks.filter((task) => task.group_id === group.id);
+
+    const checkboxes = mainCheckboxes.filter(
+      (checkbox) => checkbox.group_id === group.id
+    );
+
+    checkboxes.forEach((checkbox) => {
+      tasks.forEach((task) => {
+        subCheckboxes.push({
+          id: randomUUID(),
+          main_checkbox_id: checkbox.id,
+          task_id: task.id,
+        });
+      });
+    });
+  });
+
+  let error: SupabaseError | null = null;
+
+  const { mainSectionsResponse, mainSectionsResponseError } =
+    await dbActionsFormFillerCreate.createMainSections(mainSections);
+
+  if (mainSectionsResponseError) {
+    error = mainSectionsResponseError;
+  } else if (mainSectionsResponse) {
+    const { subSectionsResponse, subSectionsResponseError } =
+      await dbActionsFormFillerCreate.createSubSections(subSections);
+
+    if (subSectionsResponseError) {
+      error = subSectionsResponseError;
+    } else if (subSectionsResponse) {
+      const { checkboxGroup, checkboxGroupError } =
+        await dbActionsFormFillerCreate.createCheckboxGroup(checkboxGroups);
+
+      if (checkboxGroupError) {
+        error = checkboxGroupError;
+      } else if (checkboxGroup) {
+        const { mainCheckboxesResponse, mainCheckboxesResponseError } =
+          await dbActionsFormFillerCreate.createFillableMainCheckboxes(
+            mainCheckboxes
+          );
+
+        if (mainCheckboxesResponseError) {
+          error = mainCheckboxesResponseError;
+        }
+      }
+    }
+  }
+
+  if (error) {
+    return { id: null, error: error };
+  }
+
+  const { tasksResponse, tasksResponseError } =
+    await dbActionsFormFillerCreate.createTasks(checkboxTasks);
+
+  if (tasksResponseError) {
+    return { id: null, error: tasksResponseError };
+  }
+
+  const { subCheckboxesResponse, subCheckboxesResponseError } =
+    await dbActionsFormFillerCreate.createFillableSubCheckboxes(subCheckboxes);
+
+  if (subCheckboxesResponseError) {
+    return { id: null, error: subCheckboxesResponseError };
+  }
+
+  const { textInputFieldsResponse, textInputFieldsResponseError } =
+    await dbActionsFormFillerCreate.createFillableTextInputFields(
+      textInputFields
+    );
+
+  if (textInputFieldsResponseError) {
+    return { id: null, error: textInputFieldsResponseError };
+  }
+
+  return { id: form.id, error: null };
 }

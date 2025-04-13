@@ -11,72 +11,79 @@ export interface IFillableFormResponse extends IFillableFormInsert {
   in_progress: boolean;
 }
 
-export interface IFillableMainCheckboxInsert {
+export interface ISubSectionInsert {
   id: UUID;
-  fillable_form_id: UUID;
-  checkbox_build_id: UUID;
+  name: string;
+  description: string;
+  order_number: number;
+  main_section_id: UUID;
 }
 
-export interface IFillableMainCheckboxResponse
-  extends IFillableMainCheckboxInsert {
+export interface ISubSectionResponse extends ISubSectionInsert {
   created_at: Date | string;
-  checked: boolean;
 }
 
-export interface IFillableCheckboxInsert {
-  build_task_id: UUID;
+export interface IMainSectionInsert {
+  id: UUID;
+  name: string;
+  description: string;
+  order_number: number;
+  form_id: UUID;
+}
+
+export interface IMainSectionResponse extends IMainSectionInsert {
+  created_at: Date | string;
+}
+
+export interface ICheckboxGroupInsert {
+  id: UUID;
+  name: string;
+  sub_section_id: UUID;
+}
+
+export interface ICheckboxGroupResponse extends ICheckboxGroupInsert {
+  created_at: Date | string;
+}
+
+export interface ITaskInsert {
+  id: UUID;
+  description: string;
+  group_id: UUID;
+  order_number: number;
+}
+
+export interface ITaskResponse extends ITaskInsert {
+  created_at: Date | string;
+}
+
+export interface IMainCheckboxInsert {
+  id: UUID;
+  group_id: UUID;
+  order_number: number;
+  label: string;
+}
+
+export interface IMainCheckboxResponse extends IMainCheckboxInsert {
+  created_at: Date | string;
+}
+
+export interface ISubCheckboxInsert {
+  id: UUID;
   main_checkbox_id: UUID;
+  task_id: UUID;
 }
 
-export interface IFillableCheckboxResponse extends IFillableCheckboxInsert {
-  id: UUID;
+export interface ISubCheckboxResponse extends ISubCheckboxInsert {
   created_at: Date | string;
-  checked: boolean;
 }
 
-export interface IFillableTextInputFieldInsert {
-  text_input_build_id: UUID;
-  fillable_form_id: UUID;
-}
-
-export interface IFillableTextInputFieldResponse
-  extends IFillableTextInputFieldInsert {
+export interface ITextInputInsert {
   id: UUID;
+  sub_section_id: UUID;
+  placeholder_text: string | null;
+  training_id: UUID | null;
+}
+
+export interface ITextInputResponse extends ITextInputInsert {
   created_at: Date | string;
-  value: string;
-}
-
-interface ICheckbox {
-  id: UUID;
-}
-
-interface ICheckboxTask {
-  id: UUID;
-}
-
-interface ITextInputField {
-  id: UUID;
-}
-
-interface ICheckboxGroup {
-  form_checkbox: ICheckbox[];
-  form_checkbox_task: ICheckboxTask[];
-}
-
-interface ISubSection {
-  form_text_input_field: ITextInputField[];
-  form_checkbox_group: ICheckboxGroup[];
-}
-
-interface IMainSection {
-  inspectable_object_inspection_form_sub_section: ISubSection[];
-}
-
-export interface IFormData {
-  inspectable_object_inspection_form_main_section: IMainSection[];
-}
-
-export interface IMainCheckboxWithSubCheckboxData
-  extends IFillableMainCheckboxResponse {
-  checkbox: IFillableCheckboxResponse[];
 }

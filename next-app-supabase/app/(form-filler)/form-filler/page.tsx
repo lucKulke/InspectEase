@@ -12,6 +12,7 @@ import { PageHeading } from "@/components/PageHeading";
 import { formFillerLinks } from "@/lib/links/formFillerLinks";
 import { FormFilter } from "./formFilter";
 import { DBActionsFormFillerFetch } from "@/lib/database/form-filler/formFillerFetch";
+import { UUID } from "crypto";
 
 export default async function FormFillerPage() {
   const supabase = await createClient("form_filler");
@@ -25,7 +26,7 @@ export default async function FormFillerPage() {
   const dbActions = new DBActionsFormFillerFetch(supabase);
 
   const { forms, formsError } = await dbActions.fetchAllFillableForms(
-    user.user?.id
+    user.user?.id as UUID
   );
 
   return (
