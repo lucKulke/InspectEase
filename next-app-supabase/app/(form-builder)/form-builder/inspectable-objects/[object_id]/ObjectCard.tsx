@@ -46,7 +46,7 @@ import { useRouter } from "next/navigation";
 import { string } from "zod";
 
 interface ObjectCardProps {
-  objectInfo: IInspectableObjectWithPropertiesAndProfileResponse[] | null;
+  objectInfo: IInspectableObjectWithPropertiesAndProfileResponse | null;
   objectProfileProps: IInspectableObjectProfileObjPropertyResponse[] | null;
 }
 
@@ -66,7 +66,7 @@ export const ObjectCard = ({
   const [selectedProfileId, setSelectedProfileId] = useState<UUID>();
 
   const objectProps: Record<UUID, IInspectableObjectPropertyResponse> = {};
-  objectInfo[0].inspectable_object_property.forEach((objectProp) => {
+  objectInfo.inspectable_object_property.forEach((objectProp) => {
     objectProps[objectProp.profile_property_id] = objectProp;
   });
 
@@ -150,7 +150,7 @@ export const ObjectCard = ({
             <CardDescription>all the objects metadata</CardDescription>
           </CardHeader>
           <div className="m-7">
-            {profileIcons[objectInfo[0].inspectable_object_profile.icon_key]}
+            {profileIcons[objectInfo.inspectable_object_profile.icon_key]}
           </div>
         </div>
         <CardContent className="space-y-5">
@@ -209,7 +209,7 @@ export const ObjectCard = ({
                   } else {
                     if (selectedProfileId)
                       handleNewValueProp(
-                        objectInfo[0].id,
+                        objectInfo.id,
                         selectedProfileId,
                         currentObjectPropValue
                       );

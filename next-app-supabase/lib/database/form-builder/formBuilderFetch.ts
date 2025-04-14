@@ -94,9 +94,7 @@ export class DBActionsFormBuilderFetch {
   async fetchInspectableObjectWithPropertiesAndProfile(
     objectId: UUID
   ): Promise<{
-    inspectableObjectWithPropertiesAndProfile:
-      | IInspectableObjectWithPropertiesAndProfileResponse[]
-      | null;
+    inspectableObjectWithPropertiesAndProfile: IInspectableObjectWithPropertiesAndProfileResponse | null;
     inspectableObjectWithPropertiesAndProfileError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
@@ -109,7 +107,8 @@ export class DBActionsFormBuilderFetch {
     
   `
       )
-      .eq("id", objectId);
+      .eq("id", objectId)
+      .single();
 
     console.log(
       "fetch inspectable object with properties and profile test in db:",
@@ -123,13 +122,8 @@ export class DBActionsFormBuilderFetch {
     }
 
     return {
-      inspectableObjectWithPropertiesAndProfile:
-        data && data.length > 0
-          ? (data as IInspectableObjectWithPropertiesAndProfileResponse[])
-          : null,
-      inspectableObjectWithPropertiesAndProfileError: error
-        ? (error as SupabaseError)
-        : null,
+      inspectableObjectWithPropertiesAndProfile: data,
+      inspectableObjectWithPropertiesAndProfileError: error,
     };
   }
 

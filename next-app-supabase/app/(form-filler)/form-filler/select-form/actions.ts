@@ -6,6 +6,7 @@ import {
   IInspectableObjectInspectionFormMainSectionResponse,
   IInspectableObjectInspectionFormMainSectionWithSubSectionData,
   IInspectableObjectInspectionFormSubSectionWithData,
+  IInspectableObjectProfileObjPropertyResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { DBActionsFormFillerCreate } from "@/lib/database/form-filler/formFillerCreate";
 import { DBActionsFormFillerFetch } from "@/lib/database/form-filler/formFillerFetch";
@@ -23,9 +24,21 @@ import { SupabaseError } from "@/lib/globalInterfaces";
 import { createClient } from "@/utils/supabase/server";
 import { randomUUID, UUID } from "crypto";
 
-export async function createFillableInspectionForm(
-  newForm: IFillableFormInsert
-): Promise<{ id: UUID | null; error: SupabaseError | string | null }> {
+function compare(
+  a: IInspectableObjectProfileObjPropertyResponse,
+  b: IInspectableObjectProfileObjPropertyResponse
+) {
+  if (a.order_number < b.order_number) return -1;
+
+  if (a.order_number > b.order_number) return 1;
+
+  return 0;
+}
+
+export async function createFillableInspectionForm(data: {
+  identifier_string: string;
+  build_id: UUID;
+}): Promise<{ id: UUID | null; error: SupabaseError | string | null }> {
   const formBuilderSupabase = await createClient("form_builder");
   const dbActionsFormBuilder = new DBActionsFormBuilderFetch(
     formBuilderSupabase
@@ -38,24 +51,66 @@ export async function createFillableInspectionForm(
     formBuilderSupabase
   );
 
+  // get the object information
   const {
-    inspectableObjectInspectionFormMainSectionsWithSubSectionData,
-    inspectableObjectInspectionFormMainSectionsWithSubSectionDataError,
-  } =
-    await dbActionsFormBuilder.fetchInspectableObjectInspectionFormMainSectionsWithSubSections(
-      newForm.build_id
-    );
-
-  if (inspectableObjectInspectionFormMainSectionsWithSubSectionDataError)
+    inspectableObjectInspectionForm,
+    inspectableObjectInspectionFormError,
+  } = await dbActionsFormBuilder.fetchInspectableObjectInspectionForm(
+    data.build_id
+  );
+  if (inspectableObjectInspectionFormError)
     return {
       id: null,
-      error: inspectableObjectInspectionFormMainSectionsWithSubSectionDataError,
+      error: inspectableObjectInspectionFormError,
     };
-  if (!inspectableObjectInspectionFormMainSectionsWithSubSectionData)
+
+  const {
+    inspectableObjectWithPropertiesAndProfile,
+    inspectableObjectWithPropertiesAndProfileError,
+  } = await dbActionsFormBuilder.fetchInspectableObjectWithPropertiesAndProfile(
+    inspectableObjectInspectionForm.object_id
+  );
+  if (inspectableObjectWithPropertiesAndProfileError)
+    return {
+      id: null,
+      error: inspectableObjectWithPropertiesAndProfileError,
+    };
+  if (!inspectableObjectWithPropertiesAndProfile)
     return {
       id: null,
       error: "unknown fetch error",
     };
+
+  const {
+    inspectableObjectProfilePropertys,
+    inspectableObjectProfilePropertysError,
+  } = await dbActionsFormBuilder.fetchInspectableObjectProfileObjPropertys(
+    inspectableObjectWithPropertiesAndProfile.inspectable_object_profile.id
+  );
+
+  const objectInfo: Record<string, string> = {};
+
+  if (inspectableObjectProfilePropertys) {
+    inspectableObjectProfilePropertys.sort(compare).forEach((profileProp) => {
+      const objectProp =
+        inspectableObjectWithPropertiesAndProfile.inspectable_object_property.filter(
+          (objectProp) => objectProp.profile_property_id === profileProp.id
+        )[0];
+
+      objectInfo[profileProp.name] = objectProp ? objectProp.value : "";
+    });
+  }
+
+  const newForm: IFillableFormInsert = {
+    identifier_string: data.identifier_string,
+    build_id: data.build_id,
+    object_profile_name:
+      inspectableObjectWithPropertiesAndProfile.inspectable_object_profile.name,
+    object_profile_icon:
+      inspectableObjectWithPropertiesAndProfile.inspectable_object_profile
+        .icon_key,
+    object_props: objectInfo,
+  };
 
   const { form, formError } =
     await dbActionsFormFillerCreate.createNewFillableForm(newForm);
@@ -65,6 +120,25 @@ export async function createFillableInspectionForm(
       error: formError,
     };
   if (!form)
+    return {
+      id: null,
+      error: "unknown fetch error",
+    };
+
+  const {
+    inspectableObjectInspectionFormMainSectionsWithSubSectionData,
+    inspectableObjectInspectionFormMainSectionsWithSubSectionDataError,
+  } =
+    await dbActionsFormBuilder.fetchInspectableObjectInspectionFormMainSectionsWithSubSections(
+      data.build_id
+    );
+
+  if (inspectableObjectInspectionFormMainSectionsWithSubSectionDataError)
+    return {
+      id: null,
+      error: inspectableObjectInspectionFormMainSectionsWithSubSectionDataError,
+    };
+  if (!inspectableObjectInspectionFormMainSectionsWithSubSectionData)
     return {
       id: null,
       error: "unknown fetch error",

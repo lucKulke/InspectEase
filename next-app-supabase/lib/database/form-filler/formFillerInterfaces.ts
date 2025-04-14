@@ -3,6 +3,9 @@ import { UUID } from "crypto";
 export interface IFillableFormInsert {
   build_id: UUID;
   identifier_string: string;
+  object_profile_name: string;
+  object_profile_icon: string;
+  object_props: Record<string, string>;
 }
 
 export interface IFillableFormResponse extends IFillableFormInsert {
