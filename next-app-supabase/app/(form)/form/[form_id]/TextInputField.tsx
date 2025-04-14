@@ -3,20 +3,22 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { IFormTextInputFieldResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
-import { IFillableTextInputFieldResponse } from "@/lib/database/form-filler/formFillerInterfaces";
+import { ITextInputResponse } from "@/lib/database/form-filler/formFillerInterfaces";
 import { UUID } from "crypto";
 import React, { useEffect, useState } from "react";
 
 interface TextInputFieldProps {
-  buildInputField: IFormTextInputFieldResponse;
-  fillableInputField: IFillableTextInputFieldResponse;
-  handleSaveNewValue: (textInputFieldId: UUID, value: string) => Promise<void>;
+  fillableInputField: ITextInputResponse;
+  handleSaveNewTextInput: (
+    subSectionId: UUID,
+    textInputFieldId: UUID,
+    value: string
+  ) => Promise<void>;
 }
 
 export const TextInputField = ({
-  buildInputField,
   fillableInputField,
-  handleSaveNewValue,
+  handleSaveNewTextInput,
 }: TextInputFieldProps) => {
   const [input, setInput] = useState<string>(fillableInputField.value ?? "");
   const [valueChanged, setValueChanged] = useState<boolean>(false);
@@ -32,17 +34,20 @@ export const TextInputField = ({
 
   const handleSave = async () => {
     setIsSaving(true);
-    await handleSaveNewValue(fillableInputField.id, input);
+    await handleSaveNewTextInput(
+      fillableInputField.sub_section_id,
+      fillableInputField.id,
+      input
+    );
     setIsSaving(false);
-    setValueChanged(false);
   };
 
   return (
     <Card className="p-3 flex justify-between items-center">
-      <p className="w-2/3">{buildInputField.label}</p>
+      <p className="w-2/3">{fillableInputField.label}</p>
       <Input
         className="w-1/3"
-        placeholder={buildInputField.placeholder_text}
+        placeholder={fillableInputField.placeholder_text ?? ""}
         value={input}
         onChange={(e) => setInput(e.target.value)}
       ></Input>

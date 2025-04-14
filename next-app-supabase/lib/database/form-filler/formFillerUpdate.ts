@@ -1,10 +1,12 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { UUID } from "crypto";
-import {
-  IFillableMainCheckboxResponse,
-  IFillableTextInputFieldResponse,
-} from "./formFillerInterfaces";
+
 import { SupabaseError } from "@/lib/globalInterfaces";
+import {
+  IMainCheckboxResponse,
+  ISubCheckboxResponse,
+  ITextInputResponse,
+} from "./formFillerInterfaces";
 
 export class DBActionsFormFillerUpdate {
   private supabase: SupabaseClient<any, string, any>;
@@ -12,12 +14,32 @@ export class DBActionsFormFillerUpdate {
   constructor(supabase: SupabaseClient<any, string, any>) {
     this.supabase = supabase;
   }
+  async updateFormUpdatedAt(formId: UUID): Promise<{
+    updatedForm: IMainCheckboxResponse | null;
+    updatedFormError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", formId)
+      .select()
+      .single();
 
+    console.log("update updated_at from form in db:", data);
+    if (error) {
+      console.error("update updated_at from form in db error: ", error);
+    }
+
+    return {
+      updatedForm: data,
+      updatedFormError: error as SupabaseError | null,
+    };
+  }
   async updateMainCheckboxValue(
     checkboxId: UUID,
     value: boolean
   ): Promise<{
-    updatedMainCheckbox: IFillableMainCheckboxResponse | null;
+    updatedMainCheckbox: IMainCheckboxResponse | null;
     updatedMainCheckboxError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
@@ -38,28 +60,28 @@ export class DBActionsFormFillerUpdate {
     };
   }
 
-  async updateCheckboxValue(
+  async updateSubCheckboxValue(
     checkboxId: UUID,
     value: boolean
   ): Promise<{
-    updatedCheckbox: IFillableMainCheckboxResponse | null;
-    updatedCheckboxError: SupabaseError | null;
+    updatedSubCheckbox: ISubCheckboxResponse | null;
+    updatedSubCheckboxError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
-      .from("checkbox")
+      .from("sub_checkbox")
       .update({ checked: value })
       .eq("id", checkboxId)
       .select()
       .single();
 
-    console.log("update checkbox in db:", data);
+    console.log("update sub checkbox in db:", data);
     if (error) {
-      console.error("update checkbox in db error: ", error);
+      console.error("update sub checkbox in db error: ", error);
     }
 
     return {
-      updatedCheckbox: data,
-      updatedCheckboxError: error as SupabaseError | null,
+      updatedSubCheckbox: data,
+      updatedSubCheckboxError: error as SupabaseError | null,
     };
   }
 
@@ -67,7 +89,7 @@ export class DBActionsFormFillerUpdate {
     textInputFieldId: UUID,
     value: string
   ): Promise<{
-    updatedTextInputField: IFillableTextInputFieldResponse | null;
+    updatedTextInputField: ITextInputResponse | null;
     updatedTextInputFieldError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase

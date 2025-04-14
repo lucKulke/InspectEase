@@ -134,14 +134,15 @@ export async function createFillableInspectionForm(
                   order_number: task.order_number,
                 });
               });
-
-              subSection.form_text_input_field.forEach((textInput) => {
-                textInputFields.push({
-                  id: randomUUID(),
-                  placeholder_text: textInput.placeholder_text,
-                  sub_section_id: newSubSectionId,
-                  training_id: textInput.training_id,
-                });
+            });
+            subSection.form_text_input_field.forEach((textInput) => {
+              textInputFields.push({
+                id: randomUUID(),
+                placeholder_text: textInput.placeholder_text,
+                sub_section_id: newSubSectionId,
+                training_id: textInput.training_id,
+                label: textInput.label,
+                order_number: textInput.order_number,
               });
             });
           }

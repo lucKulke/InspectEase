@@ -9,6 +9,7 @@ export interface IFillableFormResponse extends IFillableFormInsert {
   id: UUID;
   created_at: Date | string;
   in_progress: boolean;
+  updated_at: Date | string;
 }
 
 export interface ISubSectionInsert {
@@ -65,6 +66,7 @@ export interface IMainCheckboxInsert {
 
 export interface IMainCheckboxResponse extends IMainCheckboxInsert {
   created_at: Date | string;
+  checked: boolean;
 }
 
 export interface ISubCheckboxInsert {
@@ -75,6 +77,7 @@ export interface ISubCheckboxInsert {
 
 export interface ISubCheckboxResponse extends ISubCheckboxInsert {
   created_at: Date | string;
+  checked: boolean;
 }
 
 export interface ITextInputInsert {
@@ -82,8 +85,41 @@ export interface ITextInputInsert {
   sub_section_id: UUID;
   placeholder_text: string | null;
   training_id: UUID | null;
+  label: string;
+  order_number: number;
 }
 
 export interface ITextInputResponse extends ITextInputInsert {
   created_at: Date | string;
+  value: string | null;
+}
+
+// test
+
+export interface ISubCheckboxData extends ISubCheckboxResponse {}
+
+export interface IMainCheckboxData extends IMainCheckboxResponse {
+  sub_checkbox: ISubCheckboxData[];
+}
+
+export interface ITaskData extends ITaskResponse {}
+
+export interface ICheckboxGroupData extends ICheckboxGroupResponse {
+  main_checkbox: IMainCheckboxData[];
+  task: ITaskData[];
+}
+
+export interface ITextInputData extends ITextInputResponse {}
+
+export interface ISubSectionData extends ISubSectionResponse {
+  checkbox_group: ICheckboxGroupData[];
+  text_input: ITextInputData[];
+}
+
+export interface IMainSectionData extends IMainSectionResponse {
+  sub_section: ISubSectionData[];
+}
+
+export interface IFormData extends IFillableFormResponse {
+  main_section: IMainSectionData[];
 }
