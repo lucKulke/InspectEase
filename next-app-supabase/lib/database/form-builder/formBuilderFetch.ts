@@ -394,7 +394,8 @@ export class DBActionsFormBuilderFetch {
         inspectable_object_profile_form_type_property(*)
         `
       )
-      .eq("id", formTypeId);
+      .eq("id", formTypeId)
+      .single();
 
     console.log("fetch inspectable object profile form type in db:", data);
     if (error) {
@@ -405,7 +406,7 @@ export class DBActionsFormBuilderFetch {
     }
 
     return {
-      inspectableObjectProfileFormTypeWithProps: data ? data[0] : null,
+      inspectableObjectProfileFormTypeWithProps: data,
       inspectableObjectProfileFormTypeWithPropsError:
         error as SupabaseError | null,
     };

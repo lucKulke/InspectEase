@@ -13,6 +13,7 @@ import { formFillerLinks } from "@/lib/links/formFillerLinks";
 import { FormFilter } from "./formFilter";
 import { DBActionsFormFillerFetch } from "@/lib/database/form-filler/formFillerFetch";
 import { UUID } from "crypto";
+import { MainAddButton } from "@/components/MainAddButton";
 
 export default async function FormFillerPage() {
   const supabase = await createClient("form_filler");
@@ -31,10 +32,13 @@ export default async function FormFillerPage() {
 
   return (
     <div className="">
-      <PageHeading>Form Filler Home</PageHeading>
-      <Link href={formFillerLinks.selectForm.href} className="text-blue-600">
-        Select form
-      </Link>
+      <div className="flex items-center justify-between">
+        <PageHeading>Form Filler</PageHeading>
+        <div className="mr-2 flex">
+          <MainAddButton href={formFillerLinks["selectForm"].href} />
+        </div>
+      </div>
+
       <FormFilter forms={forms}></FormFilter>
     </div>
   );

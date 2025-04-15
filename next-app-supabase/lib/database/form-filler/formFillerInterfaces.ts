@@ -6,6 +6,9 @@ export interface IFillableFormInsert {
   object_profile_name: string;
   object_profile_icon: string;
   object_props: Record<string, string>;
+  form_type: string;
+  form_props: Record<string, string>;
+  document_id: UUID;
 }
 
 export interface IFillableFormResponse extends IFillableFormInsert {
@@ -125,4 +128,32 @@ export interface IMainSectionData extends IMainSectionResponse {
 
 export interface IFormData extends IFillableFormResponse {
   main_section: IMainSectionData[];
+}
+
+interface IText {
+  value: string | null;
+}
+
+interface ISubCheckbox {
+  checked: boolean;
+}
+interface IMainCheckbox {
+  checked: boolean;
+  sub_checkbox: ISubCheckbox[];
+}
+interface IGroup {
+  main_checkbox: IMainCheckbox[];
+}
+
+interface ISub {
+  text_input: IText[];
+  checkbox_group: IGroup[];
+}
+
+interface IMain {
+  sub_section: ISub[];
+}
+
+export interface IFillableFormPlusFillableFields extends IFillableFormResponse {
+  main_section: IMain[];
 }

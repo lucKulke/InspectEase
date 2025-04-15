@@ -53,22 +53,27 @@ export async function createFillableInspectionForm(data: {
 
   // get the object information
   const {
-    inspectableObjectInspectionForm,
-    inspectableObjectInspectionFormError,
-  } = await dbActionsFormBuilder.fetchInspectableObjectInspectionForm(
+    inspectableObjectInspectionFormWithProps,
+    inspectableObjectInspectionFormWithPropsError,
+  } = await dbActionsFormBuilder.fetchInspectableObjectInspectionFormWithProps(
     data.build_id
   );
-  if (inspectableObjectInspectionFormError)
+  if (inspectableObjectInspectionFormWithPropsError)
     return {
       id: null,
-      error: inspectableObjectInspectionFormError,
+      error: inspectableObjectInspectionFormWithPropsError,
+    };
+  if (!inspectableObjectInspectionFormWithProps)
+    return {
+      id: null,
+      error: inspectableObjectInspectionFormWithPropsError,
     };
 
   const {
     inspectableObjectWithPropertiesAndProfile,
     inspectableObjectWithPropertiesAndProfileError,
   } = await dbActionsFormBuilder.fetchInspectableObjectWithPropertiesAndProfile(
-    inspectableObjectInspectionForm.object_id
+    inspectableObjectInspectionFormWithProps.object_id
   );
   if (inspectableObjectWithPropertiesAndProfileError)
     return {
@@ -101,6 +106,27 @@ export async function createFillableInspectionForm(data: {
     });
   }
 
+  const {
+    inspectableObjectProfileFormTypeWithProps,
+    inspectableObjectProfileFormTypeWithPropsError,
+  } = await dbActionsFormBuilder.fetchInspectableObjectProfileFormTypeWithProps(
+    inspectableObjectInspectionFormWithProps.form_type_id
+  );
+
+  const formInfo: Record<string, string> = {};
+
+  if (inspectableObjectProfileFormTypeWithProps) {
+    inspectableObjectProfileFormTypeWithProps.inspectable_object_profile_form_type_property.forEach(
+      (typeProp) => {
+        const formProp =
+          inspectableObjectInspectionFormWithProps.inspectable_object_inspection_form_property.filter(
+            (formProp) => formProp.form_type_prop_id === typeProp.id
+          )[0];
+        formInfo[typeProp.name] = formProp ? formProp.value : "";
+      }
+    );
+  }
+
   const newForm: IFillableFormInsert = {
     identifier_string: data.identifier_string,
     build_id: data.build_id,
@@ -110,6 +136,9 @@ export async function createFillableInspectionForm(data: {
       inspectableObjectWithPropertiesAndProfile.inspectable_object_profile
         .icon_key,
     object_props: objectInfo,
+    document_id: inspectableObjectInspectionFormWithProps.document_id,
+    form_type: inspectableObjectProfileFormTypeWithProps?.name ?? "",
+    form_props: formInfo,
   };
 
   const { form, formError } =

@@ -2,7 +2,10 @@
 
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { IFillableFormResponse } from "@/lib/database/form-filler/formFillerInterfaces";
+import {
+  IFillableFormPlusFillableFields,
+  IFillableFormResponse,
+} from "@/lib/database/form-filler/formFillerInterfaces";
 import {
   Card,
   CardContent,
@@ -17,7 +20,7 @@ import { format } from "date-fns";
 import { FormCard } from "./formCard";
 
 interface FormFilterProps {
-  forms: IFillableFormResponse[] | null;
+  forms: IFillableFormPlusFillableFields[] | null;
 }
 
 export const FormFilter = ({ forms }: FormFilterProps) => {
@@ -25,14 +28,12 @@ export const FormFilter = ({ forms }: FormFilterProps) => {
   const [activeTab, setActiveTab] = useState("inProgress");
 
   const [formsInProgress, setFormsInProgress] = useState<
-    IFillableFormResponse[]
+    IFillableFormPlusFillableFields[]
   >(forms.filter((form) => form.in_progress === true));
 
-  const [formsCompleted, setFormsCompleted] = useState<IFillableFormResponse[]>(
-    forms.filter((form) => form.in_progress === false)
-  );
-
-  async function fetchCurrentProgress(formId: UUID) {}
+  const [formsCompleted, setFormsCompleted] = useState<
+    IFillableFormPlusFillableFields[]
+  >(forms.filter((form) => form.in_progress === false));
 
   return (
     <div className="container mx-auto px-4">

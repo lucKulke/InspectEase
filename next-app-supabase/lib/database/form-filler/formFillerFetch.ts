@@ -1,7 +1,11 @@
 import { SupabaseError } from "@/lib/globalInterfaces";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { UUID } from "crypto";
-import { IFillableFormResponse, IFormData } from "./formFillerInterfaces";
+import {
+  IFillableFormPlusFillableFields,
+  IFillableFormResponse,
+  IFormData,
+} from "./formFillerInterfaces";
 
 export class DBActionsFormFillerFetch {
   private supabase: SupabaseClient<any, string, any>;
@@ -34,12 +38,14 @@ export class DBActionsFormFillerFetch {
   }
 
   async fetchAllFillableForms(userId: UUID): Promise<{
-    forms: IFillableFormResponse[] | null;
+    forms: IFillableFormPlusFillableFields[] | null;
     formsError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("form")
-      .select()
+      .select(
+        `*, main_section(sub_section(text_input(value),checkbox_group(main_checkbox(checked,sub_checkbox(checked)))))`
+      )
       .eq("user_id", userId);
 
     console.log("fetch all fillable form in db:", data);

@@ -8,7 +8,7 @@ import { ErrorHandler } from "@/components/ErrorHandler";
 import { UUID } from "crypto";
 import { PageHeading } from "@/components/PageHeading";
 
-export async function SelectFormPage() {
+export default async function SelectFormPage() {
   const supabase = await createClient("form_builder");
 
   const {
@@ -78,5 +78,3 @@ export async function SelectFormPage() {
     </div>
   );
 }
-
-export default SelectFormPage;
