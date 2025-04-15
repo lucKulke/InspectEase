@@ -48,7 +48,7 @@ export default async function ObjectPage({
       inspectableObjectProfilePropertys,
       inspectableObjectProfilePropertysError,
     } = await dbActions.fetchInspectableObjectProfileObjPropertys(
-      inspectableObjectWithPropertiesAndProfile[0].inspectable_object_profile.id
+      inspectableObjectWithPropertiesAndProfile.inspectable_object_profile.id
     );
 
     if (inspectableObjectProfilePropertysError)
@@ -72,7 +72,7 @@ export default async function ObjectPage({
     inspectableObjectProfileFormTypesWithProps,
     inspectableObjectProfileFormTypesWithPropsError,
   } = await dbActions.fetchInspectableObjectProfileFormTypesWithProps(
-    inspectableObjectWithPropertiesAndProfile[0].inspectable_object_profile.id
+    inspectableObjectWithPropertiesAndProfile.inspectable_object_profile.id
   );
 
   if (inspectableObjectProfileFormTypesWithPropsError)

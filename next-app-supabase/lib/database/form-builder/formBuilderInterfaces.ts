@@ -15,20 +15,19 @@ export interface IInspectableObjectInsert {}
 // ---------------------------
 
 // Inspectable object profile
-export interface IInspectableObjectProfileResponse {
-  id: UUID;
-  created_at: string | Date;
-  updated_at: string | Date;
-  name: string;
-  description: string;
-  object_count: string;
-  icon_key: IconType;
-}
 
 export interface IInspectableObjectProfileInsert {
   name: string;
   description: string;
   icon_key: IconType;
+}
+
+export interface IInspectableObjectProfileResponse
+  extends IInspectableObjectProfileInsert {
+  id: UUID;
+  created_at: string | Date;
+  updated_at: string | Date;
+  object_count: string;
 }
 
 // ---------------------------
@@ -41,11 +40,9 @@ export interface IInspectableObjectProfileObjPropertyInsert {
   profile_id: UUID;
 }
 
-export interface IInspectableObjectProfileObjPropertyResponse {
+export interface IInspectableObjectProfileObjPropertyResponse
+  extends IInspectableObjectProfileObjPropertyInsert {
   id: UUID;
-  name: string;
-  description: string;
-  order_number: number;
   created_at: string;
 }
 

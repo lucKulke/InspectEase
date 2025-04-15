@@ -1,5 +1,5 @@
 export const formFillerLinks = {
   home: { label: "Home", href: "/form-filler" },
-  settings: { label: "Settings", href: "/settings" },
+  selectForm: { label: "Select form", href: "/form-filler/select-form" },
   label: { label: "Profile", href: "/profile" },
 };
