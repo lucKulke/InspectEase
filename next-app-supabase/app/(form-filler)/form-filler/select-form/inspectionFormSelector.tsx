@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@radix-ui/react-label";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/Spinner";
 
 interface InspectionFormSelectorProps {
   profiles: IInspectableObjectProfileResponse[];
@@ -84,6 +85,7 @@ export const InspectionFormSelector = ({
     string | null
   >(null);
   const [openDialog, setOpenDialog] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const handleGroupChange = (value: string) => {
     setSelectedGroup(value);
@@ -107,16 +109,19 @@ export const InspectionFormSelector = ({
     if (error) {
       showNotification("Create text input fields", `Error`, "error");
       console.log("form id", id);
+      setIsSubmitting(false);
     } else if (id) {
       router.push("/form/" + id);
     }
   };
 
   const handleCreateNewFillableForm = (e: React.FormEvent) => {
+    setIsSubmitting(true);
     e.preventDefault();
     const identifier = formIdentifierString.trim();
     if (!identifier.trim()) {
       setFormIdentifierStringError("Identifier string is required");
+      setIsSubmitting(false);
       return;
     }
 
@@ -416,14 +421,22 @@ export const InspectionFormSelector = ({
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button
-                        variant="outline"
-                        type="button"
-                        onClick={() => setOpenDialog(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button type="submit">Create Form</Button>
+                      {isSubmitting ? (
+                        <Button variant={"outline"} className="w-20">
+                          <Spinner></Spinner>
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            variant="outline"
+                            type="button"
+                            onClick={() => setOpenDialog(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button type="submit">Create Form</Button>
+                        </>
+                      )}
                     </DialogFooter>
                   </form>
                 </DialogContent>
