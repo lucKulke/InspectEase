@@ -25,9 +25,10 @@ import React, { useState } from "react";
 import { TextInputField } from "./TextInputField";
 import {
   updateMainCheckboxValue,
-  updateSubCheckboxesValues,
+  upsertSubCheckboxesValues,
   updateSubCheckboxValue,
   updateTextInputFieldValue,
+  upsertMainCheckboxesValues,
 } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { Separator } from "@/components/ui/separator";
@@ -181,7 +182,7 @@ export const MainComp = ({
 
     setFillableSubCheckboxes(copy);
     await updateSubCheckboxValue(formData.id, checkboxId, newValue);
-    await updateSubCheckboxesValues(checkboxesThatNeedToBeUnchecked);
+    await upsertSubCheckboxesValues(checkboxesThatNeedToBeUnchecked);
   };
 
   const handleCheckMainCheckbox = async (
@@ -191,16 +192,34 @@ export const MainComp = ({
   ) => {
     let newValue: boolean = false;
     const copy = { ...fillableMainCheckboxes };
+    let unCheck: IMainCheckboxResponse[] = [];
+
     copy[subSectionId] = copy[subSectionId].map((mainCheckbox) => {
       if (mainCheckbox.id === checkboxId) {
-        mainCheckbox.checked = mainCheckbox.checked ? false : true;
+        mainCheckbox.checked = !mainCheckbox.checked;
         newValue = mainCheckbox.checked;
+      } else {
+        if (selectionGroup.checkboxes_selected_together?.includes(checkboxId)) {
+          if (
+            !selectionGroup.checkboxes_selected_together?.includes(
+              mainCheckbox.id
+            )
+          ) {
+            mainCheckbox.checked = false;
+            unCheck.push(mainCheckbox);
+          }
+        } else {
+          mainCheckbox.checked = false;
+          unCheck.push(mainCheckbox);
+        }
       }
+
       return mainCheckbox;
     });
 
     setFillableMainCheckboxes(copy);
     await updateMainCheckboxValue(formData.id, checkboxId, newValue);
+    await upsertMainCheckboxesValues(unCheck);
   };
 
   const handleSaveNewTextInput = async (

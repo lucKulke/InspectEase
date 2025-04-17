@@ -105,6 +105,28 @@ export class DBActionsFormFillerUpdate {
     };
   }
 
+  async upsertMainCheckboxesValues(
+    checkboxes: IMainCheckboxResponse[]
+  ): Promise<{
+    updatedMainCheckboxes: IMainCheckboxResponse[] | null;
+    updatedMainCheckboxesError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("main_checkbox")
+      .upsert(checkboxes)
+      .select();
+
+    console.log("upsert main checkboxes in db:", data);
+    if (error) {
+      console.error("upsert main checkboxes in db error: ", error);
+    }
+
+    return {
+      updatedMainCheckboxes: data,
+      updatedMainCheckboxesError: error as SupabaseError | null,
+    };
+  }
+
   async updateTextInputField(
     textInputFieldId: UUID,
     value: string
