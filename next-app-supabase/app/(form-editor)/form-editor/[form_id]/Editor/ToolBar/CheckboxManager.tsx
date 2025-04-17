@@ -28,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   IFormCheckboxGroupInsert,
   IFormCheckboxInsert,
+  IFormCheckboxInsertWithId,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { Reorder } from "framer-motion";
@@ -289,7 +290,7 @@ export const CheckboxManager = ({
           (checkbox) => checkbox.group_id === group.id
         );
 
-        const newCheckboxesForDB: IFormCheckboxInsert[] = [];
+        const newCheckboxesForDB: IFormCheckboxInsertWithId[] = [];
         for (
           let checkboxIndex = 0;
           checkboxIndex < associatedCheckboxes.length;
@@ -297,7 +298,7 @@ export const CheckboxManager = ({
         ) {
           const checkbox = associatedCheckboxes[checkboxIndex];
 
-          const newCheckbox: IFormCheckboxInsert = {
+          const newCheckbox: IFormCheckboxInsertWithId = {
             id: checkbox.id as UUID,
             group_id: groupInDB.id as UUID,
             label: checkbox.label,

@@ -253,7 +253,7 @@ export interface IFormCheckboxGroupWithCheckboxes
   form_checkbox: IFormCheckboxResponse[];
 }
 
-export interface IFormCheckboxInsert {
+export interface IFormCheckboxInsertWithId {
   id: UUID;
   group_id: UUID;
   label: string;
@@ -261,7 +261,15 @@ export interface IFormCheckboxInsert {
   annotation_id: UUID | null;
 }
 
+export interface IFormCheckboxInsert {
+  group_id: UUID;
+  label: string;
+  order_number: number;
+  annotation_id: UUID | null;
+}
+
 export interface IFormCheckboxResponse extends IFormCheckboxInsert {
+  id: UUID;
   created_at: Date | string;
 }
 
