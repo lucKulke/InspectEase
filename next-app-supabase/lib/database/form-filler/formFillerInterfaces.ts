@@ -46,6 +46,7 @@ export interface ICheckboxGroupInsert {
   id: UUID;
   name: string;
   sub_section_id: UUID;
+  checkboxes_selected_together: string[] | null;
 }
 
 export interface ICheckboxGroupResponse extends ICheckboxGroupInsert {

@@ -1,5 +1,6 @@
 "use server";
 
+import { ISubCheckboxResponse } from "@/lib/database/form-filler/formFillerInterfaces";
 import { DBActionsFormFillerUpdate } from "@/lib/database/form-filler/formFillerUpdate";
 import { createClient } from "@/utils/supabase/server";
 import { SupabaseClient } from "@supabase/supabase-js";
@@ -36,6 +37,16 @@ export async function updateSubCheckboxValue(
   const dbActions = new DBActionsFormFillerUpdate(supabase);
   updateFormUpdateAt(formId, supabase);
   return await dbActions.updateSubCheckboxValue(checkboxId, value);
+}
+
+export async function updateSubCheckboxesValues(
+  checkboxes: ISubCheckboxResponse[]
+) {
+  const supabase = await createClient("form_filler");
+
+  const dbActions = new DBActionsFormFillerUpdate(supabase);
+  //updateFormUpdateAt(formId, supabase);
+  return await dbActions.upsertSubCheckboxesValues(checkboxes);
 }
 
 export async function updateTextInputFieldValue(
