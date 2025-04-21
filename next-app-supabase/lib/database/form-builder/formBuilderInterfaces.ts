@@ -242,6 +242,13 @@ export interface IFormCheckboxGroupInsert {
   checkboxes_selected_together: string[] | null;
 }
 
+export interface IFormCheckboxGroupInsertWithId {
+  id: UUID;
+  sub_section_id: UUID;
+  name: string;
+  checkboxes_selected_together: string[] | null;
+}
+
 export interface IFormCheckboxGroupResponse extends IFormCheckboxGroupInsert {
   id: UUID;
   created_at: Date | string;

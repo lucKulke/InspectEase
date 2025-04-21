@@ -27,6 +27,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   IFormCheckboxGroupInsert,
+  IFormCheckboxGroupInsertWithId,
   IFormCheckboxInsert,
   IFormCheckboxInsertWithId,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
@@ -256,6 +257,9 @@ export const CheckboxManager = ({
 
     let sampleCheckboxId: string | null = "";
 
+    const checkboxGroupsForDB: IFormCheckboxGroupInsertWithId[] = [];
+    const checkboxesForDB: IFormCheckboxInsertWithId[] = [];
+
     for (let outerindex = 0; outerindex < groups.length; outerindex++) {
       const group = groups[outerindex];
 
@@ -266,55 +270,72 @@ export const CheckboxManager = ({
       ) {
         const subSectionId = group.subSectionIds[innerindex];
 
+        const newGroupId = uuidv4() as UUID;
+
+        const associatedCheckboxes = checkboxes.filter(
+          (checkbox) => checkbox.group_id === group.id
+        );
+
         let checkboxesThatCanBeSelectedTogether = null;
         if (rules[group.id]) {
           checkboxesThatCanBeSelectedTogether =
             rules[group.id].length > 1 ? rules[group.id] : null;
         }
 
-        const newGroup: IFormCheckboxGroupInsert = {
-          name: group.name,
-          sub_section_id: subSectionId as UUID,
-          checkboxes_selected_together: checkboxesThatCanBeSelectedTogether,
-        };
-
-        const { formCheckboxGroups, formCheckboxGroupsError } =
-          await createFromCheckboxGroups([newGroup]);
-
-        if (!formCheckboxGroups)
-          return { error: formCheckboxGroupsError, id: null };
-
-        const groupInDB = formCheckboxGroups[0];
-
-        const associatedCheckboxes = checkboxes.filter(
-          (checkbox) => checkbox.group_id === group.id
-        );
-
-        const newCheckboxesForDB: IFormCheckboxInsertWithId[] = [];
         for (
           let checkboxIndex = 0;
           checkboxIndex < associatedCheckboxes.length;
           checkboxIndex++
         ) {
+          const newCheckoxId = uuidv4() as UUID;
           const checkbox = associatedCheckboxes[checkboxIndex];
 
+          if (checkboxesThatCanBeSelectedTogether) {
+            if (checkboxesThatCanBeSelectedTogether.includes(checkbox.id)) {
+              checkboxesThatCanBeSelectedTogether =
+                checkboxesThatCanBeSelectedTogether.filter(
+                  (checkboxId) => checkboxId !== checkbox.id
+                );
+              checkboxesThatCanBeSelectedTogether.push(newCheckoxId);
+            }
+          }
+
           const newCheckbox: IFormCheckboxInsertWithId = {
-            id: checkbox.id as UUID,
-            group_id: groupInDB.id as UUID,
+            id: newCheckoxId,
+            group_id: newGroupId,
             label: checkbox.label,
             order_number: checkbox.order_number,
             annotation_id: null,
           };
 
-          newCheckboxesForDB.push(newCheckbox);
+          checkboxesForDB.push(newCheckbox);
         }
-        const { formCheckboxes, formCheckboxesError } =
-          await createFormCheckboxes(newCheckboxesForDB);
+
+        const newGroup: IFormCheckboxGroupInsertWithId = {
+          id: newGroupId,
+          name: group.name,
+          sub_section_id: subSectionId as UUID,
+          checkboxes_selected_together: checkboxesThatCanBeSelectedTogether,
+        };
+
+        checkboxGroupsForDB.push(newGroup);
 
         sampleCheckboxId = subSectionId;
-        if (!formCheckboxes)
-          return { error: formCheckboxGroupsError, id: null };
       }
+    }
+    const { formCheckboxGroups, formCheckboxGroupsError } =
+      await createFromCheckboxGroups(checkboxGroupsForDB);
+
+    if (formCheckboxGroupsError) {
+      return { error: formCheckboxGroupsError, id: null };
+    }
+
+    const { formCheckboxes, formCheckboxesError } = await createFormCheckboxes(
+      checkboxesForDB
+    );
+
+    if (formCheckboxesError) {
+      return { error: formCheckboxesError, id: null };
     }
     return { error: null, id: sampleCheckboxId };
   };
