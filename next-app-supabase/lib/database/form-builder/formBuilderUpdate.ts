@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
   IFormCheckboxGroupInsert,
+  IFormCheckboxGroupResponse,
   IFormCheckboxInsert,
   IFormCheckboxResponse,
   IFormCheckboxTaskResponse,
@@ -466,6 +467,31 @@ export class DBActionsFormBuilderUpdate {
     return {
       updatedFormTextInputField: data ? data[0] : null,
       updatedFormTextInputFieldError: error as SupabaseError | null,
+    };
+  }
+
+  async updateCheckboxGroupRules(
+    groupId: UUID,
+    newRules: UUID[] | null
+  ): Promise<{
+    updatedCheckboxGroup: IFormCheckboxGroupResponse | null;
+    updatedCheckboxGroupError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form_checkbox_group")
+      .update({ checkboxes_selected_together: newRules })
+      .eq("id", groupId)
+      .select()
+      .single();
+
+    console.log("updated checkbox group rules in db:", data);
+    if (error) {
+      console.error("updated checkbox group rules in db error: ", error);
+    }
+
+    return {
+      updatedCheckboxGroup: data,
+      updatedCheckboxGroupError: error as SupabaseError | null,
     };
   }
 }

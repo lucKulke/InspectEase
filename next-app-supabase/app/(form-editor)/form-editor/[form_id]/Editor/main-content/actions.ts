@@ -108,6 +108,16 @@ export async function deleteAllTextInputFields(subSectionId: UUID) {
   return await dbActions.deleteAllTextInputFields(subSectionId);
 }
 
+export async function updateCheckboxGroupRules(
+  groupId: UUID,
+  newRules: UUID[] | null
+) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderUpdate(supabase);
+
+  return await dbActions.updateCheckboxGroupRules(groupId, newRules);
+}
+
 interface InspectableObjectProfile {
   string_extraction_training: IStringExtractionTrainingResponse[];
 }

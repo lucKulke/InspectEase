@@ -52,6 +52,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -305,6 +306,29 @@ export const SubSection = ({
                       </ul>
                     )}
                   </CardContent>
+                  <CardFooter>
+                    {group.checkboxes_selected_together &&
+                      group.checkboxes_selected_together.length > 1 && (
+                        <p className="mb-2 text-sm text-slate-500">
+                          Only{" "}
+                          {group.form_checkbox
+                            .filter((checkbox) =>
+                              group.checkboxes_selected_together?.includes(
+                                checkbox.id
+                              )
+                            )
+                            .map((checkbox, index, array) => (
+                              <span key={checkbox.id + "rulesDescription"}>
+                                <span className="font-bold underline text-black">
+                                  {checkbox.label}
+                                </span>
+                                {index < array.length - 1 ? " , " : ""}
+                              </span>
+                            ))}{" "}
+                          can be checked together:{" "}
+                        </p>
+                      )}
+                  </CardFooter>
                 </Card>
               </ContextMenuTrigger>
               <ContextMenuContent>
