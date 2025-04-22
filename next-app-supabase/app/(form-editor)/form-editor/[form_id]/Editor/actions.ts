@@ -4,6 +4,7 @@ import { DBActionsFormBuilderDelete } from "@/lib/database/form-builder/formBuil
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import {
   IFormCheckboxGroupInsert,
+  IFormCheckboxGroupInsertWithId,
   IFormCheckboxInsert,
   IFormTextInputFieldInsert,
   IInspectableObjectInspectionFormMainSectionInsert,
@@ -124,7 +125,7 @@ export async function createFormCheckboxes(checkboxes: IFormCheckboxInsert[]) {
 }
 
 export async function createFromCheckboxGroups(
-  groups: IFormCheckboxGroupInsert[]
+  groups: IFormCheckboxGroupInsertWithId[]
 ) {
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderCreate(supabase);

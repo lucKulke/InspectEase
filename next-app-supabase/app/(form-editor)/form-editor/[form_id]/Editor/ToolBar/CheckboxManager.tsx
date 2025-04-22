@@ -27,7 +27,9 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   IFormCheckboxGroupInsert,
+  IFormCheckboxGroupInsertWithId,
   IFormCheckboxInsert,
+  IFormCheckboxInsertWithId,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { Reorder } from "framer-motion";
@@ -75,6 +77,9 @@ export const CheckboxManager = ({
   const [assignedSubSections, setAssignedSubSections] = useState<
     Record<string, string[]>
   >({});
+
+  // groupid: [checkboxId, checkboxId]
+  const [rules, setRules] = useState<Record<string, string[]>>({});
 
   // Create a new checkbox
   const handleCreateCheckbox = () => {
@@ -252,6 +257,9 @@ export const CheckboxManager = ({
 
     let sampleCheckboxId: string | null = "";
 
+    const checkboxGroupsForDB: IFormCheckboxGroupInsertWithId[] = [];
+    const checkboxesForDB: IFormCheckboxInsertWithId[] = [];
+
     for (let outerindex = 0; outerindex < groups.length; outerindex++) {
       const group = groups[outerindex];
 
@@ -262,56 +270,106 @@ export const CheckboxManager = ({
       ) {
         const subSectionId = group.subSectionIds[innerindex];
 
-        const newGroup: IFormCheckboxGroupInsert = {
-          name: group.name,
-          sub_section_id: subSectionId as UUID,
-        };
-
-        const { formCheckboxGroups, formCheckboxGroupsError } =
-          await createFromCheckboxGroups([newGroup]);
-
-        if (!formCheckboxGroups)
-          return { error: formCheckboxGroupsError, id: null };
-
-        const groupInDB = formCheckboxGroups[0];
+        const newGroupId = uuidv4() as UUID;
 
         const associatedCheckboxes = checkboxes.filter(
           (checkbox) => checkbox.group_id === group.id
         );
 
-        const newCheckboxesForDB: IFormCheckboxInsert[] = [];
+        let checkboxesThatCanBeSelectedTogether = null;
+        if (rules[group.id]) {
+          checkboxesThatCanBeSelectedTogether =
+            rules[group.id].length > 1 ? rules[group.id] : null;
+        }
+
         for (
           let checkboxIndex = 0;
           checkboxIndex < associatedCheckboxes.length;
           checkboxIndex++
         ) {
+          const newCheckoxId = uuidv4() as UUID;
           const checkbox = associatedCheckboxes[checkboxIndex];
 
-          const newCheckbox: IFormCheckboxInsert = {
-            group_id: groupInDB.id as UUID,
+          if (checkboxesThatCanBeSelectedTogether) {
+            if (checkboxesThatCanBeSelectedTogether.includes(checkbox.id)) {
+              checkboxesThatCanBeSelectedTogether =
+                checkboxesThatCanBeSelectedTogether.filter(
+                  (checkboxId) => checkboxId !== checkbox.id
+                );
+              checkboxesThatCanBeSelectedTogether.push(newCheckoxId);
+            }
+          }
+
+          const newCheckbox: IFormCheckboxInsertWithId = {
+            id: newCheckoxId,
+            group_id: newGroupId,
             label: checkbox.label,
             order_number: checkbox.order_number,
             annotation_id: null,
           };
 
-          newCheckboxesForDB.push(newCheckbox);
+          checkboxesForDB.push(newCheckbox);
         }
-        const { formCheckboxes, formCheckboxesError } =
-          await createFormCheckboxes(newCheckboxesForDB);
+
+        const newGroup: IFormCheckboxGroupInsertWithId = {
+          id: newGroupId,
+          name: group.name,
+          sub_section_id: subSectionId as UUID,
+          checkboxes_selected_together: checkboxesThatCanBeSelectedTogether,
+        };
+
+        checkboxGroupsForDB.push(newGroup);
+
         sampleCheckboxId = subSectionId;
-        if (!formCheckboxes)
-          return { error: formCheckboxGroupsError, id: null };
       }
     }
+    const { formCheckboxGroups, formCheckboxGroupsError } =
+      await createFromCheckboxGroups(checkboxGroupsForDB);
+
+    if (formCheckboxGroupsError) {
+      return { error: formCheckboxGroupsError, id: null };
+    }
+
+    const { formCheckboxes, formCheckboxesError } = await createFormCheckboxes(
+      checkboxesForDB
+    );
+
+    if (formCheckboxesError) {
+      return { error: formCheckboxesError, id: null };
+    }
     return { error: null, id: sampleCheckboxId };
+  };
+
+  const isInRule = (checkboxId: string) => {
+    return rules[selectedGroupId as string]
+      ? rules[selectedGroupId as string].includes(checkboxId)
+      : false;
+  };
+
+  const assignToRule = (checkboxId: string, groupId: string) => {
+    const copy = { ...rules };
+    if (copy[groupId]) {
+      if (copy[groupId].includes(checkboxId)) {
+        copy[groupId] = copy[groupId].filter(
+          (checkbox) => checkbox !== checkboxId
+        );
+      } else {
+        copy[groupId].push(checkboxId);
+      }
+    } else {
+      copy[groupId] = [checkboxId];
+    }
+
+    setRules(copy);
   };
 
   return (
     <div>
       <Tabs defaultValue="create" className="mt-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="create">Create</TabsTrigger>
           <TabsTrigger value="groups">Groups</TabsTrigger>
+          <TabsTrigger value="rules">Rules</TabsTrigger>
           <TabsTrigger value="assign">Assign</TabsTrigger>
         </TabsList>
 
@@ -510,6 +568,101 @@ export const CheckboxManager = ({
             </div>
           </div>
         </TabsContent>
+        <TabsContent value="rules" className="space-y-4">
+          <div className="flex space-x-4">
+            <ScrollArea className="h-[260px] w-1/2 rounded-md border p-4">
+              <div className="space-y-4">
+                {groups.length === 0 ? (
+                  <div className="col-span-full">
+                    <p className="text-center text-muted-foreground py-8">
+                      No groups to preview. Create some groups and add
+                      checkboxes to them.
+                    </p>
+                  </div>
+                ) : (
+                  groups.map((group) => {
+                    const groupCheckboxes = getCheckboxesForGroup(group.id);
+
+                    return (
+                      <Card
+                        key={group.id}
+                        onClick={() => setSelectedGroupId(group.id)}
+                        className={` ${selectedGroupId === group.id && "dark"}`}
+                      >
+                        <CardHeader>
+                          <CardTitle>{group.name}</CardTitle>
+                          <CardDescription>
+                            {groupCheckboxes.length} checkbox
+                            {groupCheckboxes.length !== 1 ? "es" : ""}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          {rules[group.id] && rules[group.id].length > 1 && (
+                            <p className="text-sm text-gray-300">
+                              Only{" "}
+                              {rules[group.id]
+                                .map((checkboxId) => {
+                                  return checkboxes.find(
+                                    (checkbox) => checkbox.id === checkboxId
+                                  )?.label;
+                                })
+                                .join(", ")}{" "}
+                              can be selected together.
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+              </div>
+            </ScrollArea>
+            <div className="w-1/2">
+              <p className="text-slate-500">
+                Only these checkboxes can be checked together
+              </p>
+              <ScrollArea
+                className={`h-[234px] rounded-md border p-4 bg-blue-100  ${
+                  selectedGroupId &&
+                  rules[selectedGroupId] &&
+                  rules[selectedGroupId].length > 1
+                    ? "bg-green-300"
+                    : "bg-red-300"
+                } `}
+                key={selectedGroupId}
+              >
+                {groups
+                  .filter((group) => group.id === selectedGroupId)
+                  .map((group) => {
+                    const groupCheckboxes = getCheckboxesForGroup(group.id);
+                    return (
+                      <ul key={group.id + "test"} className="space-y-2">
+                        {groupCheckboxes.map((checkbox) => (
+                          <li
+                            key={checkbox.id + "test"}
+                            className=" flex items-center space-x-2"
+                          >
+                            <Checkbox
+                              checked={isInRule(checkbox.id as UUID)}
+                              onCheckedChange={() =>
+                                assignToRule(checkbox.id, group.id)
+                              }
+                              id={`preview-${group.id}-${checkbox.id}`}
+                            />
+                            <Label
+                              htmlFor={`preview-${group.id}-${checkbox.id}`}
+                            >
+                              {checkbox.label}
+                            </Label>
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  })}
+              </ScrollArea>
+            </div>
+          </div>
+        </TabsContent>
 
         {/* Preview Tab */}
         <TabsContent value="assign" className="space-y-4">
@@ -571,6 +724,20 @@ export const CheckboxManager = ({
                                 </Reorder.Item>
                               ))}
                             </Reorder.Group>
+                          )}
+
+                          {rules[group.id] && rules[group.id].length > 1 && (
+                            <p className="text-sm mt-3 text-gray-300">
+                              Only{" "}
+                              {rules[group.id]
+                                .map((checkboxId) => {
+                                  return checkboxes.find(
+                                    (checkbox) => checkbox.id === checkboxId
+                                  )?.label;
+                                })
+                                .join(", ")}{" "}
+                              can be selected together.
+                            </p>
                           )}
                         </CardContent>
                       </Card>

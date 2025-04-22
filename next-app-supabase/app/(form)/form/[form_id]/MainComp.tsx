@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  ICheckboxGroupData,
   IFormData,
   IMainCheckboxResponse,
   IMainSectionResponse,
@@ -24,8 +25,10 @@ import React, { useState } from "react";
 import { TextInputField } from "./TextInputField";
 import {
   updateMainCheckboxValue,
+  upsertSubCheckboxesValues,
   updateSubCheckboxValue,
   updateTextInputFieldValue,
+  upsertMainCheckboxesValues,
 } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { Separator } from "@/components/ui/separator";
@@ -89,38 +92,134 @@ export const MainComp = ({
 
   const handleCheckSubCheckbox = async (
     mainCheckboxId: UUID,
-    checkboxId: UUID
+    checkboxId: UUID,
+    selectionGroup: ICheckboxGroupData,
+    taskId: UUID
   ) => {
     let newValue: boolean = false;
+    let unCheck: ISubCheckboxResponse[] = [];
     const copy = { ...fillableSubCheckboxes };
     copy[mainCheckboxId] = copy[mainCheckboxId].map((subCheckbox) => {
       if (subCheckbox.id === checkboxId) {
-        subCheckbox.checked = subCheckbox.checked ? false : true;
-        newValue = subCheckbox.checked;
+        console.log(selectionGroup.checkboxes_selected_together);
+        console.log(
+          selectionGroup.checkboxes_selected_together?.includes(mainCheckboxId)
+        );
+
+        if (subCheckbox.checked) {
+          subCheckbox.checked = false;
+          newValue = false;
+        } else {
+          selectionGroup.main_checkbox.forEach((mainCheckbox) => {
+            const row = copy[mainCheckbox.id].filter(
+              (subCheck) => subCheck.task_id === taskId
+            );
+
+            const subCheck = row.filter(
+              (subCheck) => subCheck.id !== subCheckbox.id
+            )[0];
+            subCheck ? unCheck.push(subCheck) : null;
+            subCheckbox.checked = true;
+            newValue = true;
+          });
+        }
       }
       return subCheckbox;
     });
 
+    console.log("uncheck list", unCheck);
+
+    const checkboxesThatNeedToBeUnchecked: ISubCheckboxResponse[] = [];
+
+    if (
+      !selectionGroup.checkboxes_selected_together?.includes(mainCheckboxId)
+    ) {
+      unCheck.forEach((subCheckbox) => {
+        let mainCheckbox: string | null = null;
+        for (const [key, value] of Object.entries(copy)) {
+          value.forEach((sub) => {
+            if (sub.id === subCheckbox.id) {
+              mainCheckbox = key;
+            }
+          });
+        }
+
+        if (mainCheckbox) {
+          copy[mainCheckbox].map((sub) => {
+            if (sub.id === subCheckbox.id) {
+              sub.checked = false;
+              checkboxesThatNeedToBeUnchecked.push(sub);
+            }
+            return sub;
+          });
+        }
+      });
+    } else {
+      unCheck.forEach((subCheckbox) => {
+        let mainCheckbox: string | null = null;
+        for (const [key, value] of Object.entries(copy)) {
+          value.forEach((sub) => {
+            if (sub.id === subCheckbox.id) {
+              mainCheckbox = key;
+            }
+          });
+        }
+        if (
+          mainCheckbox &&
+          !selectionGroup.checkboxes_selected_together?.includes(mainCheckbox)
+        ) {
+          copy[mainCheckbox].map((sub) => {
+            if (sub.id === subCheckbox.id) {
+              sub.checked = false;
+              checkboxesThatNeedToBeUnchecked.push(sub);
+              console.log("push");
+            }
+            return sub;
+          });
+        }
+      });
+    }
+
     setFillableSubCheckboxes(copy);
     await updateSubCheckboxValue(formData.id, checkboxId, newValue);
+    await upsertSubCheckboxesValues(checkboxesThatNeedToBeUnchecked);
   };
 
   const handleCheckMainCheckbox = async (
     subSectionId: UUID,
-    checkboxId: UUID
+    checkboxId: UUID,
+    selectionGroup: ICheckboxGroupData
   ) => {
     let newValue: boolean = false;
     const copy = { ...fillableMainCheckboxes };
+    let unCheck: IMainCheckboxResponse[] = [];
+
     copy[subSectionId] = copy[subSectionId].map((mainCheckbox) => {
       if (mainCheckbox.id === checkboxId) {
-        mainCheckbox.checked = mainCheckbox.checked ? false : true;
+        mainCheckbox.checked = !mainCheckbox.checked;
         newValue = mainCheckbox.checked;
+      } else {
+        if (selectionGroup.checkboxes_selected_together?.includes(checkboxId)) {
+          if (
+            !selectionGroup.checkboxes_selected_together?.includes(
+              mainCheckbox.id
+            )
+          ) {
+            mainCheckbox.checked = false;
+            unCheck.push(mainCheckbox);
+          }
+        } else {
+          mainCheckbox.checked = false;
+          unCheck.push(mainCheckbox);
+        }
       }
+
       return mainCheckbox;
     });
 
     setFillableMainCheckboxes(copy);
     await updateMainCheckboxValue(formData.id, checkboxId, newValue);
+    await upsertMainCheckboxesValues(unCheck);
   };
 
   const handleSaveNewTextInput = async (
@@ -327,7 +426,9 @@ export const MainComp = ({
                                                                         onClick={() => {
                                                                           handleCheckSubCheckbox(
                                                                             mainCheckbox.id,
-                                                                            currentCheckbox.id
+                                                                            currentCheckbox.id,
+                                                                            selectionGroup,
+                                                                            task.id
                                                                           );
                                                                         }}
                                                                       ></Checkbox>
@@ -360,7 +461,8 @@ export const MainComp = ({
                                                               onClick={() => {
                                                                 handleCheckMainCheckbox(
                                                                   selectionGroup.id,
-                                                                  mainCheckbox.id
+                                                                  mainCheckbox.id,
+                                                                  selectionGroup
                                                                 );
                                                               }}
                                                             ></Checkbox>

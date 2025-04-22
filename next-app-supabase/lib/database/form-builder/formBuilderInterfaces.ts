@@ -239,6 +239,14 @@ export interface IInspectableObjectInspectionFormSubSectionWithData
 export interface IFormCheckboxGroupInsert {
   sub_section_id: UUID;
   name: string;
+  checkboxes_selected_together: string[] | null;
+}
+
+export interface IFormCheckboxGroupInsertWithId {
+  id: UUID;
+  sub_section_id: UUID;
+  name: string;
+  checkboxes_selected_together: string[] | null;
 }
 
 export interface IFormCheckboxGroupResponse extends IFormCheckboxGroupInsert {
@@ -250,6 +258,14 @@ export interface IFormCheckboxGroupWithCheckboxes
   extends IFormCheckboxGroupResponse {
   form_checkbox_task: IFormCheckboxTaskResponse[];
   form_checkbox: IFormCheckboxResponse[];
+}
+
+export interface IFormCheckboxInsertWithId {
+  id: UUID;
+  group_id: UUID;
+  label: string;
+  order_number: number;
+  annotation_id: UUID | null;
 }
 
 export interface IFormCheckboxInsert {

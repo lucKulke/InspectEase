@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
   IFormCheckboxGroupInsert,
+  IFormCheckboxGroupInsertWithId,
   IFormCheckboxInsert,
   IFormCheckboxResponse,
   IFormCheckboxTaskInsert,
@@ -425,7 +426,9 @@ export class DBActionsFormBuilderCreate {
     };
   }
 
-  async createFormCheckboxGroups(groups: IFormCheckboxGroupInsert[]): Promise<{
+  async createFormCheckboxGroups(
+    groups: IFormCheckboxGroupInsertWithId[]
+  ): Promise<{
     formCheckboxGroups: IFormCheckboxResponse[] | null;
     formCheckboxGroupsError: SupabaseError | null;
   }> {

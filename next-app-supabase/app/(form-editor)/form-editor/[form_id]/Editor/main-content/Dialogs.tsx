@@ -31,6 +31,7 @@ import {
   deleteTextInputField,
   fetchStringExtractionTrainings,
   updateCheckboxesOrderNumber,
+  updateCheckboxGroupRules,
   updateCheckboxTaskOrder,
   updateTextInputFieldOrder,
   updateTextInputFieldTraining,
@@ -46,6 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { Plus, Trash2 } from "lucide-react";
 import { Reorder } from "framer-motion";
@@ -322,10 +324,16 @@ export const CheckboxGroupDialog = ({
 
   const [newCheckboxLabel, setNewCheckboxLabel] = useState<string>("");
 
-  const currentCheckboxGroup = () => {
+  const currentCheckboxGroupCheckboxes = () => {
     return subSectionsData[subSectionId].form_checkbox_group.filter(
       (group) => group.id === currentCheckboxGroupId
     )[0].form_checkbox;
+  };
+
+  const currentCheckboxGroup = () => {
+    return subSectionsData[subSectionId].form_checkbox_group.filter(
+      (group) => group.id === currentCheckboxGroupId
+    )[0];
   };
 
   const updateCheckboxOrderInDB = async (
@@ -404,7 +412,7 @@ export const CheckboxGroupDialog = ({
     const newCheckbox: IFormCheckboxInsert = {
       label: newCheckboxLabel,
       group_id: currentCheckboxGroupId,
-      order_number: currentCheckboxGroup().length + 1,
+      order_number: currentCheckboxGroupCheckboxes().length + 1,
       annotation_id: null,
     };
     const { formCheckbox, formCheckboxError } = await createCheckbox(
@@ -435,6 +443,62 @@ export const CheckboxGroupDialog = ({
       : false;
   }
 
+  function checkboxRulesIsSelected(checkboxId: UUID) {
+    const result =
+      currentCheckboxGroup().checkboxes_selected_together?.includes(checkboxId);
+
+    return result ?? false;
+  }
+
+  const checkboxRulesCheck = async (checkboxId: UUID) => {
+    let newList;
+
+    if (checkboxRulesIsSelected(checkboxId)) {
+      const copy = { ...subSectionsData };
+
+      newList = copy[subSectionId].form_checkbox_group
+        .filter((group) => group.id === currentCheckboxGroupId)[0]
+        .checkboxes_selected_together?.filter((id) => id !== checkboxId);
+
+      copy[subSectionId].form_checkbox_group.filter(
+        (group) => group.id === currentCheckboxGroupId
+      )[0].checkboxes_selected_together = newList ? newList : null;
+
+      setSubSectionsData(copy);
+    } else {
+      const copy = { ...subSectionsData };
+
+      newList = copy[subSectionId].form_checkbox_group.filter(
+        (group) => group.id === currentCheckboxGroupId
+      )[0].checkboxes_selected_together;
+
+      if (newList) {
+        newList.push(checkboxId);
+      } else {
+        newList = [];
+        newList.push(checkboxId);
+      }
+      copy[subSectionId].form_checkbox_group.filter(
+        (group) => group.id === currentCheckboxGroupId
+      )[0].checkboxes_selected_together = newList;
+
+      setSubSectionsData(copy);
+    }
+
+    const { updatedCheckboxGroup, updatedCheckboxGroupError } =
+      await updateCheckboxGroupRules(
+        currentCheckboxGroupId,
+        (newList as UUID[]) ?? null
+      );
+    if (updatedCheckboxGroupError) {
+      showNotification(
+        "Update rules",
+        `Error: ${updatedCheckboxGroupError.message} (${updatedCheckboxGroupError.code})`,
+        "error"
+      );
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[800px]">
@@ -450,75 +514,130 @@ export const CheckboxGroupDialog = ({
                 }
               </DialogTitle>
               <DialogDescription>
-                Create/Update {currentCheckboxGroup().length}
-                checkbox
-                {currentCheckboxGroup().length !== 1 ? "es" : ""}
+                Create/Update {currentCheckboxGroupCheckboxes().length} checkbox
+                {currentCheckboxGroupCheckboxes().length !== 1 ? "es" : ""}
               </DialogDescription>
             </DialogHeader>
-            <div>
-              <Label htmlFor={`task-dialog-${currentCheckboxGroupId}`}>
-                New Checkbox
-              </Label>
-              <div className="flex items-center space-x-2">
-                <Input
-                  id={`task-dialog-${currentCheckboxGroupId}`}
-                  value={newCheckboxLabel}
-                  onChange={(e) => setNewCheckboxLabel(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleCreateCheckbox();
-                  }}
-                />
-                <Button
-                  onClick={() => {
-                    handleCreateCheckbox();
-                  }}
-                >
-                  Create
-                </Button>
-              </div>
-            </div>
-            {currentCheckboxGroup().length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No checkboxes in this group.
-              </p>
-            ) : (
-              <Reorder.Group
-                axis="y"
-                values={
-                  subSectionsData[subSectionId].form_checkbox_group.filter(
-                    (group) => group.id === currentCheckboxGroupId
-                  )[0].form_checkbox
-                }
-                onReorder={handleCheckboxesReorder}
-                className="p-2 space-y-3"
-              >
-                {currentCheckboxGroup()
-                  .sort(compareCheckboxOrderNumbers)
-                  .map((checkbox) => (
-                    <Reorder.Item
-                      key={checkbox.id}
-                      value={checkbox}
-                      className="flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-grab"
-                      dragConstraints={{ top: 0, bottom: 0 }}
+
+            <Tabs defaultValue="checkboxes" className="">
+              <TabsList>
+                <TabsTrigger value="checkboxes">Checkboxes</TabsTrigger>
+                <TabsTrigger value="rules">Rules</TabsTrigger>
+              </TabsList>
+              <TabsContent value="checkboxes">
+                <div className="mb-2">
+                  <Label htmlFor={`task-dialog-${currentCheckboxGroupId}`}>
+                    New Checkbox
+                  </Label>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      id={`task-dialog-${currentCheckboxGroupId}`}
+                      value={newCheckboxLabel}
+                      onChange={(e) => setNewCheckboxLabel(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleCreateCheckbox();
+                      }}
+                    />
+                    <Button
+                      onClick={() => {
+                        handleCreateCheckbox();
+                      }}
                     >
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          checked={true}
-                          id={`preview-${currentCheckboxGroupId}-${checkbox.id}`}
-                        />
-                        <Label
-                          htmlFor={`preview-${currentCheckboxGroupId}-${checkbox.id}`}
+                      Create
+                    </Button>
+                  </div>
+                </div>
+                {currentCheckboxGroupCheckboxes().length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No checkboxes in this group.
+                  </p>
+                ) : (
+                  <Reorder.Group
+                    axis="y"
+                    values={
+                      subSectionsData[subSectionId].form_checkbox_group.filter(
+                        (group) => group.id === currentCheckboxGroupId
+                      )[0].form_checkbox
+                    }
+                    onReorder={handleCheckboxesReorder}
+                    className="p-2 space-y-3"
+                  >
+                    {currentCheckboxGroupCheckboxes()
+                      .sort(compareCheckboxOrderNumbers)
+                      .map((checkbox) => (
+                        <Reorder.Item
+                          key={checkbox.id}
+                          value={checkbox}
+                          className="flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-grab"
+                          dragConstraints={{ top: 0, bottom: 0 }}
                         >
+                          <div className="flex items-center space-x-3">
+                            <Checkbox
+                              checked={true}
+                              id={`preview-${currentCheckboxGroupId}-${checkbox.id}`}
+                            />
+                            <Label
+                              htmlFor={`preview-${currentCheckboxGroupId}-${checkbox.id}`}
+                            >
+                              {checkbox.label}
+                            </Label>
+                          </div>
+                          <button
+                            onClick={() => handleCheckboxDelete(checkbox.id)}
+                          >
+                            <Trash2 className="text-red-500 cursor-pointer"></Trash2>
+                          </button>
+                        </Reorder.Item>
+                      ))}
+                  </Reorder.Group>
+                )}
+              </TabsContent>
+              <TabsContent value="rules">
+                <p className="mb-2">
+                  Only selected checkboxes can be checked together:{" "}
+                  {currentCheckboxGroupCheckboxes()
+                    .filter((checkbox) =>
+                      currentCheckboxGroup().checkboxes_selected_together?.includes(
+                        checkbox.id
+                      )
+                    )
+                    .map((checkbox, index, array) => (
+                      <span key={checkbox.id + "rulesDescription"}>
+                        <span className="font-bold underline">
                           {checkbox.label}
-                        </Label>
-                      </div>
-                      <button onClick={() => handleCheckboxDelete(checkbox.id)}>
-                        <Trash2 className="text-red-500 cursor-pointer"></Trash2>
-                      </button>
-                    </Reorder.Item>
-                  ))}
-              </Reorder.Group>
-            )}
+                        </span>
+                        {index < array.length - 1 ? " , " : ""}
+                      </span>
+                    ))}
+                </p>
+
+                <ul className="space-y-3 p-2">
+                  {currentCheckboxGroupCheckboxes()
+                    .sort(compareCheckboxOrderNumbers)
+                    .map((checkbox) => {
+                      return (
+                        <li
+                          key={checkbox.id + "rules"}
+                          className="border p-4 rounded-md shadow"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <Checkbox
+                              checked={checkboxRulesIsSelected(checkbox.id)}
+                              onClick={() => checkboxRulesCheck(checkbox.id)}
+                              id={`previewtest-${currentCheckboxGroupId}-${checkbox.id}`}
+                            />
+                            <Label
+                              htmlFor={`previewtest-${currentCheckboxGroupId}-${checkbox.id}`}
+                            >
+                              {checkbox.label}
+                            </Label>
+                          </div>
+                        </li>
+                      );
+                    })}
+                </ul>
+              </TabsContent>
+            </Tabs>
           </>
         )}
       </DialogContent>

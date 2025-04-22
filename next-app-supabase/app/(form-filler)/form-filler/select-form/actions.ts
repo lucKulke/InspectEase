@@ -214,15 +214,26 @@ export async function createFillableInspectionForm(data: {
 
             subSection.form_checkbox_group.forEach((checkboxGroup) => {
               const newCheckboxGroupId = randomUUID();
-              checkboxGroups.push({
-                id: newCheckboxGroupId,
-                name: checkboxGroup.name,
-                sub_section_id: newSubSectionId,
-              });
+              let selectedTogether = checkboxGroup.checkboxes_selected_together;
 
               checkboxGroup.form_checkbox.forEach((checkbox) => {
+                const newId = randomUUID();
+
+                if (selectedTogether) {
+                  if (selectedTogether.includes(checkbox.id)) {
+                    selectedTogether = selectedTogether.filter(
+                      (id) => id !== checkbox.id
+                    );
+                    selectedTogether.push(newId);
+                  }
+                }
+                [
+                  "58594353-5560-4045-a175-9a9cd0612557",
+                  "fd409c06-f9f0-4efc-9212-b228a052987a",
+                ];
+
                 mainCheckboxes.push({
-                  id: randomUUID(),
+                  id: newId,
                   label: checkbox.label,
                   order_number: checkbox.order_number,
                   group_id: newCheckboxGroupId,
@@ -236,6 +247,13 @@ export async function createFillableInspectionForm(data: {
                   group_id: newCheckboxGroupId,
                   order_number: task.order_number,
                 });
+              });
+
+              checkboxGroups.push({
+                id: newCheckboxGroupId,
+                name: checkboxGroup.name,
+                sub_section_id: newSubSectionId,
+                checkboxes_selected_together: selectedTogether,
               });
             });
             subSection.form_text_input_field.forEach((textInput) => {
