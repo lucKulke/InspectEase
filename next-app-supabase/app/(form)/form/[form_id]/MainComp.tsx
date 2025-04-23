@@ -12,6 +12,7 @@ import {
 import {
   ICheckboxGroupData,
   IFormData,
+  IMainCheckboxData,
   IMainCheckboxResponse,
   IMainSectionResponse,
   ISubCheckboxResponse,
@@ -32,6 +33,8 @@ import {
 } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { Separator } from "@/components/ui/separator";
+import { constructNow } from "date-fns";
+import { IFormCheckboxResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
 //import { TextInputField } from "./TextInputField";
 
 interface MainCompProps {
@@ -89,6 +92,45 @@ export const MainComp = ({
       });
     }
   };
+
+  const currentFillState = (selectionGroup: ICheckboxGroupData) => {
+    const copy = { ...fillableSubCheckboxes };
+    const taskState: Record<UUID, Record<UUID, boolean>> = {};
+    selectionGroup.task.forEach((task) => {
+      selectionGroup.main_checkbox.forEach((mainCheckbox) => {
+        copy[mainCheckbox.id].forEach((subCheckbox) => {
+          if (subCheckbox.task_id === task.id) {
+            if (subCheckbox.checked) {
+              if (taskState[task.id]) {
+                taskState[task.id][mainCheckbox.id] = true;
+              } else {
+                const temp: Record<UUID, boolean> = {};
+                temp[mainCheckbox.id] = true;
+                taskState[task.id] = temp;
+              }
+            } else {
+              if (taskState[task.id]) {
+                taskState[task.id][mainCheckbox.id] = false;
+              } else {
+                const temp: Record<UUID, boolean> = {};
+                temp[mainCheckbox.id] = false;
+                taskState[task.id] = temp;
+              }
+            }
+          }
+        });
+      });
+    });
+    return taskState;
+  };
+
+  function sortByPrioNumber(a: IMainCheckboxData, b: IMainCheckboxData) {
+    if (a.prio_number < b.prio_number) return -1;
+
+    if (a.prio_number > b.prio_number) return 1;
+
+    return 0;
+  }
 
   const handleCheckSubCheckbox = async (
     mainCheckboxId: UUID,
@@ -172,7 +214,6 @@ export const MainComp = ({
             if (sub.id === subCheckbox.id) {
               sub.checked = false;
               checkboxesThatNeedToBeUnchecked.push(sub);
-              console.log("push");
             }
             return sub;
           });
@@ -181,12 +222,120 @@ export const MainComp = ({
     }
 
     setFillableSubCheckboxes(copy);
+
+    const fillState = currentFillState(selectionGroup);
+    const keysWithTrue = Object.keys(fillState).filter((key) =>
+      Object.values(fillState[key as UUID]).some((v) => v)
+    );
+
+    const isFilled = keysWithTrue.length === selectionGroup.task.length;
+
+    console.log("fillstate", fillState);
+    console.log("isFilled", isFilled);
+
+    if (isFilled) {
+      const copy = { ...fillableMainCheckboxes };
+      const upsertList: IMainCheckboxData[] = [];
+      for (
+        let index = 0;
+        index < selectionGroup.main_checkbox.length;
+        index++
+      ) {
+        const currentMainCheckbox =
+          selectionGroup.main_checkbox.sort(sortByPrioNumber)[index];
+
+        const found = currentMainCheckbox.sub_checkbox.find(
+          (checkbox) => checkbox.checked
+        );
+
+        if (found) {
+          if (
+            selectionGroup.checkboxes_selected_together?.includes(
+              currentMainCheckbox.id
+            )
+          ) {
+            copy[selectionGroup.id] = copy[selectionGroup.id].map(
+              (mainCheckbox) => {
+                if (
+                  !selectionGroup.checkboxes_selected_together?.includes(
+                    mainCheckbox.id
+                  )
+                ) {
+                  mainCheckbox.checked = false;
+                } else {
+                  if (mainCheckbox.id === mainCheckboxId)
+                    mainCheckbox.checked = true;
+                }
+                return mainCheckbox;
+              }
+            );
+            break;
+          } else {
+            copy[selectionGroup.id] = copy[selectionGroup.id].map(
+              (mainCheckbox) => {
+                if (mainCheckbox.id === currentMainCheckbox.id) {
+                  mainCheckbox.checked = !mainCheckbox.checked;
+                } else {
+                  mainCheckbox.checked = false;
+                }
+                return mainCheckbox;
+              }
+            );
+            break;
+          }
+        }
+      }
+      setFillableMainCheckboxes(copy);
+      await upsertMainCheckboxesValues(upsertList);
+    } else {
+      // uncheck all main checkboxes
+
+      const copy = { ...fillableMainCheckboxes };
+      let unCheck: IMainCheckboxResponse[] = [];
+
+      copy[selectionGroup.id] = copy[selectionGroup.id].map((mainCheckbox) => {
+        mainCheckbox.checked = false;
+        unCheck.push(mainCheckbox);
+        return mainCheckbox;
+      });
+      setFillableMainCheckboxes(copy);
+      await upsertMainCheckboxesValues(unCheck);
+    }
+
+    // const taskState: Record<UUID, Record<UUID, boolean>> = {};
+    // selectionGroup.task.forEach((task) => {
+    //   selectionGroup.main_checkbox.forEach((mainCheckbox) => {
+    //     copy[mainCheckbox.id].forEach((subCheckbox) => {
+    //       if (subCheckbox.task_id === task.id) {
+    //         if (subCheckbox.checked) {
+    //           if (taskState[task.id]) {
+    //             taskState[task.id][mainCheckbox.id] = true;
+    //           } else {
+    //             const temp: Record<UUID, boolean> = {};
+    //             temp[mainCheckbox.id] = true;
+    //             taskState[task.id] = temp;
+    //           }
+    //         } else {
+    //           if (taskState[task.id]) {
+    //             taskState[task.id][mainCheckbox.id] = false;
+    //           } else {
+    //             const temp: Record<UUID, boolean> = {};
+    //             temp[mainCheckbox.id] = false;
+    //             taskState[task.id] = temp;
+    //           }
+    //         }
+    //       }
+    //     });
+    //   });
+    // });
+
+    // console.log("taskState", taskState);
+
     await updateSubCheckboxValue(formData.id, checkboxId, newValue);
     await upsertSubCheckboxesValues(checkboxesThatNeedToBeUnchecked);
   };
 
-  const handleCheckMainCheckbox = async (
-    subSectionId: UUID,
+  const handleAutoCheckMainCheckbox = async (
     checkboxId: UUID,
     selectionGroup: ICheckboxGroupData
   ) => {
@@ -194,7 +343,39 @@ export const MainComp = ({
     const copy = { ...fillableMainCheckboxes };
     let unCheck: IMainCheckboxResponse[] = [];
 
-    copy[subSectionId] = copy[subSectionId].map((mainCheckbox) => {
+    copy[selectionGroup.id] = copy[selectionGroup.id].map((mainCheckbox) => {
+      if (mainCheckbox.id === checkboxId) {
+        mainCheckbox.checked = !mainCheckbox.checked;
+        newValue = mainCheckbox.checked;
+      } else {
+        if (selectionGroup.checkboxes_selected_together?.includes(checkboxId)) {
+          if (
+            !selectionGroup.checkboxes_selected_together?.includes(
+              mainCheckbox.id
+            )
+          ) {
+            mainCheckbox.checked = false;
+            unCheck.push(mainCheckbox);
+          }
+        } else {
+          mainCheckbox.checked = false;
+          unCheck.push(mainCheckbox);
+        }
+      }
+
+      return mainCheckbox;
+    });
+  };
+
+  const handleCheckMainCheckbox = async (
+    checkboxId: UUID,
+    selectionGroup: ICheckboxGroupData
+  ) => {
+    let newValue: boolean = false;
+    const copy = { ...fillableMainCheckboxes };
+    let unCheck: IMainCheckboxResponse[] = [];
+
+    copy[selectionGroup.id] = copy[selectionGroup.id].map((mainCheckbox) => {
       if (mainCheckbox.id === checkboxId) {
         mainCheckbox.checked = !mainCheckbox.checked;
         newValue = mainCheckbox.checked;
@@ -354,7 +535,7 @@ export const MainComp = ({
                                                   <Table>
                                                     <TableHeader>
                                                       <TableRow>
-                                                        <TableHead className="text-left">
+                                                        <TableHead className="text-left flex items-end">
                                                           task
                                                         </TableHead>
                                                         {fillableMainCheckboxes[
@@ -365,13 +546,21 @@ export const MainComp = ({
                                                           )
                                                           .map((checkbox) => (
                                                             <TableHead
-                                                              className="text-center w-[100px]"
+                                                              className="text-center space-y-2 w-[100px]"
                                                               key={
                                                                 checkbox.id +
                                                                 "head"
                                                               }
                                                             >
-                                                              {checkbox.label}
+                                                              <Checkbox
+                                                                disabled
+                                                                checked={
+                                                                  checkbox.checked
+                                                                }
+                                                              ></Checkbox>
+                                                              <p>
+                                                                {checkbox.label}
+                                                              </p>
                                                             </TableHead>
                                                           ))}
                                                       </TableRow>
@@ -460,7 +649,6 @@ export const MainComp = ({
                                                               }
                                                               onClick={() => {
                                                                 handleCheckMainCheckbox(
-                                                                  selectionGroup.id,
                                                                   mainCheckbox.id,
                                                                   selectionGroup
                                                                 );

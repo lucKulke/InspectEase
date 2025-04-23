@@ -237,6 +237,7 @@ export async function createFillableInspectionForm(data: {
                   label: checkbox.label,
                   order_number: checkbox.order_number,
                   group_id: newCheckboxGroupId,
+                  prio_number: checkbox.prio_number,
                 });
               });
 

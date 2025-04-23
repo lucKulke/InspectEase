@@ -327,9 +327,9 @@ export class DBActionsFormBuilderUpdate {
       .upsert(checkboxes)
       .select();
 
-    console.log("update form checkboxes order number in db:", data);
+    console.log("update form checkboxes in db:", data);
     if (error) {
-      console.error("update form checkboxes order number in db error: ", error);
+      console.error("update form checkboxes in db error: ", error);
     }
 
     return {

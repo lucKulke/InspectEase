@@ -69,6 +69,7 @@ export interface IMainCheckboxInsert {
   group_id: UUID;
   order_number: number;
   label: string;
+  prio_number: number;
 }
 
 export interface IMainCheckboxResponse extends IMainCheckboxInsert {

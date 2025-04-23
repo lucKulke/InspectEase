@@ -25,6 +25,15 @@ export async function updateCheckboxesOrderNumber(
   return await dbActions.updateFormCheckboxes(checkboxes);
 }
 
+export async function updateCheckboxesPrioOrderNumber(
+  checkboxes: IFormCheckboxResponse[]
+) {
+  const supabase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderUpdate(supabase);
+
+  return await dbActions.updateFormCheckboxes(checkboxes);
+}
+
 export async function updateCheckboxTaskOrder(
   checkboxTasks: IFormCheckboxTaskResponse[]
 ) {

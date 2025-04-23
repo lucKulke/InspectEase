@@ -13,6 +13,7 @@ import {
   Divide,
   Plus,
   PlusCircle,
+  SquareCheck,
   Trash2,
 } from "lucide-react";
 import {
@@ -292,10 +293,7 @@ export const SubSection = ({
                               key={checkbox.id}
                               className="flex items-center space-x-2"
                             >
-                              <Checkbox
-                                checked={true}
-                                id={`preview-${group.id}-${checkbox.id}`}
-                              />
+                              <SquareCheck></SquareCheck>
                               <Label
                                 htmlFor={`preview-${group.id}-${checkbox.id}`}
                               >

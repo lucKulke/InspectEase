@@ -266,6 +266,7 @@ export interface IFormCheckboxInsertWithId {
   label: string;
   order_number: number;
   annotation_id: UUID | null;
+  prio_number: number;
 }
 
 export interface IFormCheckboxInsert {
@@ -273,6 +274,7 @@ export interface IFormCheckboxInsert {
   label: string;
   order_number: number;
   annotation_id: UUID | null;
+  prio_number: number;
 }
 
 export interface IFormCheckboxResponse extends IFormCheckboxInsert {
