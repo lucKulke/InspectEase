@@ -400,7 +400,7 @@ export const CheckboxManager = ({
           <TabsTrigger value="create">Create</TabsTrigger>
           <TabsTrigger value="groups">Groups</TabsTrigger>
           <TabsTrigger value="rules">Rules</TabsTrigger>
-          <TabsTrigger value="prioritization">Prio</TabsTrigger>
+          <TabsTrigger value="prioritization">Prioritization</TabsTrigger>
 
           <TabsTrigger value="assign">Assign</TabsTrigger>
         </TabsList>

@@ -3,6 +3,7 @@ import { UUID } from "crypto";
 
 import { SupabaseError } from "@/lib/globalInterfaces";
 import {
+  IFillableFormResponse,
   IMainCheckboxResponse,
   ISubCheckboxResponse,
   ITextInputResponse,
@@ -149,6 +150,31 @@ export class DBActionsFormFillerUpdate {
     return {
       updatedTextInputField: data,
       updatedTextInputFieldError: error as SupabaseError | null,
+    };
+  }
+
+  async updateFormToComplete(
+    formId: UUID,
+    value: boolean
+  ): Promise<{
+    updatedForm: IFillableFormResponse | null;
+    updatedFormError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form")
+      .update({ in_progress: value })
+      .eq("id", formId)
+      .select()
+      .single();
+
+    console.log("update form in progress in db:", data);
+    if (error) {
+      console.error("update form in progress in db error: ", error);
+    }
+
+    return {
+      updatedForm: data,
+      updatedFormError: error as SupabaseError | null,
     };
   }
 }

@@ -101,6 +101,7 @@ export const FormFilter = ({ forms }: FormFilterProps) => {
                     selectedForm={selectedForm}
                     setSelectedForm={setSelectedForm}
                     setOpenAlertDialog={setOpenAlertDialog}
+                    setFillableForms={setFillableForms}
                   ></FormCard>
                 ))}
             </div>
@@ -125,6 +126,7 @@ export const FormFilter = ({ forms }: FormFilterProps) => {
                     selectedForm={selectedForm}
                     setSelectedForm={setSelectedForm}
                     setOpenAlertDialog={setOpenAlertDialog}
+                    setFillableForms={setFillableForms}
                   ></FormCard>
                 ))}
             </div>
