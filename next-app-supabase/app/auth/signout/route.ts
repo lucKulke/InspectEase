@@ -15,7 +15,13 @@ export async function POST(req: NextRequest) {
   }
 
   revalidatePath("/", "layout");
-  return NextResponse.redirect(new URL("/auth/login", req.url), {
-    status: 302,
-  });
+  return NextResponse.redirect(
+    new URL(
+      `https://${process.env.NEXT_PUBLIC_WEBAPP_URL}/auth/login`,
+      req.url
+    ),
+    {
+      status: 302,
+    }
+  );
 }

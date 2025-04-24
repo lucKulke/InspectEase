@@ -35,7 +35,12 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+    return NextResponse.redirect(
+      new URL(
+        `https://${process.env.NEXT_PUBLIC_WEBAPP_URL}/auth/login`,
+        request.url
+      )
+    );
   }
 
   return supabaseResponse;
