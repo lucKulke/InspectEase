@@ -12,7 +12,10 @@ import { formFillerLinks } from "@/lib/links/formFillerLinks";
 export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <form action="/auth/signout" method="post">
+      <form
+        action={`https://${process.env.WEB_APP_DOMAIN}/auth/signout`}
+        method="post"
+      >
         <button className="button block" type="submit">
           Sign out
         </button>
