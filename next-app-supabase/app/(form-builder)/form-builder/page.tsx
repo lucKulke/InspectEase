@@ -20,7 +20,7 @@ export default async function FormBuilderPage() {
             className="text-blue-400"
             href={formBuilderLinks["inspectableObjectProfiles"].href}
           >
-            Profiels
+            Profiles
           </Link>
         </li>
         <li>

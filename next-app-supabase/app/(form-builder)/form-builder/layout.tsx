@@ -6,7 +6,7 @@ import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 const FormBuilderNavbarIcon = () => {
   return (
     <Link
-      href={formBuilderLinks.home}
+      href={formBuilderLinks.home.href}
       className="flex 
    space-x-3 items-center"
     >

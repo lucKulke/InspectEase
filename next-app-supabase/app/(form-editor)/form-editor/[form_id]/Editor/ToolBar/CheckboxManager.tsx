@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, SquareCheck, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +46,7 @@ interface CheckboxItem {
   label: string;
   order_number: number;
   group_id: string | null;
+  prio_number: number;
 }
 
 interface SelectionGroup {
@@ -90,6 +91,7 @@ export const CheckboxManager = ({
       label: newCheckboxLabel,
       order_number: checkboxes.length + 1,
       group_id: null,
+      prio_number: checkboxes.length + 1,
     };
 
     setCheckboxes([...checkboxes, newCheckbox]);
@@ -245,9 +247,20 @@ export const CheckboxManager = ({
     setCheckboxes([...unchangedCheckboxes, ...updatedItems]);
   };
 
-  // useEffect(() => {
-  //   console.log("checkboxes", checkboxes);
-  // }, [checkboxes]);
+  const reorderPrioNumber = (newOrder: CheckboxItem[]) => {
+    return newOrder.map((item, index) => ({
+      ...item,
+      prio_number: index + 1,
+    }));
+  };
+
+  const handleChangePrioOrder = (newOrder: CheckboxItem[]) => {
+    const unchangedCheckboxes = checkboxes.filter(
+      (checkbox) => !newOrder.includes(checkbox)
+    );
+    const updatedItems = reorderPrioNumber(newOrder);
+    setCheckboxes([...unchangedCheckboxes, ...updatedItems]);
+  };
 
   const handleCreateCheckboxGroups = async (): Promise<{
     error: SupabaseError | null;
@@ -306,6 +319,7 @@ export const CheckboxManager = ({
             label: checkbox.label,
             order_number: checkbox.order_number,
             annotation_id: null,
+            prio_number: checkbox.prio_number,
           };
 
           checkboxesForDB.push(newCheckbox);
@@ -363,13 +377,31 @@ export const CheckboxManager = ({
     setRules(copy);
   };
 
+  function sortByPrioNumber(a: CheckboxItem, b: CheckboxItem) {
+    if (a.prio_number < b.prio_number) return -1;
+
+    if (a.prio_number > b.prio_number) return 1;
+
+    return 0;
+  }
+
+  function sortByOrderNumber(a: CheckboxItem, b: CheckboxItem) {
+    if (a.order_number < b.order_number) return -1;
+
+    if (a.order_number > b.order_number) return 1;
+
+    return 0;
+  }
+
   return (
     <div>
       <Tabs defaultValue="create" className="mt-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="create">Create</TabsTrigger>
           <TabsTrigger value="groups">Groups</TabsTrigger>
           <TabsTrigger value="rules">Rules</TabsTrigger>
+          <TabsTrigger value="prioritization">Prioritization</TabsTrigger>
+
           <TabsTrigger value="assign">Assign</TabsTrigger>
         </TabsList>
 
@@ -399,7 +431,7 @@ export const CheckboxManager = ({
 
             <div>
               <h3 className="text-sm font-medium mb-2">Created Checkboxes</h3>
-              <ScrollArea className="h-[200px] rounded-md border p-2">
+              <ScrollArea className="h-[384px] rounded-md border p-2">
                 {checkboxes.length === 0 ? (
                   <p className="text-sm text-muted-foreground p-2">
                     No checkboxes created yet.
@@ -412,7 +444,7 @@ export const CheckboxManager = ({
                         className="flex items-center justify-between"
                       >
                         <div className="flex items-center space-x-2">
-                          <Checkbox id={checkbox.id} />
+                          <SquareCheck id={checkbox.id} />
                           <Label htmlFor={checkbox.id}>{checkbox.label}</Label>
                         </div>
                         <Button
@@ -456,7 +488,7 @@ export const CheckboxManager = ({
 
               <div>
                 <h3 className="text-sm font-medium mb-2">Selection Groups</h3>
-                <ScrollArea className="h-[200px] rounded-md border p-2">
+                <ScrollArea className="h-[400px] rounded-md border p-2">
                   {groups.length === 0 ? (
                     <p className="text-sm text-muted-foreground p-2">
                       No groups created yet.
@@ -505,7 +537,7 @@ export const CheckboxManager = ({
                     }`
                   : "Select a group to assign checkboxes"}
               </h3>
-              <ScrollArea className="h-[260px] rounded-md border p-2">
+              <ScrollArea className="h-[482px] rounded-md border p-2">
                 {!selectedGroupId ? (
                   <p className="text-sm text-muted-foreground p-2">
                     Select a group first.
@@ -570,7 +602,7 @@ export const CheckboxManager = ({
         </TabsContent>
         <TabsContent value="rules" className="space-y-4">
           <div className="flex space-x-4">
-            <ScrollArea className="h-[260px] w-1/2 rounded-md border p-4">
+            <ScrollArea className="h-[512px] w-1/2 rounded-md border p-4">
               <div className="space-y-4">
                 {groups.length === 0 ? (
                   <div className="col-span-full">
@@ -596,20 +628,23 @@ export const CheckboxManager = ({
                             {groupCheckboxes.length !== 1 ? "es" : ""}
                           </CardDescription>
                         </CardHeader>
-                        <CardContent>
-                          {rules[group.id] && rules[group.id].length > 1 && (
-                            <p className="text-sm text-gray-300">
-                              Only{" "}
-                              {rules[group.id]
-                                .map((checkboxId) => {
-                                  return checkboxes.find(
-                                    (checkbox) => checkbox.id === checkboxId
-                                  )?.label;
-                                })
-                                .join(", ")}{" "}
-                              can be selected together.
-                            </p>
-                          )}
+                        <CardContent className="space-y-3">
+                          <div>
+                            <p className="font-bold underline">Rules:</p>
+                            {rules[group.id] && rules[group.id].length > 1 && (
+                              <p className="text-sm text-gray-300 ml-2 mt-2">
+                                Only{" "}
+                                {rules[group.id]
+                                  .map((checkboxId) => {
+                                    return checkboxes.find(
+                                      (checkbox) => checkbox.id === checkboxId
+                                    )?.label;
+                                  })
+                                  .join(", ")}{" "}
+                                can be selected together.
+                              </p>
+                            )}
+                          </div>
                         </CardContent>
                       </Card>
                     );
@@ -622,7 +657,7 @@ export const CheckboxManager = ({
                 Only these checkboxes can be checked together
               </p>
               <ScrollArea
-                className={`h-[234px] rounded-md border p-4 bg-blue-100  ${
+                className={`h-[489px] rounded-md border p-4 bg-blue-100  ${
                   selectedGroupId &&
                   rules[selectedGroupId] &&
                   rules[selectedGroupId].length > 1
@@ -663,11 +698,9 @@ export const CheckboxManager = ({
             </div>
           </div>
         </TabsContent>
-
-        {/* Preview Tab */}
-        <TabsContent value="assign" className="space-y-4">
+        <TabsContent value="prioritization">
           <div className="flex space-x-4">
-            <ScrollArea className="h-[260px] w-1/2 rounded-md border p-4">
+            <ScrollArea className="h-[512px] w-1/2 rounded-md border p-4">
               <div className="space-y-4">
                 {groups.length === 0 ? (
                   <div className="col-span-full">
@@ -693,51 +726,218 @@ export const CheckboxManager = ({
                             {groupCheckboxes.length !== 1 ? "es" : ""}
                           </CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="space-y-3">
+                          <div>
+                            <p className="font-bold underline">Rules:</p>
+                            {rules[group.id] && rules[group.id].length > 1 && (
+                              <p className="text-sm text-gray-300 ml-2 mt-2">
+                                Only{" "}
+                                {rules[group.id]
+                                  .map((checkboxId) => {
+                                    return checkboxes.find(
+                                      (checkbox) => checkbox.id === checkboxId
+                                    )?.label;
+                                  })
+                                  .join(", ")}{" "}
+                                can be selected together.
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-bold underline">
+                              Prioritization order:
+                            </p>
+                            <ul className="ml-2 mt-2">
+                              {groupCheckboxes
+                                .sort(sortByPrioNumber)
+                                .map((checkbox) => (
+                                  <li
+                                    key={checkbox.id + "prioorder"}
+                                    className="flex space-x-2"
+                                  >
+                                    <p className="text-slate-400 text-sm">
+                                      {checkbox.prio_number}.
+                                    </p>{" "}
+                                    <p className="text-sm text-gray-300">
+                                      {checkbox.label}
+                                    </p>
+                                  </li>
+                                ))}
+                            </ul>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+              </div>
+            </ScrollArea>
+            <div className="w-1/2">
+              <p className="text-slate-500">Arrange to prio</p>
+              <ScrollArea
+                className={`h-[486px] rounded-md border p-4`}
+                key={selectedGroupId}
+              >
+                {groups
+                  .filter((group) => group.id === selectedGroupId)
+                  .map((group) => {
+                    const groupCheckboxes = getCheckboxesForGroup(group.id);
+                    return (
+                      <Reorder.Group
+                        key={group.id + "prio"}
+                        axis="y"
+                        values={groupCheckboxes}
+                        onReorder={handleChangePrioOrder}
+                        className="space-y-2 "
+                      >
+                        {groupCheckboxes
+                          .sort(sortByPrioNumber)
+                          .map((checkbox) => (
+                            <Reorder.Item
+                              key={checkbox.id}
+                              value={checkbox}
+                              className="cursor-grab flex items-center space-x-2"
+                              dragConstraints={{ top: 0, bottom: 0 }}
+                            >
+                              <SquareCheck />
+                              <Label
+                                htmlFor={`preview-${group.id}-${checkbox.id}`}
+                              >
+                                {checkbox.label}
+                              </Label>
+                            </Reorder.Item>
+                          ))}
+                      </Reorder.Group>
+                      // {groupCheckboxes.map((checkbox) => (
+                      //   <li
+                      //     key={checkbox.id + "test"}
+                      //     className=" flex items-center space-x-2"
+                      //   >
+                      //     <Checkbox
+                      //       checked={isInRule(checkbox.id as UUID)}
+                      //       onCheckedChange={() =>
+                      //         assignToRule(checkbox.id, group.id)
+                      //       }
+                      //       id={`preview-${group.id}-${checkbox.id}`}
+                      //     />
+                      //     <Label
+                      //       htmlFor={`preview-${group.id}-${checkbox.id}`}
+                      //     >
+                      //       {checkbox.label}
+                      //     </Label>
+                      //   </li>
+                      // ))}
+                    );
+                  })}
+              </ScrollArea>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Preview Tab */}
+        <TabsContent value="assign" className="space-y-4">
+          <div className="flex space-x-4">
+            <ScrollArea className="h-[460px] w-1/2 rounded-md border p-4">
+              <div className="space-y-4">
+                {groups.length === 0 ? (
+                  <div className="col-span-full">
+                    <p className="text-center text-muted-foreground py-8">
+                      No groups to preview. Create some groups and add
+                      checkboxes to them.
+                    </p>
+                  </div>
+                ) : (
+                  groups.map((group) => {
+                    const groupCheckboxes = getCheckboxesForGroup(group.id);
+
+                    return (
+                      <Card
+                        key={group.id}
+                        onClick={() => setSelectedGroupId(group.id)}
+                        className={` ${selectedGroupId === group.id && "dark"}`}
+                      >
+                        <CardHeader>
+                          <CardTitle>{group.name}</CardTitle>
+                          <CardDescription>
+                            {groupCheckboxes.length} checkbox
+                            {groupCheckboxes.length !== 1 ? "es" : ""}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div>
+                            <p className="font-bold underline">Rules:</p>
+                            {rules[group.id] && rules[group.id].length > 1 && (
+                              <p className="text-sm text-gray-300 ml-2 mt-2">
+                                Only{" "}
+                                {rules[group.id]
+                                  .map((checkboxId) => {
+                                    return checkboxes.find(
+                                      (checkbox) => checkbox.id === checkboxId
+                                    )?.label;
+                                  })
+                                  .join(", ")}{" "}
+                                can be selected together.
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-bold underline">
+                              Prioritization order:
+                            </p>
+                            <ul className="ml-2 mt-2">
+                              {groupCheckboxes
+                                .sort(sortByPrioNumber)
+                                .map((checkbox) => (
+                                  <li
+                                    key={checkbox.id + "prioorder"}
+                                    className="flex space-x-2"
+                                  >
+                                    <p className="text-slate-400 text-sm">
+                                      {checkbox.prio_number}.
+                                    </p>{" "}
+                                    <p className="text-sm text-gray-300">
+                                      {checkbox.label}
+                                    </p>
+                                  </li>
+                                ))}
+                            </ul>
+                          </div>
                           {groupCheckboxes.length === 0 ? (
                             <p className="text-sm text-muted-foreground">
                               No checkboxes in this group.
                             </p>
                           ) : (
-                            <Reorder.Group
-                              axis="y"
-                              values={groupCheckboxes}
-                              onReorder={handleCheckboxesReorder}
-                              className="space-y-2 "
-                            >
-                              {groupCheckboxes.map((checkbox) => (
-                                <Reorder.Item
-                                  key={checkbox.id}
-                                  value={checkbox}
-                                  className="cursor-grab flex items-center space-x-2"
-                                  dragConstraints={{ top: 0, bottom: 0 }}
-                                >
-                                  <Checkbox
-                                    checked={true}
-                                    id={`preview-${group.id}-${checkbox.id}`}
-                                  />
-                                  <Label
-                                    htmlFor={`preview-${group.id}-${checkbox.id}`}
-                                  >
-                                    {checkbox.label}
-                                  </Label>
-                                </Reorder.Item>
-                              ))}
-                            </Reorder.Group>
-                          )}
-
-                          {rules[group.id] && rules[group.id].length > 1 && (
-                            <p className="text-sm mt-3 text-gray-300">
-                              Only{" "}
-                              {rules[group.id]
-                                .map((checkboxId) => {
-                                  return checkboxes.find(
-                                    (checkbox) => checkbox.id === checkboxId
-                                  )?.label;
-                                })
-                                .join(", ")}{" "}
-                              can be selected together.
-                            </p>
+                            <div>
+                              <p className="font-bold underline">Order:</p>
+                              <Reorder.Group
+                                axis="y"
+                                values={groupCheckboxes}
+                                onReorder={handleCheckboxesReorder}
+                                className="space-y-2 ml-2 mt-2 "
+                              >
+                                {groupCheckboxes
+                                  .sort(sortByOrderNumber)
+                                  .map((checkbox) => (
+                                    <Reorder.Item
+                                      key={checkbox.id}
+                                      value={checkbox}
+                                      className="cursor-grab flex items-center space-x-2"
+                                      dragConstraints={{ top: 0, bottom: 0 }}
+                                    >
+                                      <SquareCheck
+                                        id={`preview-${group.id}-${checkbox.id}`}
+                                        className="cursor-grab"
+                                      />
+                                      <Label
+                                        className="cursor-grab"
+                                        htmlFor={`preview-${group.id}-${checkbox.id}`}
+                                      >
+                                        {checkbox.label}
+                                      </Label>
+                                    </Reorder.Item>
+                                  ))}
+                              </Reorder.Group>
+                            </div>
                           )}
                         </CardContent>
                       </Card>
@@ -749,7 +949,7 @@ export const CheckboxManager = ({
 
             {selectedGroupId && (
               <ScrollArea
-                className="h-[260px] w-1/2 rounded-md border p-4"
+                className="h-[460px] w-1/2 rounded-md border p-4"
                 key={selectedGroupId}
               >
                 {sections.map((mainSection) => (
@@ -820,10 +1020,10 @@ export const CheckboxManager = ({
                   }
                 }}
               >
-                Save
+                Create
               </Button>
             ) : (
-              <Button variant="outline">Save</Button>
+              <Button variant="outline">Create</Button>
             )}
           </div>
         </TabsContent>

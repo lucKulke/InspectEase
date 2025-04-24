@@ -25,6 +25,7 @@ export default async function FormFillerPage() {
   }
 
   const dbActions = new DBActionsFormFillerFetch(supabase);
+  const wsUrl = `wss://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/ws/dashboard`;
 
   const { forms, formsError } = await dbActions.fetchAllFillableForms(
     user.user?.id as UUID
@@ -39,7 +40,7 @@ export default async function FormFillerPage() {
         </div>
       </div>
 
-      <FormFilter forms={forms}></FormFilter>
+      <FormFilter wsUrl={wsUrl} forms={forms}></FormFilter>
     </div>
   );
 }

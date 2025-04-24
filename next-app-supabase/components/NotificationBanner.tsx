@@ -19,7 +19,7 @@ export const NotificationBanner: React.FC = () => {
 
   return (
     <div
-      className="fixed top-2 left-1/4 right-1/4 p-4 "
+      className="fixed top-2 left-1/4 right-1/4 p-4 z-[9999] "
       onClick={hideNotification}
     >
       <Alert className={bannerClasses[notification.type]}>

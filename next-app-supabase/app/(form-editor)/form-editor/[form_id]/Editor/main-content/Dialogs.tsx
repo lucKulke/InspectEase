@@ -31,6 +31,7 @@ import {
   deleteTextInputField,
   fetchStringExtractionTrainings,
   updateCheckboxesOrderNumber,
+  updateCheckboxesPrioOrderNumber,
   updateCheckboxGroupRules,
   updateCheckboxTaskOrder,
   updateTextInputFieldOrder,
@@ -49,7 +50,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, SquareCheck, Trash2 } from "lucide-react";
 import { Reorder } from "framer-motion";
 import { validate as isValidUUID } from "uuid";
 
@@ -344,7 +345,22 @@ export const CheckboxGroupDialog = ({
 
     if (updatedFormCheckboxesError) {
       showNotification(
-        "Main section order",
+        "Checkbox order",
+        `Error: ${updatedFormCheckboxesError.message} (${updatedFormCheckboxesError.code})`,
+        "error"
+      );
+    }
+  };
+
+  const updateCheckboxPrioOrderInDB = async (
+    updatedItems: IFormCheckboxResponse[]
+  ) => {
+    const { updatedFormCheckboxes, updatedFormCheckboxesError } =
+      await updateCheckboxesPrioOrderNumber(updatedItems);
+
+    if (updatedFormCheckboxesError) {
+      showNotification(
+        "Checkbox prio order",
         `Error: ${updatedFormCheckboxesError.message} (${updatedFormCheckboxesError.code})`,
         "error"
       );
@@ -352,11 +368,22 @@ export const CheckboxGroupDialog = ({
   };
 
   const debouncedCheckboxUpdate = debounce(updateCheckboxOrderInDB, 500);
+  const debouncedCheckboxPrioNumberUpdate = debounce(
+    updateCheckboxPrioOrderInDB,
+    500
+  );
 
   const reorderItems = (newOrder: IFormCheckboxResponse[]) => {
     return newOrder.map((item, index) => ({
       ...item,
       order_number: index + 1,
+    }));
+  };
+
+  const reorderPrioItems = (newOrder: IFormCheckboxResponse[]) => {
+    return newOrder.map((item, index) => ({
+      ...item,
+      prio_number: index + 1,
     }));
   };
 
@@ -366,11 +393,24 @@ export const CheckboxGroupDialog = ({
     const copy = { ...subSectionsData };
     copy[subSectionId].form_checkbox_group.filter(
       (group) => group.id === currentCheckboxGroupId
-    )[0].form_checkbox = newOrder;
+    )[0].form_checkbox = updatedItems;
 
     setSubSectionsData(copy);
 
     debouncedCheckboxUpdate(updatedItems);
+  };
+
+  const handleCheckboxesPrioReorder = (newOrder: IFormCheckboxResponse[]) => {
+    const updatedItems = reorderPrioItems(newOrder);
+
+    const copy = { ...subSectionsData };
+    copy[subSectionId].form_checkbox_group.filter(
+      (group) => group.id === currentCheckboxGroupId
+    )[0].form_checkbox = updatedItems;
+
+    setSubSectionsData(copy);
+
+    debouncedCheckboxPrioNumberUpdate(updatedItems);
   };
 
   function compareCheckboxOrderNumbers(
@@ -380,6 +420,17 @@ export const CheckboxGroupDialog = ({
     if (a.order_number < b.order_number) return -1;
 
     if (a.order_number > b.order_number) return 1;
+
+    return 0;
+  }
+
+  function compareCheckboxPrioNumbers(
+    a: IFormCheckboxResponse,
+    b: IFormCheckboxResponse
+  ) {
+    if (a.prio_number < b.prio_number) return -1;
+
+    if (a.prio_number > b.prio_number) return 1;
 
     return 0;
   }
@@ -414,6 +465,7 @@ export const CheckboxGroupDialog = ({
       group_id: currentCheckboxGroupId,
       order_number: currentCheckboxGroupCheckboxes().length + 1,
       annotation_id: null,
+      prio_number: currentCheckboxGroupCheckboxes().length + 1,
     };
     const { formCheckbox, formCheckboxError } = await createCheckbox(
       newCheckbox
@@ -519,10 +571,11 @@ export const CheckboxGroupDialog = ({
               </DialogDescription>
             </DialogHeader>
 
-            <Tabs defaultValue="checkboxes" className="">
+            <Tabs defaultValue="checkboxes">
               <TabsList>
                 <TabsTrigger value="checkboxes">Checkboxes</TabsTrigger>
                 <TabsTrigger value="rules">Rules</TabsTrigger>
+                <TabsTrigger value="prioritization">Prioritization</TabsTrigger>
               </TabsList>
               <TabsContent value="checkboxes">
                 <div className="mb-2">
@@ -568,25 +621,32 @@ export const CheckboxGroupDialog = ({
                         <Reorder.Item
                           key={checkbox.id}
                           value={checkbox}
-                          className="flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-grab"
+                          className=""
                           dragConstraints={{ top: 0, bottom: 0 }}
                         >
                           <div className="flex items-center space-x-3">
-                            <Checkbox
-                              checked={true}
-                              id={`preview-${currentCheckboxGroupId}-${checkbox.id}`}
-                            />
-                            <Label
-                              htmlFor={`preview-${currentCheckboxGroupId}-${checkbox.id}`}
-                            >
-                              {checkbox.label}
-                            </Label>
+                            <p className="text-slate-600">
+                              {checkbox.order_number}.
+                            </p>
+                            <div className="flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-grab w-full">
+                              <div className="flex items-center space-x-3">
+                                <SquareCheck></SquareCheck>
+                                <Label
+                                  className="font-bold"
+                                  htmlFor={`preview-${currentCheckboxGroupId}-${checkbox.id}`}
+                                >
+                                  {checkbox.label}
+                                </Label>
+                              </div>
+                              <button
+                                onClick={() =>
+                                  handleCheckboxDelete(checkbox.id)
+                                }
+                              >
+                                <Trash2 className="text-red-500 cursor-pointer"></Trash2>
+                              </button>
+                            </div>
                           </div>
-                          <button
-                            onClick={() => handleCheckboxDelete(checkbox.id)}
-                          >
-                            <Trash2 className="text-red-500 cursor-pointer"></Trash2>
-                          </button>
                         </Reorder.Item>
                       ))}
                   </Reorder.Group>
@@ -627,6 +687,7 @@ export const CheckboxGroupDialog = ({
                               id={`previewtest-${currentCheckboxGroupId}-${checkbox.id}`}
                             />
                             <Label
+                              className="font-bold"
                               htmlFor={`previewtest-${currentCheckboxGroupId}-${checkbox.id}`}
                             >
                               {checkbox.label}
@@ -636,6 +697,51 @@ export const CheckboxGroupDialog = ({
                       );
                     })}
                 </ul>
+              </TabsContent>
+              <TabsContent value="prioritization">
+                <p>Set prioritization order</p>
+                {currentCheckboxGroupCheckboxes().length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No checkboxes in this group.
+                  </p>
+                ) : (
+                  <Reorder.Group
+                    axis="y"
+                    values={
+                      subSectionsData[subSectionId].form_checkbox_group.filter(
+                        (group) => group.id === currentCheckboxGroupId
+                      )[0].form_checkbox
+                    }
+                    onReorder={handleCheckboxesPrioReorder}
+                    className="p-2 space-y-3"
+                  >
+                    {currentCheckboxGroupCheckboxes()
+                      .sort(compareCheckboxPrioNumbers)
+                      .map((checkbox) => (
+                        <Reorder.Item
+                          key={checkbox.id}
+                          value={checkbox}
+                          className=""
+                          dragConstraints={{ top: 0, bottom: 0 }}
+                        >
+                          <div className="flex items-center space-x-3 w-full ">
+                            <p className="text-slate-600">
+                              {checkbox.prio_number}.
+                            </p>
+                            <div className="flex items-center space-x-2 bg-white border p-4 rounded-md shadow cursor-grab w-full">
+                              <SquareCheck></SquareCheck>
+                              <Label
+                                htmlFor={`preview-${currentCheckboxGroupId}-${checkbox.id}`}
+                                className="font-bold"
+                              >
+                                {checkbox.label}
+                              </Label>
+                            </div>
+                          </div>
+                        </Reorder.Item>
+                      ))}
+                  </Reorder.Group>
+                )}
               </TabsContent>
             </Tabs>
           </>

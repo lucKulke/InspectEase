@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   IFillableFormPlusFillableFields,
@@ -18,23 +18,76 @@ import { Progress } from "@/components/ui/progress";
 import { UUID } from "crypto";
 import { format } from "date-fns";
 import { FormCard } from "./formCard";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { deleteForm } from "./actions";
+import { useNotification } from "@/app/context/NotificationContext";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { ActiveForm } from "@/lib/globalInterfaces";
 
 interface FormFilterProps {
   forms: IFillableFormPlusFillableFields[] | null;
+  wsUrl: string;
 }
 
-export const FormFilter = ({ forms }: FormFilterProps) => {
+export const FormFilter = ({ forms, wsUrl }: FormFilterProps) => {
   if (!forms) return <div>No forms yet</div>;
+
+  const { data, isConnected } = useWebSocket<ActiveForm[]>(wsUrl);
+  const [activeForms, setActiveForms] = useState<ActiveForm[]>([]);
+
+  useEffect(() => {
+    if (data) {
+      setActiveForms(data);
+    }
+  }, [data]);
+
+  const { showNotification } = useNotification();
   const [activeTab, setActiveTab] = useState("inProgress");
 
-  const [formsInProgress, setFormsInProgress] = useState<
-    IFillableFormPlusFillableFields[]
-  >(forms.filter((form) => form.in_progress === true));
+  const [fillableForms, setFillableForms] =
+    useState<IFillableFormPlusFillableFields[]>(forms);
 
-  const [formsCompleted, setFormsCompleted] = useState<
-    IFillableFormPlusFillableFields[]
-  >(forms.filter((form) => form.in_progress === false));
+  const [openAlertDialog, setOpenAlertDialog] = useState<boolean>(false);
+  const [selectedForm, setSelectedForm] = useState<UUID>();
 
+  function compare(
+    a: IFillableFormPlusFillableFields,
+    b: IFillableFormPlusFillableFields
+  ) {
+    if (a.updated_at > b.updated_at) return -1;
+
+    if (a.updated_at < b.updated_at) return 1;
+
+    return 0;
+  }
+
+  const handleDeleteForm = async (formId: UUID) => {
+    setFillableForms([...fillableForms].filter((form) => form.id !== formId));
+    const { deletedForm, deletedFormError } = await deleteForm(formId);
+    if (deletedFormError) {
+      return showNotification(
+        "Delete form",
+        `Error: ${deletedFormError.message} (${deletedFormError.code})`,
+        "error"
+      );
+    } else if (deletedForm) {
+      return showNotification(
+        "Delete form",
+        `Successfully deleted form with id ${deletedForm.identifier_string}`,
+        "info"
+      );
+    }
+  };
   return (
     <div className="container mx-auto px-4">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -44,33 +97,87 @@ export const FormFilter = ({ forms }: FormFilterProps) => {
         </TabsList>
 
         <TabsContent value="inProgress" className="w-full">
-          {formsInProgress.length === 0 ? (
+          {fillableForms
+            .sort(compare)
+            .filter((form) => form.in_progress === true).length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               No in-progress forms available
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {formsInProgress.map((form) => (
-                <FormCard key={form.id} form={form}></FormCard>
-              ))}
+              {fillableForms
+                .filter((form) => form.in_progress === true)
+                .map((form) => (
+                  <FormCard
+                    isBeeingEdited={activeForms}
+                    key={form.id}
+                    form={form}
+                    selectedForm={selectedForm}
+                    setSelectedForm={setSelectedForm}
+                    setOpenAlertDialog={setOpenAlertDialog}
+                    setFillableForms={setFillableForms}
+                  ></FormCard>
+                ))}
             </div>
           )}
         </TabsContent>
 
         <TabsContent value="completed" className="w-full">
-          {formsCompleted.length === 0 ? (
+          {fillableForms.filter((form) => form.in_progress === false).length ===
+          0 ? (
             <div className="text-center py-8 text-gray-500">
               No completed forms available
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {formsCompleted.map((form) => (
-                <FormCard key={form.id} form={form}></FormCard>
-              ))}
+              {fillableForms
+                .sort(compare)
+                .filter((form) => form.in_progress === false)
+                .map((form) => (
+                  <FormCard
+                    isBeeingEdited={activeForms}
+                    key={form.id}
+                    form={form}
+                    selectedForm={selectedForm}
+                    setSelectedForm={setSelectedForm}
+                    setOpenAlertDialog={setOpenAlertDialog}
+                    setFillableForms={setFillableForms}
+                  ></FormCard>
+                ))}
             </div>
           )}
         </TabsContent>
       </Tabs>
+      <AlertDialog open={openAlertDialog} onOpenChange={setOpenAlertDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your
+              fillable form with id{" "}
+              {selectedForm && (
+                <span className="font-bold">
+                  {
+                    fillableForms.filter((form) => form.id === selectedForm)[0]
+                      ?.identifier_string
+                  }
+                </span>
+              )}{" "}
+              from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (selectedForm) handleDeleteForm(selectedForm);
+              }}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
