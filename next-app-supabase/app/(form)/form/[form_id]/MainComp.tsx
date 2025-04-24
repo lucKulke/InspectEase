@@ -22,7 +22,7 @@ import {
 } from "@/lib/database/form-filler/formFillerInterfaces";
 import { UUID } from "crypto";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { TextInputField } from "./TextInputField";
 import {
   updateMainCheckboxValue,
@@ -35,6 +35,7 @@ import { useNotification } from "@/app/context/NotificationContext";
 import { Separator } from "@/components/ui/separator";
 import { constructNow } from "date-fns";
 import { IFormCheckboxResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
+import { useFormActivity } from "@/hooks/useFormActivity";
 //import { TextInputField } from "./TextInputField";
 
 interface MainCompProps {
@@ -52,6 +53,25 @@ export const MainComp = ({
   mainCheckboxes,
   textInputFields,
 }: MainCompProps) => {
+  const [userId, setUserId] = useState<string>("");
+  useEffect(() => {
+    // For demo, generate a random user ID if not available
+    const storedUserId = localStorage.getItem("userId");
+    if (storedUserId) {
+      setUserId(storedUserId);
+    } else {
+      const newUserId = `user-${Math.random().toString(36).substring(2, 9)}`;
+      localStorage.setItem("userId", newUserId);
+      setUserId(newUserId);
+    }
+  }, []);
+
+  // Register form activity and start heartbeat
+  useFormActivity({
+    formId: formData.id as string,
+    userId,
+  });
+
   const { showNotification } = useNotification();
   const [fillableSubCheckboxes, setFillableSubCheckboxes] =
     useState<Record<string, ISubCheckboxResponse[]>>(subCheckboxes);

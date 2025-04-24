@@ -36,3 +36,9 @@ export interface IUserProfile {
   last_name: string;
   openai_token: string;
 }
+
+export interface ActiveForm {
+  formId: string;
+  activeUsers: number;
+  lastActive: number;
+}

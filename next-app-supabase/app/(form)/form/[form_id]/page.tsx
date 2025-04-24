@@ -56,6 +56,7 @@ export default async function FormPage({
             label: mainCheckbox.label,
             created_at: mainCheckbox.created_at,
             checked: mainCheckbox.checked,
+            prio_number: mainCheckbox.prio_number,
           });
 
           mainCheckbox.sub_checkbox.forEach((subCheckbox) => {

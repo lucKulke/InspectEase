@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   IFillableFormPlusFillableFields,
@@ -31,6 +31,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { deleteForm } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { ActiveForm } from "@/lib/globalInterfaces";
 
 interface FormFilterProps {
   forms: IFillableFormPlusFillableFields[] | null;
@@ -38,6 +40,18 @@ interface FormFilterProps {
 
 export const FormFilter = ({ forms }: FormFilterProps) => {
   if (!forms) return <div>No forms yet</div>;
+
+  const { data, isConnected } = useWebSocket<ActiveForm[]>(
+    "ws://localhost:8000/ws/dashboard"
+  );
+  const [activeForms, setActiveForms] = useState<ActiveForm[]>([]);
+
+  useEffect(() => {
+    if (data) {
+      setActiveForms(data);
+    }
+  }, [data]);
+
   const { showNotification } = useNotification();
   const [activeTab, setActiveTab] = useState("inProgress");
 
@@ -96,6 +110,7 @@ export const FormFilter = ({ forms }: FormFilterProps) => {
                 .filter((form) => form.in_progress === true)
                 .map((form) => (
                   <FormCard
+                    isBeeingEdited={activeForms}
                     key={form.id}
                     form={form}
                     selectedForm={selectedForm}
@@ -121,6 +136,7 @@ export const FormFilter = ({ forms }: FormFilterProps) => {
                 .filter((form) => form.in_progress === false)
                 .map((form) => (
                   <FormCard
+                    isBeeingEdited={activeForms}
                     key={form.id}
                     form={form}
                     selectedForm={selectedForm}

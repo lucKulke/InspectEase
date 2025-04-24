@@ -36,6 +36,7 @@ import { UUID } from "crypto";
 import { updateFormProgressState } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ActiveForm } from "@/lib/globalInterfaces";
 
 interface FormCardProps {
   form: IFillableFormPlusFillableFields;
@@ -45,6 +46,7 @@ interface FormCardProps {
   setFillableForms: React.Dispatch<
     React.SetStateAction<IFillableFormPlusFillableFields[]>
   >;
+  isBeeingEdited: ActiveForm[];
 }
 
 export const FormCard = ({
@@ -53,6 +55,7 @@ export const FormCard = ({
   setSelectedForm,
   setOpenAlertDialog,
   setFillableForms,
+  isBeeingEdited,
 }: FormCardProps) => {
   const router = useRouter();
   const { showNotification } = useNotification();
@@ -115,11 +118,19 @@ export const FormCard = ({
       <ContextMenuTrigger>
         <Card
           key={form.id}
-          className="h-full hover:shadow-md transition-shadow "
+          className="h-full hover:shadow-md transition-shadow relative"
         >
+          {isBeeingEdited.filter((f) => f.formId === form.id).length > 0 && (
+            <div className="absolute top-2 right-2 ">
+              <span className="relative flex size-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
+                <span className="relative inline-flex size-3 rounded-full bg-sky-500"></span>
+              </span>
+            </div>
+          )}
           <div className="flex justify-between">
             <CardHeader>
-              <CardTitle>ID: {form.identifier_string}</CardTitle>
+              <CardTitle>ID: {form.identifier_string} </CardTitle>
               <CardDescription>{form.form_type}</CardDescription>
             </CardHeader>
             <div className="m-7">
