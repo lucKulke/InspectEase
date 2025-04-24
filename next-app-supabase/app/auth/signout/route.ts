@@ -1,3 +1,4 @@
+"use server";
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { type NextRequest, NextResponse } from "next/server";
@@ -16,10 +17,7 @@ export async function POST(req: NextRequest) {
 
   revalidatePath("/", "layout");
   return NextResponse.redirect(
-    new URL(
-      `https://${process.env.NEXT_PUBLIC_WEBAPP_URL}/auth/login`,
-      req.url
-    ),
+    `https://${process.env.NEXT_PUBLIC_WEBAPP_URL}/auth/login`,
     {
       status: 302,
     }

@@ -36,10 +36,7 @@ export async function updateSession(request: NextRequest) {
 
   if (!user) {
     return NextResponse.redirect(
-      new URL(
-        `https://${process.env.NEXT_PUBLIC_WEBAPP_URL}/auth/login`,
-        request.url
-      )
+      `https://${process.env.NEXT_PUBLIC_WEBAPP_URL}/auth/login`
     );
   }
 
