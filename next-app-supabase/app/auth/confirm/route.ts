@@ -1,6 +1,7 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { NextURL } from "next/dist/server/web/next-url";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -35,7 +36,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const redirectTo = request.nextUrl.clone();
+    const redirectTo = new NextURL(
+      `${process.env.NEXT_PUBLIC_WEBAPP_BASE_URL}`
+    );
     redirectTo.pathname = nextPath;
     redirectTo.searchParams.delete("token_hash");
     redirectTo.searchParams.delete("type");
@@ -43,7 +46,9 @@ export async function GET(request: NextRequest) {
   }
 
   // Redirect to an error page if token verification fails
-  const errorRedirect = request.nextUrl.clone();
+  const errorRedirect = new NextURL(
+    `${process.env.NEXT_PUBLIC_WEBAPP_BASE_URL}`
+  );
   errorRedirect.pathname = "/error";
   return NextResponse.redirect(errorRedirect);
 }
