@@ -1,3 +1,4 @@
+"use server";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -33,11 +34,10 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
+  const url = process.env.NEXT_PUBLIC_WEBAPP_BASE_URL;
+  console.log("url", url);
   if (!user) {
-    return NextResponse.redirect(
-      `https://${process.env.NEXT_PUBLIC_WEBAPP_URL}/auth/login`
-    );
+    return NextResponse.redirect(`${url}/auth/login`);
   }
 
   return supabaseResponse;
