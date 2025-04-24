@@ -4,14 +4,15 @@ import axios from "axios";
 interface FormActivityProps {
   formId: string;
   userId: string;
+  url: string;
 }
 
-export function useFormActivity({ formId, userId }: FormActivityProps) {
+export function useFormActivity({ formId, userId, url }: FormActivityProps) {
   useEffect(() => {
     // Register activity when component mounts
     const registerActivity = async () => {
       try {
-        await axios.post("http://localhost:8000/api/form-activity", {
+        await axios.post(url, {
           form_id: formId,
           user_id: userId,
         });

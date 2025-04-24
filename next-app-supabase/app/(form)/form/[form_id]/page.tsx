@@ -80,6 +80,7 @@ export default async function FormPage({
         </div>
 
         <MainComp
+          sessionAwarenessFeatureUrl={`https://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/api/form-activity`}
           formData={formData}
           subCheckboxes={subCheckboxes}
           mainCheckboxes={mainCheckboxes}

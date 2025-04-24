@@ -45,9 +45,11 @@ interface MainCompProps {
   mainCheckboxes: Record<string, IMainCheckboxResponse[]>;
 
   textInputFields: Record<string, ITextInputResponse[]>;
+  sessionAwarenessFeatureUrl: string;
 }
 
 export const MainComp = ({
+  sessionAwarenessFeatureUrl,
   formData,
   subCheckboxes,
   mainCheckboxes,
@@ -70,6 +72,7 @@ export const MainComp = ({
   useFormActivity({
     formId: formData.id as string,
     userId,
+    url: sessionAwarenessFeatureUrl,
   });
 
   const { showNotification } = useNotification();

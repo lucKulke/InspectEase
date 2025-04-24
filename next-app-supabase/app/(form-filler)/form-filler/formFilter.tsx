@@ -36,14 +36,13 @@ import { ActiveForm } from "@/lib/globalInterfaces";
 
 interface FormFilterProps {
   forms: IFillableFormPlusFillableFields[] | null;
+  wsUrl: string;
 }
 
-export const FormFilter = ({ forms }: FormFilterProps) => {
+export const FormFilter = ({ forms, wsUrl }: FormFilterProps) => {
   if (!forms) return <div>No forms yet</div>;
 
-  const { data, isConnected } = useWebSocket<ActiveForm[]>(
-    "ws://localhost:8000/ws/dashboard"
-  );
+  const { data, isConnected } = useWebSocket<ActiveForm[]>(wsUrl);
   const [activeForms, setActiveForms] = useState<ActiveForm[]>([]);
 
   useEffect(() => {
