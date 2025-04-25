@@ -29,13 +29,19 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(ANNOTATED_DIR, exist_ok=True)
 
 
-class AnnotationDetail(BaseModel):
-    location: List[float]
-    page: int
+class Rect(BaseModel):
+    x1: float
+    y1: float
+    x2: float
+    y2: float
 
-AnnotationsResponse = RootModel[Dict[str, AnnotationDetail]]
+class AnnotationData(BaseModel):
+    pageNumber: int
+    type: str
+    rect: Rect
+    contents: str
 
-@app.post("/extract-annotations/", response_model=AnnotationsResponse)
+@app.post("/extract-annotations", response_model=List[AnnotationData])
 async def extract_annotations(pdf: UploadFile = File(...)):
     temp_pdf_path = f"{UPLOAD_DIR}/{uuid.uuid4()}.pdf"
 
@@ -50,7 +56,7 @@ async def extract_annotations(pdf: UploadFile = File(...)):
 
 
 
-@app.post("/remove-annotations/")
+@app.post("/remove-annotations")
 async def remove_annotations(pdf: UploadFile = File(...)):
     # Read PDF from upload
     input_pdf_bytes = await pdf.read()

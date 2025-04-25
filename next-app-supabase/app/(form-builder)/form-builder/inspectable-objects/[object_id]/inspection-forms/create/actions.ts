@@ -8,7 +8,11 @@ import {
   IInspectableObjectInspectionFormInsert,
   IInspectableObjectInspectionFormPropertyInsert,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
-import { AnnotationData, SupabaseError } from "@/lib/globalInterfaces";
+import {
+  AnnotationData,
+  AnnotationsApiResponse,
+  SupabaseError,
+} from "@/lib/globalInterfaces";
 import { extractAnnotations } from "@/utils/pdfTools";
 import { createClient } from "@/utils/supabase/server";
 import { error } from "console";
@@ -29,12 +33,37 @@ async function uploadDocument(fileName: UUID, file: File) {
   return await dbStorageActions.uploadDocument(fileName, file);
 }
 
+export async function extractAnnotationsFromPDF(
+  annotatedFile: File
+): Promise<AnnotationData[]> {
+  const form = new FormData();
+  form.append("pdf", annotatedFile); // 'pdf' must match FastAPI param name
+
+  console.log(annotatedFile.name, annotatedFile.size, annotatedFile.type);
+  const response = await fetch(
+    `${process.env.PDF_TOOL_URL}/extract-annotations`,
+    {
+      method: "POST",
+      body: form,
+      // ❌ DO NOT set Content-Type manually here!
+    }
+  );
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Server error: ${response.status} - ${errText}`);
+  }
+
+  const data: AnnotationData[] = await response.json();
+  return data;
+}
+
 export async function createInspectionForm(
   formTypeId: UUID,
   objectId: UUID,
   metadata: Record<UUID, string>,
   file: File,
-  annotations: AnnotationData[] | null
+  annotations: AnnotationData[]
 ): Promise<{ inspectionForm: any; inspectionFormError: SupabaseError | null }> {
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderCreate(supabase);
@@ -111,35 +140,35 @@ export async function createInspectionForm(
 
   // step 4: create form annotations
 
-  // const newAnnotations: IInspectableObjectInspectionFormAnnotationInsert[] = [];
+  const newAnnotations: IInspectableObjectInspectionFormAnnotationInsert[] = [];
 
-  // annotations.forEach((annotation) => {
-  //   newAnnotations.push({
-  //     inspection_form_id: inspectableObjectInspectionForm.id,
-  //     page: annotation.pageNumber,
-  //     type: annotation.type,
-  //     content: annotation.contents,
-  //     x1: annotation.rect["x1"],
-  //     x2: annotation.rect["x2"],
-  //     y1: annotation.rect["y1"],
-  //     y2: annotation.rect["y2"],
-  //   });
-  //   annotation;
-  // });
+  annotations.forEach((annotation) => {
+    newAnnotations.push({
+      inspection_form_id: inspectableObjectInspectionForm.id,
+      page: annotation.pageNumber,
+      type: annotation.type,
+      content: annotation.contents,
+      x1: annotation.rect["x1"],
+      x2: annotation.rect["x2"],
+      y1: annotation.rect["y1"],
+      y2: annotation.rect["y2"],
+    });
+    annotation;
+  });
 
-  // const {
-  //   inspectableObjectInspectionFormAnnotations,
-  //   inspectableObjectInspectionFormAnnotationsError,
-  // } = await dbActions.createInspectableObjectInspectionFormAnnotations(
-  //   newAnnotations
-  // );
+  const {
+    inspectableObjectInspectionFormAnnotations,
+    inspectableObjectInspectionFormAnnotationsError,
+  } = await dbActions.createInspectableObjectInspectionFormAnnotations(
+    newAnnotations
+  );
 
-  // if (inspectableObjectInspectionFormAnnotationsError) {
-  //   return {
-  //     inspectionForm: null,
-  //     inspectionFormError: inspectableObjectInspectionFormAnnotationsError,
-  //   };
-  // }
+  if (inspectableObjectInspectionFormAnnotationsError) {
+    return {
+      inspectionForm: null,
+      inspectionFormError: inspectableObjectInspectionFormAnnotationsError,
+    };
+  }
 
   return {
     inspectionForm: inspectableObjectInspectionForm,

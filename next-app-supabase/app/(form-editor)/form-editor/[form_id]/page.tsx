@@ -61,7 +61,7 @@ export default async function FormEditorPage({
   }
 
   const { bucketResponse, bucketError } =
-    await storageActions.downloadDocumentViaPublicUrl(
+    await storageActions.downloadDocumentViaSignedUrl(
       inspectableObjectInspectionFormWithProps.document_id
     );
 
