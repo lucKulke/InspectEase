@@ -47,7 +47,7 @@ async function sendPdfFromSignedUrl(
   signedUrl: string,
   locations: LocationsWrapper
 ) {
-  console.log("pdf tool url", process.env.PDF_TOOL_UR);
+  console.log("pdf tool url", process.env.PDF_TOOL_URL);
 
   // Step 1: Fetch the PDF from the signed URL
   const response = await fetch(signedUrl);
