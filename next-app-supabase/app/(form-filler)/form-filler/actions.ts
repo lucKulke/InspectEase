@@ -44,7 +44,7 @@ interface LocationsWrapper {
 }
 
 async function usePDFAPI(signedUrl: string, locations: LocationsWrapper) {
-  console.log("pdf tool url", process.env.PDF_TOOL_URL);
+  const apiUrl = process.env.PDF_TOOL_URL;
 
   // Step 1: Fetch the PDF from the signed URL
   const response = await fetch(signedUrl);
@@ -58,28 +58,30 @@ async function usePDFAPI(signedUrl: string, locations: LocationsWrapper) {
   }
 
   console.log("all fine after fetching the document");
+
   const blob = await response.blob();
+
+  console.log("after creating blob");
 
   // Step 2: Create a File object from the blob
   const baseFile = new File([blob], "uploaded.pdf", {
     type: "application/pdf",
   });
 
+  console.log("after creating file");
   // Step 3: clean up pdf
   const formCleanerData = new FormData();
   formCleanerData.append("pdf", baseFile);
 
   console.log("all fine after preparing data");
-  const uploadResponseCleaner = await fetch(
-    `${process.env.PDF_TOOL_URL}/remove-annotations`,
-    {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-      },
-      body: formCleanerData,
-    }
-  );
+
+  const uploadResponseCleaner = await fetch(`${apiUrl}/remove-annotations`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+    },
+    body: formCleanerData,
+  });
   console.log("all fine after cleaner ");
 
   if (!uploadResponseCleaner.ok) {
@@ -103,16 +105,13 @@ async function usePDFAPI(signedUrl: string, locations: LocationsWrapper) {
   formFillerData.append("locations", JSON.stringify(locations));
 
   // Step 6: fill out pdf
-  const uploadResponseFiller = await fetch(
-    `${process.env.PDF_TOOL_URL}/fill-pdf`,
-    {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-      },
-      body: formFillerData,
-    }
-  );
+  const uploadResponseFiller = await fetch(`${apiUrl}/fill-pdf`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+    },
+    body: formFillerData,
+  });
 
   if (!uploadResponseFiller.ok) {
     console.log(`Error uploading PDF! status: ${uploadResponseFiller.status}`);
