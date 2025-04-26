@@ -43,10 +43,7 @@ interface LocationsWrapper {
   locations: Location[];
 }
 
-async function sendPdfFromSignedUrl(
-  signedUrl: string,
-  locations: LocationsWrapper
-) {
+async function usePDFAPI(signedUrl: string, locations: LocationsWrapper) {
   console.log("pdf tool url", process.env.PDF_TOOL_URL);
 
   // Step 1: Fetch the PDF from the signed URL
@@ -60,6 +57,7 @@ async function sendPdfFromSignedUrl(
     );
   }
 
+  console.log("all fine after fetching the document");
   const blob = await response.blob();
 
   // Step 2: Create a File object from the blob
@@ -88,7 +86,9 @@ async function sendPdfFromSignedUrl(
       `Error uploading PDF! status: ${uploadResponseCleaner.status}`
     );
   }
+
   const resultBlobCleaner = await uploadResponseCleaner.blob();
+  console.log("all fine after cleaning document");
 
   // Step 4: Create a File object from the blob
   const cleanedFile = new File([resultBlobCleaner], "uploaded.pdf", {
@@ -207,10 +207,7 @@ export async function fillPDF(form: IFillableFormPlusFillableFields): Promise<{
   if (bucketResponse) {
     let resultBlob = null;
     try {
-      resultBlob = await sendPdfFromSignedUrl(
-        bucketResponse.signedUrl,
-        wrapper
-      );
+      resultBlob = await usePDFAPI(bucketResponse.signedUrl, wrapper);
     } catch {
       return { resultBlob: null, error: "Error during api usage" };
     }
