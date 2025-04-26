@@ -104,13 +104,14 @@ async function usePDFAPI(signedUrl: string, locations: LocationsWrapper) {
 
   const resultBlobCleaner = await uploadResponseCleaner.blob();
   console.log("all fine after cleaning document");
+
   const arrayBufferTest = await resultBlobCleaner.arrayBuffer();
   const bufferTest = Buffer.from(arrayBufferTest);
 
   // Prepare the FormData manually
   const formFillerData = new FormData();
   formCleanerData.append(
-    "pdf",
+    "file",
     new Blob([bufferTest], { type: "application/pdf" }),
     "uploaded.pdf"
   );
