@@ -44,7 +44,7 @@ interface LocationsWrapper {
 }
 
 async function usePDFAPI(signedUrl: string, locations: LocationsWrapper) {
-  const apiUrl = process.env.PDF_TOOL_URL;
+  console.log("pdf tool url", process.env.PDF_TOOL_URL);
 
   // Step 1: Fetch the PDF from the signed URL
   const response = await fetch(signedUrl);
@@ -57,43 +57,27 @@ async function usePDFAPI(signedUrl: string, locations: LocationsWrapper) {
     );
   }
 
-  console.log("all fine after fetching the document");
-
   const blob = await response.blob();
 
-  console.log("after creating blob");
-
+  // ⚡ Replace File constructor here
   const arrayBuffer = await blob.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
+  const cleanedBlob = new Blob([buffer], { type: "application/pdf" });
 
-  // Prepare the FormData manually
   const formCleanerData = new FormData();
-  formCleanerData.append(
-    "pdf",
-    new Blob([buffer], { type: "application/pdf" }),
-    "uploaded.pdf"
+  formCleanerData.append("pdf", cleanedBlob, "uploaded.pdf");
+
+  // Step 3: clean up pdf
+  const uploadResponseCleaner = await fetch(
+    `${process.env.PDF_TOOL_URL}/remove-annotations`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+      },
+      body: formCleanerData,
+    }
   );
-
-  // Step 2: Create a File object from the blob
-  // const baseFile = new File([blob], "uploaded.pdf", {
-  //   type: "application/pdf",
-  // });
-
-  // console.log("after creating file");
-  // // Step 3: clean up pdf
-  // const formCleanerData = new FormData();
-  // formCleanerData.append("pdf", baseFile);
-
-  // console.log("all fine after preparing data");
-
-  const uploadResponseCleaner = await fetch(`${apiUrl}/remove-annotations`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-    },
-    body: formCleanerData,
-  });
-  console.log("all fine after cleaner ");
 
   if (!uploadResponseCleaner.ok) {
     console.log(`Error uploading PDF! status: ${uploadResponseCleaner.status}`);
@@ -103,37 +87,26 @@ async function usePDFAPI(signedUrl: string, locations: LocationsWrapper) {
   }
 
   const resultBlobCleaner = await uploadResponseCleaner.blob();
-  console.log("all fine after cleaning document");
 
-  const arrayBufferTest = await resultBlobCleaner.arrayBuffer();
-  const bufferTest = Buffer.from(arrayBufferTest);
+  // same fix for the second upload:
+  const arrayBufferCleaner = await resultBlobCleaner.arrayBuffer();
+  const bufferCleaner = Buffer.from(arrayBufferCleaner);
+  const cleanedFile = new Blob([bufferCleaner], { type: "application/pdf" });
 
-  // Prepare the FormData manually
   const formFillerData = new FormData();
-  formCleanerData.append(
-    "file",
-    new Blob([bufferTest], { type: "application/pdf" }),
-    "uploaded.pdf"
-  );
+  formFillerData.append("file", cleanedFile, "uploaded.pdf");
   formFillerData.append("locations", JSON.stringify(locations));
-  // Step 4: Create a File object from the blob
-  // const cleanedFile = new File([resultBlobCleaner], "uploaded.pdf", {
-  //   type: "application/pdf",
-  // });
 
-  // // Step 5: Prepare the form data
-  // const formFillerData = new FormData();
-  // formFillerData.append("file", cleanedFile);
-  // formFillerData.append("locations", JSON.stringify(locations));
-
-  // Step 6: fill out pdf
-  const uploadResponseFiller = await fetch(`${apiUrl}/fill-pdf`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-    },
-    body: formFillerData,
-  });
+  const uploadResponseFiller = await fetch(
+    `${process.env.PDF_TOOL_URL}/fill-pdf`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+      },
+      body: formFillerData,
+    }
+  );
 
   if (!uploadResponseFiller.ok) {
     console.log(`Error uploading PDF! status: ${uploadResponseFiller.status}`);
