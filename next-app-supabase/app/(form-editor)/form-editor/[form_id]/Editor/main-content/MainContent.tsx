@@ -1,5 +1,6 @@
 "use client";
 import {
+  IInspectableObjectInspectionFormAnnotationResponse,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionWithData,
   IStringExtractionTrainingResponse,
@@ -46,6 +47,8 @@ interface MainContentProps {
     >
   >;
   trainingList: IStringExtractionTrainingResponse[] | undefined;
+
+  annotations: IInspectableObjectInspectionFormAnnotationResponse[];
 }
 
 export const MainContent = ({
@@ -53,8 +56,33 @@ export const MainContent = ({
   subSectionsData,
   setSubSectionsData,
   trainingList,
+  annotations,
 }: MainContentProps) => {
   const { showNotification } = useNotification();
+
+  const allreadyAssignedAnnoationsTemp: UUID[] = [];
+
+  mainSubSections.forEach((main) => {
+    main.inspectable_object_inspection_form_sub_section.forEach((sub) => {
+      subSectionsData[sub.id].form_checkbox_group.forEach((group) => {
+        group.form_checkbox.forEach((checkbox) => {
+          if (checkbox.annotation_id !== null) {
+            allreadyAssignedAnnoationsTemp.push(checkbox.annotation_id);
+          }
+        });
+      });
+      subSectionsData[sub.id].form_text_input_field.forEach((textInput) => {
+        if (textInput.annotation_id !== null) {
+          allreadyAssignedAnnoationsTemp.push(textInput.annotation_id);
+        }
+      });
+    });
+  });
+
+  const [allreadyAssignedAnnoations, setAllreadyAssignedAnnoations] = useState<
+    UUID[]
+  >(allreadyAssignedAnnoationsTemp);
+
   const [openDeleteAllTasksDialog, setOpenDeleteAllTasksDialog] =
     useState<boolean>(false);
   const [openTaskDialog, setOpenTaskDialog] = useState<boolean>(false);
@@ -200,6 +228,9 @@ export const MainContent = ({
             setSubSectionsData={setSubSectionsData}
             subSectionsData={subSectionsData}
             subSectionId={selectedSubSectionId}
+            annotations={annotations}
+            allreadyAssignedAnnoations={allreadyAssignedAnnoations}
+            setAllreadyAssignedAnnoations={setAllreadyAssignedAnnoations}
           />
         </>
       )}
@@ -211,6 +242,9 @@ export const MainContent = ({
           subSectionsData={subSectionsData}
           subSectionId={selectedSubSectionId}
           trainingList={trainingList}
+          annotations={annotations}
+          allreadyAssignedAnnoations={allreadyAssignedAnnoations}
+          setAllreadyAssignedAnnoations={setAllreadyAssignedAnnoations}
         />
       )}
     </div>

@@ -15,6 +15,7 @@ import {
   PlusCircle,
   SquareCheck,
   Trash2,
+  TriangleAlert,
 } from "lucide-react";
 import {
   Dialog,
@@ -42,12 +43,7 @@ import {
 import { useNotification } from "@/app/context/NotificationContext";
 import { Spinner } from "@/components/Spinner";
 
-import {
-  deleteAllTasks,
-  deleteCheckbox,
-  deleteCheckboxGroup,
-  updateCheckboxesOrderNumber,
-} from "./actions";
+import { deleteAllTasks, deleteCheckbox, deleteCheckboxGroup } from "./actions";
 import { flushSync } from "react-dom";
 import {
   Card,
@@ -180,6 +176,17 @@ export const SubSection = ({
     }
   };
 
+  function sortCheckboxGroups(
+    a: IFormCheckboxGroupWithCheckboxes,
+    b: IFormCheckboxGroupWithCheckboxes
+  ) {
+    if (a.created_at < b.created_at) return -1;
+
+    if (a.created_at > b.created_at) return 1;
+
+    return 0;
+  }
+
   return (
     <div className="border-2 hover:border-black rounded-xl p-2">
       <TooltipProvider>
@@ -192,7 +199,7 @@ export const SubSection = ({
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      {sectionData.form_checkbox_group.map((group) => {
+      {sectionData.form_checkbox_group.sort(sortCheckboxGroups).map((group) => {
         return (
           <div className="flex space-x-5 p-5 " key={group.id}>
             <div
@@ -299,6 +306,12 @@ export const SubSection = ({
                               >
                                 {checkbox.label}
                               </Label>
+                              <TriangleAlert
+                                size={22}
+                                className={`${
+                                  checkbox.annotation_id && "opacity-0"
+                                }`}
+                              ></TriangleAlert>
                             </li>
                           ))}
                       </ul>
@@ -417,7 +430,7 @@ export const SubSection = ({
                               </Select>
                             </div>
                           </Card>
-                          {!field.training_id ? (
+                          {!field.training_id || !field.annotation_id ? (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger>
@@ -425,7 +438,8 @@ export const SubSection = ({
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>
-                                    No string extraction training selected...
+                                    No string extraction training or id
+                                    selected...
                                   </p>
                                 </TooltipContent>
                               </Tooltip>

@@ -364,14 +364,14 @@ export class DBActionsFormBuilderUpdate {
   }
 
   async updateFormTextInputFields(
-    checkboxTasks: IFormTextInputFieldResponse[]
+    textInputFields: IFormTextInputFieldResponse[]
   ): Promise<{
     updatedFormTextInputFields: IFormTextInputFieldResponse[];
     updatedFormTextInputFieldsError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("form_text_input_field")
-      .upsert(checkboxTasks)
+      .upsert(textInputFields)
       .select();
 
     console.log("update form text input field order number in db:", data);

@@ -45,6 +45,13 @@ export default async function FormEditorPage({
   }
 
   const {
+    inspectableObjectInspectionFormAnnotations,
+    inspectableObjectInspectionFormAnnotationsError,
+  } = await dbActions.fetchInspectableObjectInspectionFormAnnotations(
+    inspectableObjectInspectionFormWithProps.id
+  );
+
+  const {
     inspectableObjectProfileFormTypeWithProps,
     inspectableObjectProfileFormTypeWithPropsError,
   } = await dbActions.fetchInspectableObjectProfileFormTypeWithProps(
@@ -61,7 +68,7 @@ export default async function FormEditorPage({
   }
 
   const { bucketResponse, bucketError } =
-    await storageActions.downloadDocumentViaPublicUrl(
+    await storageActions.downloadDocumentViaSignedUrl(
       inspectableObjectInspectionFormWithProps.document_id
     );
 
@@ -140,6 +147,7 @@ export default async function FormEditorPage({
           formId={formId}
           subSectionData={subSectionData}
           trainingList={trainingList}
+          annotations={inspectableObjectInspectionFormAnnotations}
         />
       </div>
       {/* <PDFViewer></PDFViewer> */}

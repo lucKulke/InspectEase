@@ -70,6 +70,7 @@ export interface IMainCheckboxInsert {
   order_number: number;
   label: string;
   prio_number: number;
+  annotation_id: UUID | null;
 }
 
 export interface IMainCheckboxResponse extends IMainCheckboxInsert {
@@ -95,6 +96,7 @@ export interface ITextInputInsert {
   training_id: UUID | null;
   label: string;
   order_number: number;
+  annotation_id: UUID | null;
 }
 
 export interface ITextInputResponse extends ITextInputInsert {

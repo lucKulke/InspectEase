@@ -33,10 +33,11 @@ import {
 } from "@/components/ui/context-menu";
 import { Trash2 } from "lucide-react";
 import { UUID } from "crypto";
-import { updateFormProgressState } from "./actions";
+import { fillPDF, updateFormProgressState } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ActiveForm } from "@/lib/globalInterfaces";
+import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 
 interface FormCardProps {
   form: IFillableFormPlusFillableFields;
@@ -110,6 +111,24 @@ export const FormCard = ({
           return form;
         })
       );
+    }
+  };
+
+  const exportToPdf = async (form: IFillableFormPlusFillableFields) => {
+    const { resultBlob, error } = await fillPDF(form);
+
+    if (error) {
+      showNotification("Error during pdf export", "Message: " + error, "error");
+    }
+
+    if (resultBlob) {
+      const downloadUrl = URL.createObjectURL(resultBlob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = "filled.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
     }
   };
 
@@ -217,6 +236,22 @@ export const FormCard = ({
         </Card>
       </ContextMenuTrigger>
       <ContextMenuContent>
+        <ContextMenuItem
+          className=""
+          onClick={() => {
+            router.push("/form-editor/" + form.build_id);
+          }}
+        >
+          Visit build
+        </ContextMenuItem>
+        <ContextMenuItem
+          className=""
+          onClick={() => {
+            exportToPdf(form);
+          }}
+        >
+          Export to PDF
+        </ContextMenuItem>
         <ContextMenuItem
           className="text-red-500 flex justify-between"
           onClick={() => {

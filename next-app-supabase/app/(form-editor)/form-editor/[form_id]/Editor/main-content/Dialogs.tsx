@@ -19,6 +19,7 @@ import {
   IFormCheckboxTaskResponse,
   IFormTextInputFieldInsert,
   IFormTextInputFieldResponse,
+  IInspectableObjectInspectionFormAnnotationResponse,
   IInspectableObjectInspectionFormSubSectionWithData,
   IStringExtractionTrainingResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
@@ -30,12 +31,11 @@ import {
   deleteCheckboxTask,
   deleteTextInputField,
   fetchStringExtractionTrainings,
-  updateCheckboxesOrderNumber,
-  updateCheckboxesPrioOrderNumber,
   updateCheckboxGroupRules,
   updateCheckboxTaskOrder,
-  updateTextInputFieldOrder,
   updateTextInputFieldTraining,
+  upsertCheckboxes,
+  upsertTextInputFields,
 } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 
@@ -50,11 +50,21 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { Plus, SquareCheck, Trash2 } from "lucide-react";
+import { Plus, SquareCheck, Trash2, TriangleAlert } from "lucide-react";
 import { Reorder } from "framer-motion";
 import { validate as isValidUUID } from "uuid";
 
 import { Checkbox } from "@/components/ui/checkbox";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const debounce = (func: Function, delay: number) => {
   let timer: NodeJS.Timeout;
@@ -63,6 +73,24 @@ const debounce = (func: Function, delay: number) => {
     timer = setTimeout(() => func(...args), delay);
   };
 };
+
+function sortAnnotations(
+  a: IInspectableObjectInspectionFormAnnotationResponse,
+  b: IInspectableObjectInspectionFormAnnotationResponse
+) {
+  const numA = Number(a.content);
+  const numB = Number(b.content);
+
+  const isNumA = !isNaN(numA);
+  const isNumB = !isNaN(numB);
+
+  if (isNumA && isNumB) {
+    return numA - numB; // numeric comparison
+  }
+
+  // fallback to string comparison
+  return a.content.localeCompare(b.content);
+}
 
 interface TaskDialogProps {
   open: boolean;
@@ -311,6 +339,9 @@ interface CheckboxGroupDialogProps {
     >
   >;
   subSectionId: UUID;
+  annotations: IInspectableObjectInspectionFormAnnotationResponse[];
+  setAllreadyAssignedAnnoations: React.Dispatch<React.SetStateAction<UUID[]>>;
+  allreadyAssignedAnnoations: UUID[];
 }
 
 export const CheckboxGroupDialog = ({
@@ -320,6 +351,9 @@ export const CheckboxGroupDialog = ({
   subSectionsData,
   setSubSectionsData,
   subSectionId,
+  annotations,
+  allreadyAssignedAnnoations,
+  setAllreadyAssignedAnnoations,
 }: CheckboxGroupDialogProps) => {
   const { showNotification } = useNotification();
 
@@ -341,7 +375,7 @@ export const CheckboxGroupDialog = ({
     updatedItems: IFormCheckboxResponse[]
   ) => {
     const { updatedFormCheckboxes, updatedFormCheckboxesError } =
-      await updateCheckboxesOrderNumber(updatedItems);
+      await upsertCheckboxes(updatedItems);
 
     if (updatedFormCheckboxesError) {
       showNotification(
@@ -356,7 +390,7 @@ export const CheckboxGroupDialog = ({
     updatedItems: IFormCheckboxResponse[]
   ) => {
     const { updatedFormCheckboxes, updatedFormCheckboxesError } =
-      await updateCheckboxesPrioOrderNumber(updatedItems);
+      await upsertCheckboxes(updatedItems);
 
     if (updatedFormCheckboxesError) {
       showNotification(
@@ -551,6 +585,43 @@ export const CheckboxGroupDialog = ({
     }
   };
 
+  const assignAnnotationToCheckbox = async (
+    annotationId: UUID,
+    checkboxId: UUID
+  ) => {
+    let updateableCheckbox = null;
+    let prevAnnotation: UUID | null = null;
+    const copy = { ...subSectionsData };
+    copy[subSectionId].form_checkbox_group.filter(
+      (group) => group.id === currentCheckboxGroupId
+    )[0].form_checkbox = currentCheckboxGroupCheckboxes().map((checkbox) => {
+      if (checkbox.id === checkboxId) {
+        prevAnnotation = checkbox.annotation_id;
+        checkbox.annotation_id = annotationId;
+        updateableCheckbox = checkbox;
+      }
+      return checkbox;
+    });
+
+    let copyAllreadyAssignedAnnotations = [...allreadyAssignedAnnoations];
+
+    if (
+      prevAnnotation &&
+      copyAllreadyAssignedAnnotations.includes(prevAnnotation)
+    ) {
+      copyAllreadyAssignedAnnotations = copyAllreadyAssignedAnnotations.filter(
+        (annoId) => annoId !== prevAnnotation
+      );
+    }
+    if (!copyAllreadyAssignedAnnotations.includes(annotationId)) {
+      copyAllreadyAssignedAnnotations.push(annotationId);
+    }
+    setAllreadyAssignedAnnoations(copyAllreadyAssignedAnnotations);
+
+    setSubSectionsData(copy);
+    if (updateableCheckbox) await upsertCheckboxes([updateableCheckbox]);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[800px]">
@@ -638,13 +709,72 @@ export const CheckboxGroupDialog = ({
                                   {checkbox.label}
                                 </Label>
                               </div>
-                              <button
-                                onClick={() =>
-                                  handleCheckboxDelete(checkbox.id)
-                                }
-                              >
-                                <Trash2 className="text-red-500 cursor-pointer"></Trash2>
-                              </button>
+                              <div className="flex space-x-2 items-center">
+                                <div className="flex items-center space-x-2">
+                                  <Label
+                                    htmlFor={
+                                      checkbox.id + "annotationSelection"
+                                    }
+                                  >
+                                    ID:
+                                  </Label>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger className="border-2 p-1 rounded-xl w-16 h-9">
+                                      <p className="truncate">
+                                        {checkbox.annotation_id
+                                          ? annotations.filter(
+                                              (annotation) =>
+                                                annotation.id ===
+                                                checkbox.annotation_id
+                                            )[0].content
+                                          : ""}
+                                      </p>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                      <DropdownMenuLabel>
+                                        Available IDs
+                                      </DropdownMenuLabel>
+                                      <DropdownMenuSeparator />
+                                      <ScrollArea className="h-52">
+                                        {annotations
+                                          .filter(
+                                            (anno) =>
+                                              !allreadyAssignedAnnoations.includes(
+                                                anno.id
+                                              )
+                                          )
+                                          .sort(sortAnnotations)
+                                          .map((annotation) => (
+                                            <DropdownMenuItem
+                                              key={annotation.id}
+                                              onClick={() =>
+                                                assignAnnotationToCheckbox(
+                                                  annotation.id,
+                                                  checkbox.id
+                                                )
+                                              }
+                                            >
+                                              {annotation.content}
+                                            </DropdownMenuItem>
+                                          ))}
+                                      </ScrollArea>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+
+                                  <TriangleAlert
+                                    className={`${
+                                      checkbox.annotation_id && "opacity-0"
+                                    }`}
+                                  ></TriangleAlert>
+                                </div>
+                                <button
+                                  onClick={() =>
+                                    handleCheckboxDelete(checkbox.id)
+                                  }
+                                >
+                                  <Trash2 className="text-red-500 cursor-pointer hover:text-red-700"></Trash2>
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </Reorder.Item>
@@ -765,6 +895,9 @@ interface TextInputFieldsDialogProps {
   >;
   subSectionId: UUID;
   trainingList: IStringExtractionTrainingResponse[] | undefined;
+  annotations: IInspectableObjectInspectionFormAnnotationResponse[];
+  setAllreadyAssignedAnnoations: React.Dispatch<React.SetStateAction<UUID[]>>;
+  allreadyAssignedAnnoations: UUID[];
 }
 
 export const TextInputFieldsDialog = ({
@@ -774,6 +907,9 @@ export const TextInputFieldsDialog = ({
   subSectionsData,
   subSectionId,
   trainingList,
+  annotations,
+  allreadyAssignedAnnoations,
+  setAllreadyAssignedAnnoations,
 }: TextInputFieldsDialogProps) => {
   const { showNotification } = useNotification();
 
@@ -789,7 +925,7 @@ export const TextInputFieldsDialog = ({
     updatedItems: IFormTextInputFieldResponse[]
   ) => {
     const { updatedFormTextInputFields, updatedFormTextInputFieldsError } =
-      await updateTextInputFieldOrder(updatedItems);
+      await upsertTextInputFields(updatedItems);
 
     if (updatedFormTextInputFieldsError) {
       showNotification(
@@ -888,6 +1024,44 @@ export const TextInputFieldsDialog = ({
     }
   };
 
+  const assignAnnotationToTextInputField = async (
+    annotationId: UUID,
+    textInputId: UUID
+  ) => {
+    let updateableTextInputField = null;
+    let prevAnnotation: UUID | null = null;
+    const copy = { ...subSectionsData };
+    copy[subSectionId].form_text_input_field = copy[
+      subSectionId
+    ].form_text_input_field.map((textInput) => {
+      if (textInput.id === textInputId) {
+        prevAnnotation = textInput.annotation_id;
+        textInput.annotation_id = annotationId;
+        updateableTextInputField = textInput;
+      }
+      return textInput;
+    });
+
+    let copyAllreadyAssignedAnnotations = [...allreadyAssignedAnnoations];
+
+    if (
+      prevAnnotation &&
+      copyAllreadyAssignedAnnotations.includes(prevAnnotation)
+    ) {
+      copyAllreadyAssignedAnnotations = copyAllreadyAssignedAnnotations.filter(
+        (annoId) => annoId !== prevAnnotation
+      );
+    }
+    if (!copyAllreadyAssignedAnnotations.includes(annotationId)) {
+      copyAllreadyAssignedAnnotations.push(annotationId);
+    }
+    setAllreadyAssignedAnnoations(copyAllreadyAssignedAnnotations);
+
+    setSubSectionsData(copy);
+    if (updateableTextInputField)
+      await upsertTextInputFields([updateableTextInputField]);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[800px]">
@@ -965,6 +1139,50 @@ export const TextInputFieldsDialog = ({
                   setSubSectionsData={setSubSectionsData}
                   subSectionId={subSectionId}
                 ></TrainingsSelector>
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor={field.id + "annotationSelection"}>ID:</Label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="border-2 p-1 rounded-xl w-16 h-9">
+                      <p className="truncate">
+                        {field.annotation_id
+                          ? annotations.filter(
+                              (annotation) =>
+                                annotation.id === field.annotation_id
+                            )[0].content
+                          : ""}
+                      </p>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuLabel>Available IDs</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <ScrollArea className="h-52">
+                        {annotations
+                          .filter(
+                            (anno) =>
+                              !allreadyAssignedAnnoations.includes(anno.id)
+                          )
+                          .sort(sortAnnotations)
+                          .map((annotation) => (
+                            <DropdownMenuItem
+                              key={annotation.id}
+                              onClick={() =>
+                                assignAnnotationToTextInputField(
+                                  annotation.id,
+                                  field.id
+                                )
+                              }
+                            >
+                              {annotation.content}
+                            </DropdownMenuItem>
+                          ))}
+                      </ScrollArea>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <TriangleAlert
+                    className={`${field.annotation_id && "opacity-0"}`}
+                  ></TriangleAlert>
+                </div>
                 <button onClick={() => handleDeleteTextField(field.id)}>
                   <Trash2 className="text-red-500 cursor-pointer"></Trash2>
                 </button>
@@ -1025,23 +1243,28 @@ const TrainingsSelector = ({
   };
 
   return (
-    <Select
-      value={selectedTraining}
-      onValueChange={(value) => handleUpdateTextInputFieldTraining(value)}
-    >
-      <SelectTrigger className="w-[180px]">
-        <SelectValue placeholder="Select a training" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectGroup>
-          <SelectLabel>Profile</SelectLabel>
-          {trainingsList.map((training) => (
-            <SelectItem key={training.id} value={training.id}>
-              {training.name}
-            </SelectItem>
-          ))}
-        </SelectGroup>
-      </SelectContent>
-    </Select>
+    <div className="flex items-center space-x-2">
+      <Select
+        value={selectedTraining}
+        onValueChange={(value) => handleUpdateTextInputFieldTraining(value)}
+      >
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Select a training" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectLabel>Profile</SelectLabel>
+            {trainingsList.map((training) => (
+              <SelectItem key={training.id} value={training.id}>
+                {training.name}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <TriangleAlert
+        className={`${field.training_id && "opacity-0"}`}
+      ></TriangleAlert>
+    </div>
   );
 };

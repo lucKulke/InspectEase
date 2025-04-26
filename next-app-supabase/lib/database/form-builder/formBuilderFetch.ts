@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  IInspectableObjectInspectionFormAnnotationResponse,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormMainSectionWithSubSectionData,
   IInspectableObjectInspectionFormResponse,
@@ -496,10 +497,10 @@ export class DBActionsFormBuilderFetch {
         `
         *,
         inspectable_object_inspection_form_property(*)
-
       `
       )
-      .eq("id", formId);
+      .eq("id", formId)
+      .single();
 
     console.log(
       "fetch inspectable object inspection form with props in db:",
@@ -513,8 +514,35 @@ export class DBActionsFormBuilderFetch {
     }
 
     return {
-      inspectableObjectInspectionFormWithProps: data ? data[0] : null,
+      inspectableObjectInspectionFormWithProps: data,
       inspectableObjectInspectionFormWithPropsError:
+        error as SupabaseError | null,
+    };
+  }
+
+  async fetchInspectableObjectInspectionFormAnnotations(formId: UUID): Promise<{
+    inspectableObjectInspectionFormAnnotations: IInspectableObjectInspectionFormAnnotationResponse[];
+    inspectableObjectInspectionFormAnnotationsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_inspection_form_annotation")
+      .select()
+      .eq("inspection_form_id", formId);
+
+    console.log(
+      "fetch inspectable object inspection form annotations in db:",
+      data
+    );
+    if (error) {
+      console.error(
+        "fetch inspectable object inspection form annotations in db error: ",
+        error
+      );
+    }
+
+    return {
+      inspectableObjectInspectionFormAnnotations: data ? data : [],
+      inspectableObjectInspectionFormAnnotationsError:
         error as SupabaseError | null,
     };
   }

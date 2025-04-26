@@ -32,7 +32,11 @@ import { UploadDocument } from "./UploadDocument";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { createInspectionForm, fetchProfileFormTypeProps } from "./actions";
+import {
+  createInspectionForm,
+  extractAnnotationsFromPDF,
+  fetchProfileFormTypeProps,
+} from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { AnnotationData, AnnotationsApiResponse } from "@/lib/globalInterfaces";
 import { Progress } from "@/components/ui/progress";
@@ -124,22 +128,6 @@ export const NewInspectionFormCard = ({
     setFormTypeValues((prev) => ({ ...prev, [propertyId]: value }));
   };
 
-  const getAnnotationsFromPDF = async (
-    annotatedFile: File
-  ): Promise<AnnotationsApiResponse> => {
-    const form = new FormData();
-    form.append("file", annotatedFile);
-
-    // Extract annotations from the file using own api
-    const response = await fetch("/api/pdf/extract-annotations", {
-      method: "POST",
-      body: form,
-    });
-
-    const data: AnnotationsApiResponse = await response.json();
-    return data;
-  };
-
   function hasDuplicateAnnotations(annotations: AnnotationData[]): boolean {
     const seenContents: Set<string> = new Set();
 
@@ -158,24 +146,24 @@ export const NewInspectionFormCard = ({
   const handleCreateInspectionForm = async () => {
     if (!file || !selectedFormTypeId || !formTypeValues) return;
 
-    // const annotationsData = await getAnnotationsFromPDF(file);
-    // console.log("annotations", annotationsData);
-    // if (hasDuplicateAnnotations(annotationsData.annotations)) {
-    //   showNotification(
-    //     "Extract pdf annotations",
-    //     "Error: Duplicate annotations found",
-    //     "error"
-    //   );
-    //   setLoading(false);
-    //   return;
-    // }
+    const annotationsData = await extractAnnotationsFromPDF(file);
+
+    if (hasDuplicateAnnotations(annotationsData)) {
+      showNotification(
+        "Extract pdf annotations",
+        "Error: Duplicate annotations found",
+        "error"
+      );
+      setLoading(false);
+      return;
+    }
 
     const { inspectionForm, inspectionFormError } = await createInspectionForm(
       selectedFormTypeId,
       objectId,
       formTypeValues,
       file,
-      null
+      annotationsData
     );
 
     if (inspectionFormError) {
