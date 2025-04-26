@@ -52,6 +52,9 @@ async function sendPdfFromSignedUrl(
   // Step 1: Fetch the PDF from the signed URL
   const response = await fetch(signedUrl);
   if (!response.ok) {
+    console.log(
+      `Failed to fetch PDF from signed URL, status: ${response.status}`
+    );
     throw new Error(
       `Failed to fetch PDF from signed URL, status: ${response.status}`
     );
@@ -80,6 +83,7 @@ async function sendPdfFromSignedUrl(
   );
 
   if (!uploadResponseCleaner.ok) {
+    console.log(`Error uploading PDF! status: ${uploadResponseCleaner.status}`);
     throw new Error(
       `Error uploading PDF! status: ${uploadResponseCleaner.status}`
     );
@@ -109,6 +113,7 @@ async function sendPdfFromSignedUrl(
   );
 
   if (!uploadResponseFiller.ok) {
+    console.log(`Error uploading PDF! status: ${uploadResponseFiller.status}`);
     throw new Error(
       `Error uploading PDF! status: ${uploadResponseFiller.status}`
     );
