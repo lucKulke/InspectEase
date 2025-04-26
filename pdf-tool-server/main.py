@@ -1,16 +1,18 @@
 from fastapi import FastAPI, File, UploadFile, Form
-from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, RootModel
+import json
+import io
+from pydantic import BaseModel
 import shutil
 import uuid
 import os
-from lib.annotations import Reader, Writer, FormData
+from lib.annotations import Reader
 from pypdf import PdfReader, PdfWriter
 from typing import Dict, List# Replace 'your_module' with actual module name
 
 from fastapi.responses import StreamingResponse
 from io import BytesIO
+from reportlab.pdfgen import canvas
 
 
 app = FastAPI()
@@ -81,29 +83,68 @@ async def remove_annotations(pdf: UploadFile = File(...)):
     )
 
 
+class Position(BaseModel):
+    x1: float
+    y1: float
+    x2: float
+    y2: float
 
-# class AnnotationItem(BaseModel):
-#     name: str
-#     data: dict  # Should match FormData expectations
+class Location(BaseModel):
+    page: int
+    content: str
+    position: Position
 
+class LocationsWrapper(BaseModel):
+    locations: List[Location]
 
-# @app.post("/annotate-pdf/")
-# async def annotate_pdf(
-#     pdf: UploadFile = File(...),
-#     annotation_json: str = Form(...)
-# ):
-#     input_pdf_path = f"{UPLOAD_DIR}/{uuid.uuid4()}.pdf"
+@app.post("/fill-pdf/")
+async def fill_pdf(file: UploadFile = File(...), locations: str = Form(...)):
+    # Parse the incoming JSON string
+    parsed_locations = LocationsWrapper(**json.loads(locations))
 
-#     with open(input_pdf_path, "wb") as buffer:
-#         shutil.copyfileobj(pdf.file, buffer)
+    file_content = await file.read()
+    input_pdf = PdfReader(io.BytesIO(file_content))
+    output_pdf = PdfWriter()
 
-#     # Deserialize form data for the writer
-#     annotation_dict = json.loads(annotation_json)
-#     form_data = FormData(annotation_dict)
+    # Prepare a per-page list of overlays
+    overlays = {}
 
-#     output_pdf_path = f"{ANNOTATED_DIR}/annotated_{uuid.uuid4()}.pdf"
-#     writer = Writer(output_pdf_path=output_pdf_path, base_pdf_path=input_pdf_path)
-#     writer.write_to_pdf(form_data)
+    for loc in parsed_locations.locations:
+        if loc.page not in overlays:
+            overlays[loc.page] = []
+        overlays[loc.page].append(loc)
+    
+    
 
-#     os.remove(input_pdf_path)
-#     return FileResponse(output_pdf_path, media_type='application/pdf', filename="annotated.pdf")
+    for page_number, page in enumerate(input_pdf.pages):
+        packet = io.BytesIO()
+
+        page_width = float(page.mediabox.width)
+        page_height = float(page.mediabox.height)
+
+        can = canvas.Canvas(packet, pagesize=(page_width, page_height))
+
+        has_overlay = False
+
+        if page_number in overlays:
+            for loc in overlays[page_number]:
+                pos = loc.position
+                x = pos.x1
+                y = pos.y1
+                can.drawString(x, y, loc.content)
+                has_overlay = True
+
+        can.save()
+        packet.seek(0)
+
+        if has_overlay:
+            new_pdf = PdfReader(packet)
+            page.merge_page(new_pdf.pages[0])
+
+        output_pdf.add_page(page)
+
+    output_stream = io.BytesIO()
+    output_pdf.write(output_stream)
+    output_stream.seek(0)
+
+    return StreamingResponse(output_stream, media_type="application/pdf", headers={"Content-Disposition": "attachment;filename=filled.pdf"})
