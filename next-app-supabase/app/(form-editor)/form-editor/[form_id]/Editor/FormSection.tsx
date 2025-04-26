@@ -6,6 +6,7 @@ import { ErrorHandler } from "@/components/ErrorHandler";
 import { error } from "console";
 import { UUID } from "crypto";
 import {
+  IInspectableObjectInspectionFormAnnotationResponse,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionWithData,
   IStringExtractionTrainingResponse,
@@ -31,6 +32,7 @@ interface MainFormSectionProps {
     >
   >;
   trainingList: IStringExtractionTrainingResponse[] | undefined;
+  annotations: IInspectableObjectInspectionFormAnnotationResponse[];
 }
 
 export const FormSection = ({
@@ -40,6 +42,7 @@ export const FormSection = ({
   subSectionsData,
   setSubSectionsData,
   trainingList,
+  annotations,
 }: MainFormSectionProps) => {
   const [width, setWidth] = useState(400); // Initial sidebar width
   const isResizing = useRef(false);
@@ -100,6 +103,7 @@ export const FormSection = ({
         subSectionsData={subSectionsData}
         setSubSectionsData={setSubSectionsData}
         trainingList={trainingList}
+        annotations={annotations}
       ></MainContent>
     </div>
   );

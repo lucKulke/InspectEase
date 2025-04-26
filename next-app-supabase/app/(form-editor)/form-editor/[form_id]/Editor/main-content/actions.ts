@@ -16,18 +16,7 @@ import { DBActionsFormBuilderUpdate } from "@/lib/database/form-builder/formBuil
 import { createClient } from "@/utils/supabase/server";
 import { UUID } from "crypto";
 
-export async function updateCheckboxesOrderNumber(
-  checkboxes: IFormCheckboxResponse[]
-) {
-  const supabase = await createClient("form_builder");
-  const dbActions = new DBActionsFormBuilderUpdate(supabase);
-
-  return await dbActions.updateFormCheckboxes(checkboxes);
-}
-
-export async function updateCheckboxesPrioOrderNumber(
-  checkboxes: IFormCheckboxResponse[]
-) {
+export async function upsertCheckboxes(checkboxes: IFormCheckboxResponse[]) {
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderUpdate(supabase);
 

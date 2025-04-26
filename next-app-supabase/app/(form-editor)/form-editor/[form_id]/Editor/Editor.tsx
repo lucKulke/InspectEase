@@ -2,6 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  IInspectableObjectInspectionFormAnnotationResponse,
   IInspectableObjectInspectionFormMainSectionWithSubSection,
   IInspectableObjectInspectionFormSubSectionWithData,
   IStringExtractionTrainingResponse,
@@ -27,6 +28,7 @@ interface EditorProps {
     IInspectableObjectInspectionFormSubSectionWithData
   >;
   trainingList: IStringExtractionTrainingResponse[] | undefined;
+  annotations: IInspectableObjectInspectionFormAnnotationResponse[];
 }
 
 export const Editor = ({
@@ -35,6 +37,7 @@ export const Editor = ({
   formId,
   subSectionData,
   trainingList,
+  annotations,
 }: EditorProps) => {
   const { showNotification } = useNotification();
   const [activeTab, setActiveTab] = useState<string>("Editor");
@@ -93,6 +96,7 @@ export const Editor = ({
           subSectionsData={subSectionsData}
           setSubSectionsData={setSubSectionsData}
           trainingList={trainingList}
+          annotations={annotations}
         ></FormSection>
       ) : (
         <div className="h-screen p-4">
