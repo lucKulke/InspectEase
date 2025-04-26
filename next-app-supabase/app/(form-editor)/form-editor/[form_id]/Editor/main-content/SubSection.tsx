@@ -430,7 +430,7 @@ export const SubSection = ({
                               </Select>
                             </div>
                           </Card>
-                          {!field.training_id ? (
+                          {!field.training_id || !field.annotation_id ? (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger>
@@ -438,7 +438,8 @@ export const SubSection = ({
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>
-                                    No string extraction training selected...
+                                    No string extraction training or id
+                                    selected...
                                   </p>
                                 </TooltipContent>
                               </Tooltip>

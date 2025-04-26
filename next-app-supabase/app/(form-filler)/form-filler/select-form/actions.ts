@@ -266,6 +266,7 @@ export async function createFillableInspectionForm(data: {
                 training_id: textInput.training_id,
                 label: textInput.label,
                 order_number: textInput.order_number,
+                annotation_id: textInput.annotation_id,
               });
             });
           }

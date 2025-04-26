@@ -97,7 +97,7 @@ class Location(BaseModel):
 class LocationsWrapper(BaseModel):
     locations: List[Location]
 
-@app.post("/fill-pdf/")
+@app.post("/fill-pdf")
 async def fill_pdf(file: UploadFile = File(...), locations: str = Form(...)):
     # Parse the incoming JSON string
     parsed_locations = LocationsWrapper(**json.loads(locations))

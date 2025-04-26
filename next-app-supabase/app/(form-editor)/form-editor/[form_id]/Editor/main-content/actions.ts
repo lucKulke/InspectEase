@@ -32,7 +32,7 @@ export async function updateCheckboxTaskOrder(
   return await dbActions.updateFormCheckboxTasks(checkboxTasks);
 }
 
-export async function updateTextInputFieldOrder(
+export async function upsertTextInputFields(
   textInputFields: IFormTextInputFieldResponse[]
 ) {
   const supabase = await createClient("form_builder");

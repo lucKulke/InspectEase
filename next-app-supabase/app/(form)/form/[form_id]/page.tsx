@@ -57,6 +57,7 @@ export default async function FormPage({
             created_at: mainCheckbox.created_at,
             checked: mainCheckbox.checked,
             prio_number: mainCheckbox.prio_number,
+            annotation_id: mainCheckbox.annotation_id,
           });
 
           mainCheckbox.sub_checkbox.forEach((subCheckbox) => {

@@ -71,6 +71,11 @@ export const MainContent = ({
           }
         });
       });
+      subSectionsData[sub.id].form_text_input_field.forEach((textInput) => {
+        if (textInput.annotation_id !== null) {
+          allreadyAssignedAnnoationsTemp.push(textInput.annotation_id);
+        }
+      });
     });
   });
 
@@ -237,6 +242,9 @@ export const MainContent = ({
           subSectionsData={subSectionsData}
           subSectionId={selectedSubSectionId}
           trainingList={trainingList}
+          annotations={annotations}
+          allreadyAssignedAnnoations={allreadyAssignedAnnoations}
+          setAllreadyAssignedAnnoations={setAllreadyAssignedAnnoations}
         />
       )}
     </div>

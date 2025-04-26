@@ -25,10 +25,10 @@ export class DBActionsBucket {
     return { bucketResponse: data, bucketError: error };
   }
 
-  async downloadDocumentViaSignedUrl(fileId: UUID) {
+  async downloadDocumentViaSignedUrl(docId: UUID) {
     const { data, error } = await this.supabase.storage
       .from("documents")
-      .createSignedUrl("private/" + fileId, 86400);
+      .createSignedUrl("private/" + docId, 86400);
 
     console.log("storage download document", data?.signedUrl);
 
