@@ -63,17 +63,28 @@ async function usePDFAPI(signedUrl: string, locations: LocationsWrapper) {
 
   console.log("after creating blob");
 
-  // Step 2: Create a File object from the blob
-  const baseFile = new File([blob], "uploaded.pdf", {
-    type: "application/pdf",
-  });
+  const arrayBuffer = await blob.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
 
-  console.log("after creating file");
-  // Step 3: clean up pdf
+  // Prepare the FormData manually
   const formCleanerData = new FormData();
-  formCleanerData.append("pdf", baseFile);
+  formCleanerData.append(
+    "pdf",
+    new Blob([buffer], { type: "application/pdf" }),
+    "uploaded.pdf"
+  );
 
-  console.log("all fine after preparing data");
+  // Step 2: Create a File object from the blob
+  // const baseFile = new File([blob], "uploaded.pdf", {
+  //   type: "application/pdf",
+  // });
+
+  // console.log("after creating file");
+  // // Step 3: clean up pdf
+  // const formCleanerData = new FormData();
+  // formCleanerData.append("pdf", baseFile);
+
+  // console.log("all fine after preparing data");
 
   const uploadResponseCleaner = await fetch(`${apiUrl}/remove-annotations`, {
     method: "POST",
@@ -93,16 +104,26 @@ async function usePDFAPI(signedUrl: string, locations: LocationsWrapper) {
 
   const resultBlobCleaner = await uploadResponseCleaner.blob();
   console.log("all fine after cleaning document");
+  const arrayBufferTest = await resultBlobCleaner.arrayBuffer();
+  const bufferTest = Buffer.from(arrayBufferTest);
 
-  // Step 4: Create a File object from the blob
-  const cleanedFile = new File([resultBlobCleaner], "uploaded.pdf", {
-    type: "application/pdf",
-  });
-
-  // Step 5: Prepare the form data
+  // Prepare the FormData manually
   const formFillerData = new FormData();
-  formFillerData.append("file", cleanedFile);
+  formCleanerData.append(
+    "pdf",
+    new Blob([bufferTest], { type: "application/pdf" }),
+    "uploaded.pdf"
+  );
   formFillerData.append("locations", JSON.stringify(locations));
+  // Step 4: Create a File object from the blob
+  // const cleanedFile = new File([resultBlobCleaner], "uploaded.pdf", {
+  //   type: "application/pdf",
+  // });
+
+  // // Step 5: Prepare the form data
+  // const formFillerData = new FormData();
+  // formFillerData.append("file", cleanedFile);
+  // formFillerData.append("locations", JSON.stringify(locations));
 
   // Step 6: fill out pdf
   const uploadResponseFiller = await fetch(`${apiUrl}/fill-pdf`, {
