@@ -69,6 +69,7 @@ async function usePDFAPI(signedUrl: string, locations: LocationsWrapper) {
   const formCleanerData = new FormData();
   formCleanerData.append("pdf", baseFile);
 
+  console.log("all fine after preparing data");
   const uploadResponseCleaner = await fetch(
     `${process.env.PDF_TOOL_URL}/remove-annotations`,
     {
@@ -79,6 +80,7 @@ async function usePDFAPI(signedUrl: string, locations: LocationsWrapper) {
       body: formCleanerData,
     }
   );
+  console.log("all fine after cleaner ");
 
   if (!uploadResponseCleaner.ok) {
     console.log(`Error uploading PDF! status: ${uploadResponseCleaner.status}`);
