@@ -1,0 +1,50 @@
+{
+  "Electric": [
+    {
+      "Battery": {
+        "selectionGroups": [
+          {
+            "checkboxes": [
+              { "label": "good", "id": 312124 },
+              { "label": "not good", "id": 382124 },
+              { "label": "fixed", "id": 1112323 }
+            ],
+            "tasks": [
+              { "description": "check voltage", "id": 2344666 },
+              { "description": "check battery fluid", "id": 23446699 }
+            ]
+          }
+        ],
+        "textInputFields": [{ "label": "voltage", "trainingsId": 2332334 }]
+      },
+      "Rearlightsystem": {
+        "selectionGroups": [
+          {
+            "checkboxes": [
+              { "label": "good", "id": 312124 },
+              { "label": "not good", "id": 382124 },
+              { "label": "fixed", "id": 1112323 }
+            ],
+            "tasks": [
+              { "description": "check break light", "id": 2344666 },
+              { "description": "check rear indicators", "id": 23446699 }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "Wheels": []
+}
+
+
+{
+  "Elektric": [{
+    "id": 1, "name": "Battery"
+  }, {
+    "id": 2, "name": "Rearlight system"
+  }], 
+  "Wheels": [{
+    "id": 3, "name": "Airpressure"
+  }]
+}

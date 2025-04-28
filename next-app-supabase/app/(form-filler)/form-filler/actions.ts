@@ -59,7 +59,6 @@ async function usePDFAPI(signedUrl: string, locations: LocationsWrapper) {
 
   const blob = await response.blob();
 
-  // ⚡ Replace File constructor here
   const arrayBuffer = await blob.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
   const cleanedBlob = new Blob([buffer], { type: "application/pdf" });
@@ -88,7 +87,6 @@ async function usePDFAPI(signedUrl: string, locations: LocationsWrapper) {
 
   const resultBlobCleaner = await uploadResponseCleaner.blob();
 
-  // same fix for the second upload:
   const arrayBufferCleaner = await resultBlobCleaner.arrayBuffer();
   const bufferCleaner = Buffer.from(arrayBufferCleaner);
   const cleanedFile = new Blob([bufferCleaner], { type: "application/pdf" });
