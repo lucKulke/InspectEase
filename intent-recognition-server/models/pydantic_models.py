@@ -4,33 +4,65 @@ from pydantic import BaseModel, RootModel
 
 
 
-class Checkbox(BaseModel):
-    label: str
+
+class Example(BaseModel):
+    user: str
+    ai: str
+
+
+class TrainingsDataItem(BaseModel):
     id: int
+    prompt: str
+    examples: List[Example]
 
-class Task(BaseModel):
-    description: str
+
+class TextInput(BaseModel):
     id: int
-
-class SelectionGroup(BaseModel):
-    checkboxes: List[Checkbox]
-    tasks: List[Task]
-
-class TextInputField(BaseModel):
     label: str
     trainingsId: int
 
+
+class Checkbox(BaseModel):
+    id: int
+    label: str
+    checked: bool
+
+
+class Task(BaseModel):
+    id: int
+    description: str
+    checkboxes: List[Checkbox]
+
+
+class CheckboxGroupWithTasks(BaseModel):
+    id: int
+    label: str
+    tasks: List[Task]
+
+
+class CheckboxGroupWithoutTasks(BaseModel):
+    id: int
+    label: str
+    checkboxes: List[Checkbox]
+
+
 class SubSection(BaseModel):
-    selectionGroups: List[SelectionGroup]
-    textInputFields: Optional[List[TextInputField]] = None
+    id: int
+    label: str
+    textInput: List[TextInput]
+    checkboxGroupsWithTasks: List[CheckboxGroupWithTasks]
+    checkboxGroupsWithoutTasks: List[CheckboxGroupWithoutTasks]
 
-# SectionGroup is a dict: subsection name -> SubSection
-SectionGroup = Dict[str, SubSection]
 
-# The full form structure is a dict: main section name -> list of SectionGroups
-class FormStructure(RootModel):
-    root: Dict[str, List[SectionGroup]]
+class MainSection(BaseModel):
+    id: int
+    label: str
+    subSections: List[SubSection]
 
+
+class RootData(BaseModel):
+    trainingsData: List[TrainingsDataItem]
+    formData: List[MainSection]
 
 
 class Gpt(BaseModel):
@@ -38,11 +70,8 @@ class Gpt(BaseModel):
     token: str
     temp: int
 
-class Anthropic(BaseModel):
-    model: str
-    token: str
 
 class UserInput(BaseModel):
-    user_sentence: str
-    llm: Gpt | Anthropic
-    form: FormStructure
+    userSentence: str
+    llm: Gpt 
+    form: RootData

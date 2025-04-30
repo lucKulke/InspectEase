@@ -216,6 +216,12 @@ export interface IStringExtractionTrainingResponse
   created_at: Date | string;
   prompt: string | null;
 }
+
+export interface IStringExtractionTrainingWithExamplesResponse
+  extends IStringExtractionTrainingResponse {
+  string_extraction_training_example: IStringExtractionTrainingExampleResponse[];
+}
+
 export interface IStringExtractionTrainingExampleInsert {
   training_id: UUID;
   input: string;

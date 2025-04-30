@@ -4,16 +4,14 @@ from langchain_openai import ChatOpenAI
 from prompt_templates.templates import multi_intent_classifier_prompt, find_sub_category_template
 from langchain.chains import LLMChain
 import os
-from models.pydantic_models import UserInput, Gpt, Anthropic
+from models.pydantic_models import UserInput, Gpt, Anthropic, RootData
 from langchain_core.language_models.base import BaseLanguageModel
 from langchain.schema.output_parser import StrOutputParser
 import dotenv
 import json
 
-dotenv.load_dotenv()
 
 app = FastAPI()
-
 
 
 
@@ -25,41 +23,18 @@ def getModelWrapper(user_input: UserInput) -> BaseLanguageModel:
         temperature=user_input.llm.temp
     )
    
-def getSubcategorys(user_input: UserInput) -> dict:
-    pass
-    # response = {}
-    # for maincategory, subcategorys in user_input.form.items():
-    #     print(f"maincategory: {maincategory}")
-        
 
-    #     for subcategory in subcategorys: 
-            
-             # list inside each section
-            # for system, system_data in subcategory.items():  # system like Battery, Rearlightsystem
-            #     print(f"  System: {system}")
-
-            #     # Handle 'selectionGroups' if present
-            #     selection_groups = system_data.get('selectionGroups', [])
-            #     for group in selection_groups:
-            #         # Checkboxes
-            #         for checkbox in group.get('checkboxes', []):
-            #             print(f"    Checkbox: {checkbox['label']} (id: {checkbox['id']})")
-
-            #         # Tasks
-            #         for task in group.get('tasks', []):
-            #             print(f"    Task: {task['description']} (id: {task['id']})")
-
-            #     # Handle 'textInputFields' if present
-            #     text_inputs = system_data.get('textInputFields', [])
-            #     for field in text_inputs:
-            #         print(f"    Text Input Field: {field['label']} (trainingsId: {field['trainingsId']})")
-
+def getSubSections(form: RootData):
+    for main_section in  form.formData:
+        for sub_section in main_section.subSections:
+            print(sub_section.label, flush=True)
 
 
 # Intent endpoint
 @app.post("/intent")
 async def get_intent(user_input: UserInput):
     llm = getModelWrapper(user_input)
+    getSubSections(user_input.form)
 
     #define chains
     multi_intent_chain = multi_intent_classifier_prompt | llm | StrOutputParser()
@@ -72,5 +47,5 @@ async def get_intent(user_input: UserInput):
     #     print(subCategory)
 
 
-    print(json.loads(response)[0], flush=True)
+    print(json.loads(response), flush=True)
     return {"intent": response}

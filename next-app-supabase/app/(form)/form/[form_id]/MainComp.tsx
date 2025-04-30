@@ -36,6 +36,7 @@ import { Separator } from "@/components/ui/separator";
 import { constructNow } from "date-fns";
 import { IFormCheckboxResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { useFormActivity } from "@/hooks/useFormActivity";
+import { AIInteractionBar } from "./AIInteractionBar";
 //import { TextInputField } from "./TextInputField";
 
 interface MainCompProps {
@@ -668,6 +669,7 @@ export const MainComp = ({
           </li>
         ))}
       </ul>
+      <AIInteractionBar formId={formData.id}></AIInteractionBar>
     </div>
   );
 };
