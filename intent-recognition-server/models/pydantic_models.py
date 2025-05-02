@@ -2,52 +2,49 @@ from typing import List, Dict, Optional
 from pydantic import BaseModel, RootModel
 
 
-
-
-
 class Example(BaseModel):
     user: str
     ai: str
 
 
 class TrainingsDataItem(BaseModel):
-    id: int
+    id: str
     prompt: str
     examples: List[Example]
 
 
 class TextInput(BaseModel):
-    id: int
+    id: str
     label: str
-    trainingsId: int
+    trainingsId: str
 
 
 class Checkbox(BaseModel):
-    id: int
+    id: str
     label: str
     checked: bool
 
 
 class Task(BaseModel):
-    id: int
+    id: str
     description: str
     checkboxes: List[Checkbox]
 
 
 class CheckboxGroupWithTasks(BaseModel):
-    id: int
+    id: str
     label: str
     tasks: List[Task]
 
 
 class CheckboxGroupWithoutTasks(BaseModel):
-    id: int
+    id: str
     label: str
     checkboxes: List[Checkbox]
 
 
 class SubSection(BaseModel):
-    id: int
+    id: str
     label: str
     textInput: List[TextInput]
     checkboxGroupsWithTasks: List[CheckboxGroupWithTasks]
@@ -55,7 +52,7 @@ class SubSection(BaseModel):
 
 
 class MainSection(BaseModel):
-    id: int
+    id: str
     label: str
     subSections: List[SubSection]
 
@@ -73,5 +70,5 @@ class Gpt(BaseModel):
 
 class UserInput(BaseModel):
     userSentence: str
-    llm: Gpt 
+    llm: Gpt
     form: RootData

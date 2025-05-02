@@ -284,11 +284,20 @@ async function apiCall(data: RootData, userInput: string): Promise<any> {
   const supabase = await createClient();
   const { data: user } = await supabase.auth.getUser();
   const dbActions = new DBActionsPublicFetch(supabase);
+  if (!user.user) return false;
 
-  dbActions.fetchUserProfile(user.user.id);
+  const { userProfile, userProfileError } = await dbActions.fetchUserProfile(
+    user.user.id as UUID
+  );
+
   const payload: APICall = {
     userSentence: userInput,
-    llm: { model: "gpt-3.5-turbo", token: "" },
+    llm: {
+      model: "gpt-3.5-turbo",
+      token: userProfile?.openai_token ?? "",
+      temp: 0,
+    },
+    form: data,
   };
   try {
     const response = await fetch(
@@ -298,7 +307,7 @@ async function apiCall(data: RootData, userInput: string): Promise<any> {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       }
     );
 
@@ -317,4 +326,8 @@ export async function requestIntentRecognition(
   userInput: string
 ) {
   const { formData, error } = await getFormData(formId);
+
+  if (formData) {
+    apiCall(formData, userInput);
+  }
 }
