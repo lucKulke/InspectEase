@@ -4,6 +4,8 @@ from langchain_openai import ChatOpenAI
 from prompt_templates.templates import (
     multi_intent_classifier_prompt,
     find_sub_category_template,
+    find_task_template,
+    modify_checkboxes_template,
 )
 from langchain.chains import LLMChain
 import os
@@ -50,6 +52,8 @@ async def get_intent(user_input: UserInput):
     # define chains
     multi_intent_chain = multi_intent_classifier_prompt | llm | StrOutputParser()
     sub_section_chain = find_sub_category_template | llm | StrOutputParser()
+    task_chain = find_task_template | llm | StrOutputParser()
+    checkbox_chain = modify_checkboxes_template | llm | StrOutputParser()
 
     response = multi_intent_chain.invoke({"sentence": user_sentence})
 
@@ -57,9 +61,36 @@ async def get_intent(user_input: UserInput):
         subCategory = sub_section_chain.invoke(
             {"sentence": user_sentence, "subcategorys": getSubSections(user_input.form)}
         )
-        sub_section = getSubSectionData(sub_section_id=subCategory)
+        sub_section = getSubSectionData(
+            sub_section_id=subCategory, form=user_input.form
+        )
 
-        sub_section.checkboxGroupsWithoutTasks
+        temp_tasks = {}
+        tasks = {}
+        for group in sub_section.checkboxGroupsWithTasks:
+            for task in group.tasks:
+                tasks[task.description] = []
+                for checkbox in task.checkboxes:
+                    tasks[task.description].append(
+                        {
+                            "id": checkbox.id,
+                            "label": checkbox.label,
+                            "checked": checkbox.checked,
+                        }
+                    )
+
+        resp = checkbox_chain.invoke({"tasks": tasks, "sentence": user_sentence})
+
+        print(resp, flush=True)
+
+        # temp_checkboxes = {}
+        # checkboxes = {}
+        # for checkbox in temp_tasks[taskId].checkboxes:
+        #     checkboxes[checkbox.id] = {
+        #         "label": checkbox.label,
+        #         "checked": checkbox.checked,
+        #     }
+        #     temp_checkboxes[checkbox.id] = checkbox
 
     # print(json.loads(response), flush=True)
     return {"intent": True}
