@@ -30,6 +30,7 @@ import {
   updateSubCheckboxValue,
   updateTextInputFieldValue,
   upsertMainCheckboxesValues,
+  requestIntentRecognition,
 } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { Separator } from "@/components/ui/separator";
@@ -37,6 +38,7 @@ import { constructNow } from "date-fns";
 import { IFormCheckboxResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { useFormActivity } from "@/hooks/useFormActivity";
 import { AIInteractionBar } from "./AIInteractionBar";
+import { get } from "http";
 //import { TextInputField } from "./TextInputField";
 
 interface MainCompProps {
@@ -395,6 +397,182 @@ export const MainComp = ({
     setFillableTextInputFields(copy);
   };
 
+  const handeAiCheckSubCheckbox = async (
+    mainCheckboxId: UUID,
+    checkboxId: UUID,
+    selectionGroup: ICheckboxGroupData,
+    taskId: UUID,
+    value: true
+  ) => {
+    let newValue: boolean = false;
+    let unCheck: ISubCheckboxResponse[] = [];
+    const copy = { ...fillableSubCheckboxes };
+    copy[mainCheckboxId] = copy[mainCheckboxId].map((subCheckbox) => {
+      if (subCheckbox.id === checkboxId) {
+        console.log(selectionGroup.checkboxes_selected_together);
+        console.log(
+          selectionGroup.checkboxes_selected_together?.includes(mainCheckboxId)
+        );
+
+        if (subCheckbox.checked) {
+          subCheckbox.checked = value;
+          newValue = value;
+        } else {
+          selectionGroup.main_checkbox.forEach((mainCheckbox) => {
+            const row = copy[mainCheckbox.id].filter(
+              (subCheck) => subCheck.task_id === taskId
+            );
+
+            const subCheck = row.filter(
+              (subCheck) => subCheck.id !== subCheckbox.id
+            )[0];
+            subCheck ? unCheck.push(subCheck) : null;
+            subCheckbox.checked = value;
+            newValue = value;
+          });
+        }
+      }
+      return subCheckbox;
+    });
+
+    console.log("uncheck list", unCheck);
+
+    const checkboxesThatNeedToBeUnchecked: ISubCheckboxResponse[] = [];
+
+    if (
+      !selectionGroup.checkboxes_selected_together?.includes(mainCheckboxId)
+    ) {
+      unCheck.forEach((subCheckbox) => {
+        let mainCheckbox: string | null = null;
+        for (const [key, value] of Object.entries(copy)) {
+          value.forEach((sub) => {
+            if (sub.id === subCheckbox.id) {
+              mainCheckbox = key;
+            }
+          });
+        }
+
+        if (mainCheckbox) {
+          copy[mainCheckbox].map((sub) => {
+            if (sub.id === subCheckbox.id) {
+              sub.checked = false;
+              checkboxesThatNeedToBeUnchecked.push(sub);
+            }
+            return sub;
+          });
+        }
+      });
+    } else {
+      unCheck.forEach((subCheckbox) => {
+        let mainCheckbox: string | null = null;
+        for (const [key, value] of Object.entries(copy)) {
+          value.forEach((sub) => {
+            if (sub.id === subCheckbox.id) {
+              mainCheckbox = key;
+            }
+          });
+        }
+        if (
+          mainCheckbox &&
+          !selectionGroup.checkboxes_selected_together?.includes(mainCheckbox)
+        ) {
+          copy[mainCheckbox].map((sub) => {
+            if (sub.id === subCheckbox.id) {
+              sub.checked = false;
+              checkboxesThatNeedToBeUnchecked.push(sub);
+            }
+            return sub;
+          });
+        }
+      });
+    }
+
+    setFillableSubCheckboxes(copy);
+
+    handleAutoCheckMainCheckbox(selectionGroup);
+
+    await updateSubCheckboxValue(formData.id, checkboxId, newValue);
+    await upsertSubCheckboxesValues(checkboxesThatNeedToBeUnchecked);
+  };
+
+  const getMainCheckboxIdAndSelectionGroupAndTaskIdbasedOnCheckboxId = (
+    checkboxId: string
+  ): {
+    mainCheckboxId: UUID;
+    selectionGroup: ICheckboxGroupData;
+    taskId: UUID;
+  } | null => {
+    let data = null;
+    formData.main_section.forEach((mainSection) => {
+      mainSection.sub_section.forEach((subSection) => {
+        subSection.checkbox_group.forEach((group) => {
+          group.main_checkbox.forEach((mainCheckbox) => {
+            mainCheckbox.sub_checkbox.forEach((subCheckbox) => {
+              console.log(subCheckbox.id, checkboxId);
+              if (subCheckbox.id == checkboxId) {
+                data = {
+                  mainCheckboxId: mainCheckbox.id,
+                  selectionGroup: group,
+                  taskId: subCheckbox.task_id,
+                };
+              }
+            });
+          });
+        });
+      });
+    });
+
+    return data;
+  };
+
+  const processAiResponse = async (userInput: string) => {
+    const response = await requestIntentRecognition(formData.id, userInput);
+    console.log("response", response);
+
+    if (response) {
+      if (response.checkboxes.length > 0) {
+        for (let index = 0; index < response.checkboxes.length; index++) {
+          const groupName = response.checkboxes[index];
+          console.log("groupName", groupName);
+          for (
+            let index = 0;
+            index < Object.values(groupName).length;
+            index++
+          ) {
+            const checkboxes = Object.values(groupName)[index];
+            for (let index = 0; index < checkboxes.length; index++) {
+              const checkbox = checkboxes[index];
+              console.log("checkbox", checkbox);
+              const data =
+                getMainCheckboxIdAndSelectionGroupAndTaskIdbasedOnCheckboxId(
+                  checkbox.id
+                );
+              console.log("data", data);
+              if (data) {
+                console.log("set checkboxes", data);
+                if (checkbox.checked)
+                  await handeAiCheckSubCheckbox(
+                    data.mainCheckboxId,
+                    checkbox.id as UUID,
+                    data.selectionGroup,
+                    data.taskId,
+                    checkbox.checked
+                  );
+              }
+            }
+          }
+        }
+        // for (const [groupName, checkboxes] of Object.entries(
+        //   response.checkboxes
+        // )) {
+        //   console.log(`Group: ${groupName} ${checkboxes}`);
+        // }
+      }
+      if (response.textInputFields.length > 0) {
+      }
+    }
+  };
+
   function sortMainSections(a: IMainSectionResponse, b: IMainSectionResponse) {
     if (a.order_number < b.order_number) return -1;
 
@@ -439,7 +617,7 @@ export const MainComp = ({
   }
 
   return (
-    <div>
+    <div className="mb-12">
       <ul className="space-y-2">
         {formData.main_section.sort(sortMainSections).map((mainSection) => (
           <li key={mainSection.id}>
@@ -669,7 +847,10 @@ export const MainComp = ({
           </li>
         ))}
       </ul>
-      <AIInteractionBar formId={formData.id}></AIInteractionBar>
+      <AIInteractionBar
+        processAiResposne={processAiResponse}
+        formId={formData.id}
+      ></AIInteractionBar>
     </div>
   );
 };

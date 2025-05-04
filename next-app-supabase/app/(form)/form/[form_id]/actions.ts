@@ -144,6 +144,25 @@ interface APICall {
   form: RootData;
 }
 
+interface TextInputField {
+  id: string;
+  value: string;
+}
+
+interface CheckboxGroup {
+  [groupName: string]: CheckboxItem[];
+}
+
+interface CheckboxItem {
+  id: string;
+  label: string;
+  checked: boolean;
+}
+interface ApiResponse {
+  textInputFields: TextInputField[];
+  checkboxes: CheckboxGroup[];
+}
+
 async function getStringExtractionTrainings(trainingId: UUID) {
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderFetch(supabase);
@@ -280,7 +299,10 @@ async function getFormData(
   return { formData: form, error: null };
 }
 
-async function apiCall(data: RootData, userInput: string): Promise<any> {
+async function apiCall(
+  data: RootData,
+  userInput: string
+): Promise<ApiResponse | false> {
   const supabase = await createClient();
   const { data: user } = await supabase.auth.getUser();
   const dbActions = new DBActionsPublicFetch(supabase);
@@ -321,13 +343,34 @@ async function apiCall(data: RootData, userInput: string): Promise<any> {
     throw error;
   }
 }
+
+function parseApiResponse(raw: any): ApiResponse {
+  return {
+    textInputFields: raw.textInputFields,
+    checkboxes: raw.checkboxes.map((group: any) => {
+      const key = Object.keys(group)[0];
+      return {
+        [key]: group[key].map((item: any) => {
+          if (item.checked.constructor === String) {
+            return { ...item, checked: item.checked === "True" };
+          } else {
+            return { ...item, checked: item.checked };
+          }
+        }),
+      };
+    }),
+  };
+}
 export async function requestIntentRecognition(
   formId: UUID,
   userInput: string
-) {
+): Promise<ApiResponse | false> {
   const { formData, error } = await getFormData(formId);
 
   if (formData) {
-    apiCall(formData, userInput);
+    const response = await apiCall(formData, userInput);
+    return parseApiResponse(response);
+  } else {
+    return false;
   }
 }
