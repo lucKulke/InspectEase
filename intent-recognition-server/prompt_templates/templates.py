@@ -23,6 +23,8 @@ Response: ["checked the front wheel airpressure and its ok", "checked the valves
 Sentence: "ich habe kontrollzelle der batterie repariert und nun ist sie in ordung"
 Response: ["kontrollzelle der batterie repariert und nun ist sie in ordnung"]
 
+Sentence: "Ah ne hab mich geirrt, der ladezustand ist doch nicht in ordnung"
+Response: ["Ah ne hab mich geirrt, der ladezustand ist doch nicht in ordnung"]
 
 Now, classify the following sentence:
 
