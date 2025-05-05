@@ -78,7 +78,7 @@ def getCheckboxesReady(sub_section: SubSection):
                     {
                         "id": checkbox.id,
                         "label": checkbox.label,
-                        "checked": checkbox.checked,
+                        "checked": "True" if checkbox.checked else "False",
                     }
                 )
     for group in sub_section.checkboxGroupsWithoutTasks:
@@ -87,7 +87,7 @@ def getCheckboxesReady(sub_section: SubSection):
             checkboxes[group.label].append({
                         "id": checkbox.id,
                         "label": checkbox.label,
-                        "checked": checkbox.checked,
+                        "checked": "True" if checkbox.checked else "False",
                     })
             
     return checkboxes
@@ -163,15 +163,24 @@ async def get_intent(user_input: UserInput):
             extracted_string = string_extraction_chain.invoke({})
             response["textInputFields"].append({"id": text_input_field ,"value": extracted_string})
         else: 
-
-            checked_checkboxes = json.loads(checkbox_chain.invoke({"checkboxes": checkboxes, "sentence": intent}))
             print()
-            if len(checked_checkboxes.keys()) > 1:
+            print(checkboxes, flush=True)
+            print()
+           
+            raw = checkbox_chain.invoke({"checkboxes": checkboxes, "sentence": intent})
+            print("raw " + raw, flush=True)
+            checked_checkboxes = json.loads(raw)
+            print()
+            if isinstance(checked_checkboxes, list):
+                response["checkboxes"] = response["checkboxes"] + checked_checkboxes
+            elif isinstance(checked_checkboxes, dict):
                 for key in checked_checkboxes:
-                    response["checkboxes"].append({key: checked_checkboxes[key]})
-            else:
-                response["checkboxes"].append(checked_checkboxes)
-            print(checked_checkboxes, flush=True)
+                    response["checkboxes"] = response["checkboxes"] + checked_checkboxes[key]
+                
+            print()
+            print("intent:" + intent + " checkboxes: "+ str(checked_checkboxes), flush=True)
+            #response["checkboxes"] = response["checkboxes"] + checked_checkboxes
+            
             print()
            
             

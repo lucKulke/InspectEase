@@ -149,10 +149,6 @@ interface TextInputField {
   value: string;
 }
 
-interface CheckboxGroup {
-  [groupName: string]: CheckboxItem[];
-}
-
 interface CheckboxItem {
   id: string;
   label: string;
@@ -160,7 +156,7 @@ interface CheckboxItem {
 }
 interface ApiResponse {
   textInputFields: TextInputField[];
-  checkboxes: CheckboxGroup[];
+  checkboxes: CheckboxItem[];
 }
 
 async function getStringExtractionTrainings(trainingId: UUID) {
@@ -315,7 +311,7 @@ async function apiCall(
   const payload: APICall = {
     userSentence: userInput,
     llm: {
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o-mini",
       token: userProfile?.openai_token ?? "",
       temp: 0,
     },
@@ -345,19 +341,12 @@ async function apiCall(
 }
 
 function parseApiResponse(raw: any): ApiResponse {
+  console.log("raw", raw);
   return {
     textInputFields: raw.textInputFields,
-    checkboxes: raw.checkboxes.map((group: any) => {
-      const key = Object.keys(group)[0];
-      return {
-        [key]: group[key].map((item: any) => {
-          if (item.checked.constructor === String) {
-            return { ...item, checked: item.checked === "True" };
-          } else {
-            return { ...item, checked: item.checked };
-          }
-        }),
-      };
+    checkboxes: raw.checkboxes.map((checkbox: any) => {
+      checkbox.checked = checkbox.checked === "True";
+      return checkbox;
     }),
   };
 }
