@@ -1,6 +1,20 @@
 from typing import List, Dict, Optional
 from pydantic import BaseModel, RootModel
 
+class SubSectionLog(BaseModel):
+    label: str
+    checkboxes: List[str]
+    text_input_fields: List[str] 
+
+
+class IntentLog(BaseModel):
+    sentence: str
+    sub_section: SubSectionLog
+    
+
+class Logs(BaseModel):
+    intents: List[IntentLog]
+    error: str | None
 
 class Example(BaseModel):
     user: str
