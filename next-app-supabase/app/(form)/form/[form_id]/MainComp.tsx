@@ -39,6 +39,7 @@ import { IFormCheckboxResponse } from "@/lib/database/form-builder/formBuilderIn
 import { useFormActivity } from "@/hooks/useFormActivity";
 import { AIInteractionBar } from "./AIInteractionBar";
 import { motion, AnimatePresence } from "framer-motion";
+import { v4 as uuid4 } from "uuid";
 //import { TextInputField } from "./TextInputField";
 
 interface MainCompProps {
@@ -77,6 +78,7 @@ export const MainComp = ({
     userId,
     url: sessionAwarenessFeatureUrl,
   });
+  const [aiLogs, setAiLogs] = useState<string[]>([]);
 
   const { showNotification } = useNotification();
   const [fillableSubCheckboxes, setFillableSubCheckboxes] =
@@ -586,7 +588,13 @@ export const MainComp = ({
   };
 
   const processAiResponse = async (userInput: string) => {
-    const response = await requestIntentRecognition(formData.id, userInput);
+    const processId = uuid4();
+    connectToIntentLogs(processId);
+    const response = await requestIntentRecognition(
+      formData.id,
+      userInput,
+      processId
+    );
     console.log("response", response);
 
     if (response) {
@@ -721,6 +729,29 @@ export const MainComp = ({
     return 0;
   }
 
+  const connectToIntentLogs = (uuid: string) => {
+    const ws = new WebSocket(`ws://localhost:8000/intent-logs/ws`);
+
+    ws.onopen = () => {
+      ws.send(uuid); // Send UUID first
+    };
+
+    ws.onmessage = (event) => {
+      if (event.data === "DONE") {
+        ws.close();
+      } else {
+        setAiLogs((prev) => [...prev, event.data.toString()]);
+      }
+    };
+
+    ws.onerror = (err) => {
+      console.error("WebSocket error", err);
+      ws.close();
+    };
+
+    return ws;
+  };
+
   return (
     <div className="mb-12">
       <ul className="space-y-2">
@@ -740,6 +771,11 @@ export const MainComp = ({
                   <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 )}
               </CardHeader>
+              <div>
+                {aiLogs.map((log) => (
+                  <div key={log}>{log}</div>
+                ))}
+              </div>
               <AnimatePresence initial={false}>
                 {selectedMainSections.includes(mainSection.id) && (
                   <motion.div

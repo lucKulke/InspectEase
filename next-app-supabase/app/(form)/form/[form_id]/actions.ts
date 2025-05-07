@@ -297,7 +297,8 @@ async function getFormData(
 
 async function apiCall(
   data: RootData,
-  userInput: string
+  userInput: string,
+  processId: string
 ): Promise<ApiResponse | false> {
   const supabase = await createClient();
   const { data: user } = await supabase.auth.getUser();
@@ -319,7 +320,7 @@ async function apiCall(
   };
   try {
     const response = await fetch(
-      `${process.env.INTENT_RECOGNITION_URL}/intent`,
+      `${process.env.INTENT_RECOGNITION_URL}/intent?uuid=${processId}`,
       {
         method: "POST",
         headers: {
@@ -352,12 +353,13 @@ function parseApiResponse(raw: any): ApiResponse {
 }
 export async function requestIntentRecognition(
   formId: UUID,
-  userInput: string
+  userInput: string,
+  processId: string
 ): Promise<ApiResponse | false> {
   const { formData, error } = await getFormData(formId);
 
   if (formData) {
-    const response = await apiCall(formData, userInput);
+    const response = await apiCall(formData, userInput, processId);
     return parseApiResponse(response);
   } else {
     return false;

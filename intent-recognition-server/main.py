@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
 from prompt_templates.templates import (
@@ -7,7 +7,7 @@ from prompt_templates.templates import (
     determine_if_text_input_field_template,
     modify_checkboxes_template,
 )
-from typing import List
+from typing import Dict, List
 import os
 from models.pydantic_models import UserInput, Gpt, RootData, SubSection, TrainingsDataItem, Logs
 from langchain_core.language_models.base import BaseLanguageModel
@@ -17,18 +17,29 @@ import asyncio
 from utils.helper import getCheckboxesReady, getModelWrapper, getSubSectionData, getSubSections, getTextInputFieldsReady, getTrainingsDataItem, stringExtractionTemplate
 
 
+from asyncio import Queue
+
+
 app = FastAPI()
 
-
+log_queues: Dict[str, Queue] = {}
 
 
 # Intent endpoint
 @app.post("/intent")
-async def get_intent(user_input: UserInput):
+async def get_intent(user_input: UserInput, uuid: str):
+    if uuid not in log_queues:
+        log_queues[uuid] = asyncio.Queue()
+
+    async def emit(message: str):
+        await log_queues[uuid].put(message)
+
+    await emit("Starting intent recognition...")
+    
     llm = getModelWrapper(user_input)
     user_sentence = user_input.userSentence
    
-    response = {"textInputFields": [], "checkboxes": [], "log": {"error": [], "intent":[]}, "success": False}
+    response = {"textInputFields": [], "checkboxes": []}
     # Define chains
     multi_intent_chain = multi_intent_classifier_prompt | llm | StrOutputParser()
     sub_section_chain = find_sub_category_template | llm | StrOutputParser()
@@ -44,7 +55,7 @@ async def get_intent(user_input: UserInput):
         response["log"]["error"].append(f"Error in multi intent classifier: {raw}")
         return response
         
-
+    await emit(f"intents {intents}")
     async def process_intent(intent):
         intent_response = {"textInputFields": [], "checkboxes": []}
 
@@ -99,4 +110,31 @@ async def get_intent(user_input: UserInput):
         response["checkboxes"] += result["checkboxes"]
 
     print(response, flush=True)
+    await emit("Intent recognition complete.")
+    await log_queues[uuid].put("DONE")
     return response
+
+
+
+
+
+@app.websocket("/intent-logs/ws")
+async def intent_logs(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        uuid = await websocket.receive_text()
+
+        if uuid not in log_queues:
+            log_queues[uuid] = asyncio.Queue()
+
+        while True:
+            message = await log_queues[uuid].get()
+            await websocket.send_text(message)
+            if message == "DONE":
+                break
+
+    except WebSocketDisconnect:
+        print(f"WebSocket disconnected for UUID: {uuid}")
+    except Exception as e:
+        await websocket.send_text(f"Error: {str(e)}")
+        await websocket.close()
