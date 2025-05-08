@@ -7,3 +7,4 @@ langchain
 OpenAI
 langchain-community
 langchain-openai
+redis

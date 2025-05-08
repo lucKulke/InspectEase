@@ -19,6 +19,7 @@ import {
   ISubSectionResponse,
   ITaskResponse,
   ITextInputResponse,
+  LogEntry,
 } from "@/lib/database/form-filler/formFillerInterfaces";
 import { UUID } from "crypto";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -40,6 +41,7 @@ import { useFormActivity } from "@/hooks/useFormActivity";
 import { AIInteractionBar } from "./AIInteractionBar";
 import { motion, AnimatePresence } from "framer-motion";
 import { v4 as uuid4 } from "uuid";
+import { LogStream } from "./LogStream";
 //import { TextInputField } from "./TextInputField";
 
 interface MainCompProps {
@@ -78,7 +80,10 @@ export const MainComp = ({
     userId,
     url: sessionAwarenessFeatureUrl,
   });
-  const [aiLogs, setAiLogs] = useState<string[]>([]);
+  const [aiLogs, setAiLogs] = useState<LogEntry[]>([]);
+  const [logsOpen, setLogsOpen] = useState<boolean>(true);
+  const [aiConnectionStatus, setAiConnectionStatus] =
+    useState<string>("not connected");
 
   const { showNotification } = useNotification();
   const [fillableSubCheckboxes, setFillableSubCheckboxes] =
@@ -588,12 +593,11 @@ export const MainComp = ({
   };
 
   const processAiResponse = async (userInput: string) => {
-    const processId = uuid4();
-    connectToIntentLogs(processId);
+    const ws = await connectToIntentLogs(formData.id);
     const response = await requestIntentRecognition(
       formData.id,
       userInput,
-      processId
+      formData.id
     );
     console.log("response", response);
 
@@ -729,24 +733,30 @@ export const MainComp = ({
     return 0;
   }
 
-  const connectToIntentLogs = (uuid: string) => {
+  const connectToIntentLogs = async (uuid: string) => {
+    setAiConnectionStatus("connecting");
     const ws = new WebSocket(`ws://localhost:8000/intent-logs/ws`);
 
     ws.onopen = () => {
       ws.send(uuid); // Send UUID first
+      setAiConnectionStatus("connected");
     };
 
     ws.onmessage = (event) => {
       if (event.data === "DONE") {
         ws.close();
+        setAiConnectionStatus("disconnected");
       } else {
-        setAiLogs((prev) => [...prev, event.data.toString()]);
+        const newLogEntry: LogEntry = JSON.parse(event.data);
+        console.log("get message", event.data.toString());
+        setAiLogs((prev) => [...prev, newLogEntry]);
       }
     };
 
     ws.onerror = (err) => {
       console.error("WebSocket error", err);
       ws.close();
+      setAiConnectionStatus("disconnected");
     };
 
     return ws;
@@ -754,6 +764,13 @@ export const MainComp = ({
 
   return (
     <div className="mb-12">
+      <LogStream
+        logs={aiLogs}
+        setLogs={setAiLogs}
+        connectionStatus={aiConnectionStatus}
+        isOpen={logsOpen}
+        setIsOpen={setLogsOpen}
+      ></LogStream>
       <ul className="space-y-2">
         {formData.main_section.sort(sortMainSections).map((mainSection) => (
           <li key={mainSection.id}>
@@ -771,11 +788,7 @@ export const MainComp = ({
                   <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 )}
               </CardHeader>
-              <div>
-                {aiLogs.map((log) => (
-                  <div key={log}>{log}</div>
-                ))}
-              </div>
+
               <AnimatePresence initial={false}>
                 {selectedMainSections.includes(mainSection.id) && (
                   <motion.div

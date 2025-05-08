@@ -161,3 +161,11 @@ interface IMain {
 export interface IFillableFormPlusFillableFields extends IFillableFormResponse {
   main_section: IMain[];
 }
+
+export interface LogEntry {
+  id: string;
+  intent: string;
+  timestamp: string;
+  message: string;
+  type?: "info" | "warning" | "error" | "success";
+}

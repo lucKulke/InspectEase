@@ -14,27 +14,30 @@ from langchain_core.language_models.base import BaseLanguageModel
 from langchain.schema.output_parser import StrOutputParser
 import json
 import asyncio
-from utils.helper import getCheckboxesReady, getModelWrapper, getSubSectionData, getSubSections, getTextInputFieldsReady, getTrainingsDataItem, stringExtractionTemplate
-
-
-from asyncio import Queue
+from utils.helper import getCheckboxesReady, getModelWrapper, getSubSectionData, getSubSections, getTextInputFieldsReady, getTrainingsDataItem, stringExtractionTemplate, getTextInputFieldLabel
+import redis.asyncio as redis
+from uuid import uuid4
+from datetime import datetime
 
 
 app = FastAPI()
 
-log_queues: Dict[str, Queue] = {}
+# "info" | "warning" | "error" | "success";
+
+redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
+
+
+
+async def emit(uuid: str, intent: str, message: str, type: str = "info" ):
+    now = datetime.now()
+    new_log_entry = {"id": str(uuid4()),"intent": intent, "timestamp": str(now), "message": message, "type": type} 
+    await redis_client.publish(uuid, json.dumps(new_log_entry))
 
 
 # Intent endpoint
 @app.post("/intent")
 async def get_intent(user_input: UserInput, uuid: str):
-    if uuid not in log_queues:
-        log_queues[uuid] = asyncio.Queue()
 
-    async def emit(message: str):
-        await log_queues[uuid].put(message)
-
-    await emit("Starting intent recognition...")
     
     llm = getModelWrapper(user_input)
     user_sentence = user_input.userSentence
@@ -49,13 +52,13 @@ async def get_intent(user_input: UserInput, uuid: str):
     try:
         raw = multi_intent_chain.invoke({"sentence": user_sentence})
         intents = json.loads(raw)
-        response["success"] = True
-        print(intents, flush=True)
+        #await emit(uuid, message=f"successfully extracted {len(intents)} intent{'s' if len(intents) > 1 else ''}: {intents}", type="success")
+
     except:
-        response["log"]["error"].append(f"Error in multi intent classifier: {raw}")
+        await emit(uuid, intent="",  message="Error during multi intent recognition", type="error")
         return response
         
-    await emit(f"intents {intents}")
+    
     async def process_intent(intent):
         intent_response = {"textInputFields": [], "checkboxes": []}
 
@@ -65,14 +68,20 @@ async def get_intent(user_input: UserInput, uuid: str):
         sub_section = getSubSectionData(
             sub_section_id=subCategory, form=user_input.form
         )
+        await emit(uuid, intent=intent, message=f"identifyed sub category '{sub_section.label}'", type="success")
+
         text_input_fields = getTextInputFieldsReady(sub_section=sub_section)
         checkboxes = getCheckboxesReady(sub_section=sub_section)
-
+        
+        await emit(uuid,intent=intent, message=f"checking if text input field ")
+        
         text_input_field = find_text_input_field_chain.invoke(
             {"text_input_fields": text_input_fields, "sentence": intent}
         )
-
+        
         if text_input_field != "None":
+            text_input_field_label = getTextInputFieldLabel(sub_section=sub_section, text_input_field_id = text_input_field)
+            await emit(uuid,intent=intent, message=f"is text input field with label {text_input_field_label}", type="success")
             string_extraction_training = getTrainingsDataItem(
                 trainings=user_input.form.trainingsData,
                 sub_section=sub_section,
@@ -87,12 +96,15 @@ async def get_intent(user_input: UserInput, uuid: str):
                 "id": text_input_field,
                 "value": extracted_string
             })
+            await emit(uuid, intent=intent, message=f"extracted string '{extracted_string}'", type="success")
         else:
+            await emit(uuid, intent=intent, message=f"is no text input field, must be checkbox")
             raw = checkbox_chain.invoke({
                 "checkboxes": checkboxes,
                 "sentence": intent
             })
             checked_checkboxes = json.loads(raw)
+            await emit(uuid,intent=intent, message=f"filled out checkboxes '{checked_checkboxes}'", type="success")
             if isinstance(checked_checkboxes, list):
                 intent_response["checkboxes"] += checked_checkboxes
             elif isinstance(checked_checkboxes, dict):
@@ -110,11 +122,9 @@ async def get_intent(user_input: UserInput, uuid: str):
         response["checkboxes"] += result["checkboxes"]
 
     print(response, flush=True)
-    await emit("Intent recognition complete.")
-    await log_queues[uuid].put("DONE")
+    await emit(uuid, intent="", message="Intent recognition complete.")
+    await emit(uuid, intent="", message="DONE")
     return response
-
-
 
 
 
@@ -123,15 +133,19 @@ async def intent_logs(websocket: WebSocket):
     await websocket.accept()
     try:
         uuid = await websocket.receive_text()
+        pubsub = redis_client.pubsub()
+        await pubsub.subscribe(uuid)
 
-        if uuid not in log_queues:
-            log_queues[uuid] = asyncio.Queue()
-
-        while True:
-            message = await log_queues[uuid].get()
-            await websocket.send_text(message)
-            if message == "DONE":
+        async for message in pubsub.listen():
+            if message['type'] != 'message':
+                continue
+            data = message['data']
+            await websocket.send_text(data)
+            if data == "DONE":
                 break
+
+        await pubsub.unsubscribe(uuid)
+        await pubsub.close()
 
     except WebSocketDisconnect:
         print(f"WebSocket disconnected for UUID: {uuid}")

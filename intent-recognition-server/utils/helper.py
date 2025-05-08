@@ -104,3 +104,9 @@ def getTrainingsDataItem(trainings: List[TrainingsDataItem], sub_section: SubSec
     for training in trainings:
         if training.id == trainings_id:
             return training
+
+def getTextInputFieldLabel(sub_section: SubSection, text_input_field_id: str) -> str | None:
+    for text_input_field in sub_section.textInput:
+        if text_input_field.id == text_input_field_id:
+           return text_input_field.label
+    return None
