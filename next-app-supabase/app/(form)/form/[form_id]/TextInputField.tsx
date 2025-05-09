@@ -14,10 +14,12 @@ interface TextInputFieldProps {
     textInputFieldId: UUID,
     value: string
   ) => Promise<void>;
+  aiSelectedFields: UUID[];
 }
 
 export const TextInputField = ({
   fillableInputField,
+  aiSelectedFields,
   handleSaveNewTextInput,
 }: TextInputFieldProps) => {
   const [input, setInput] = useState<string>(fillableInputField.value ?? "");
@@ -32,6 +34,10 @@ export const TextInputField = ({
     }
   }, [input]);
 
+  useEffect(() => {
+    setInput(fillableInputField.value ?? "");
+  }, [fillableInputField.value]);
+
   const handleSave = async () => {
     setIsSaving(true);
     await handleSaveNewTextInput(
@@ -43,7 +49,11 @@ export const TextInputField = ({
   };
 
   return (
-    <Card className="p-3 flex justify-between items-center">
+    <Card
+      className={`p-3 flex justify-between items-center ${
+        aiSelectedFields.includes(fillableInputField.id) && "bg-green-300"
+      }`}
+    >
       <p className="w-2/3">{fillableInputField.label}</p>
       <Input
         className="w-1/3"

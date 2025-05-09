@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  intent_recognition_server:
+    image: luckulke\intent-recognition-server:latest
+    container_name: intent_recognition_server
+    ports:
+      - "8003:8003"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_DB=redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis_cache
+    expose:
+      - "6379"
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge

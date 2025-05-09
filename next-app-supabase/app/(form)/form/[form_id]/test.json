@@ -1,37 +1,149 @@
 {
-  "Electric": [
+  "trainingsData": [
     {
-      "Battery": {
-        "selectionGroups": [
-          {
-            "checkboxes": [
-              { "label": "good", "id": 312124 },
-              { "label": "not good", "id": 382124 },
-              { "label": "fixed", "id": 1112323 }
-            ],
-            "tasks": [
-              { "description": "check voltage", "id": 2344666 },
-              { "description": "check battery fluid", "id": 23446699 }
-            ]
-          }
-        ],
-        "textInputFields": [{ "label": "voltage", "trainingsId": 2332334 }]
-      },
-      "Rearlightsystem": {
-        "selectionGroups": [
-          {
-            "checkboxes": [
-              { "label": "good", "id": 312124 },
-              { "label": "not good", "id": 382124 },
-              { "label": "fixed", "id": 1112323 }
-            ],
-            "tasks": [
-              { "description": "check break light", "id": 2344666 },
-              { "description": "check rear indicators", "id": 23446699 }
-            ]
-          }
-        ]
-      }
+      "id": "59163532-b168-4470-a705-f5786bf99dd9",
+      "prompt": "Extrahiere die Reifengröße aus dem Satz des users",
+      "examples": [
+        { "user": "Die reifengröße ist 205/55 R16", "ai": "205/55 R16" },
+        { "user": "200/55 R17 ist die autoreifen größe", "ai": "200/55 R17" },
+        {
+          "user": "zweihundert55 R siebzehn ist die autoreifen größe",
+          "ai": "200/55 R17"
+        }
+      ]
+    }
+  ],
+  "formData": [
+    {
+      "id": "6a4314b0-9d87-4a61-8822-2e7c814b08e7",
+      "label": "Elektrik",
+      "subSections": [
+        {
+          "id": "4cafd365-84ef-4a2b-8f9a-8bfd4ac6570b",
+          "label": "Batterie",
+          "textInput": [],
+          "checkboxGroupsWithoutTasks": [],
+          "checkboxGroupsWithTasks": [
+            {
+              "id": "11c0bbd7-7e1f-46ac-b50a-4804d182efc2",
+              "label": "Zustand",
+              "tasks": [
+                {
+                  "id": "2fdb563d-f70e-4e96-ad01-b0790c2c6cba",
+                  "description": "Ladezustand prüfen",
+                  "checkboxes": [
+                    {
+                      "id": "d3791afc-ff3f-4073-9465-add5f04a1fcd",
+                      "label": "in ordnung",
+                      "checked": true
+                    },
+                    {
+                      "id": "579016f9-f1cd-44a0-8955-8e39270154d1",
+                      "label": "behoben",
+                      "checked": false
+                    },
+                    {
+                      "id": "03d61522-1a75-4447-bd6d-9e2ee8aaa3c3",
+                      "label": "nicht in ordung",
+                      "checked": false
+                    }
+                  ]
+                },
+                {
+                  "id": "f73b77f0-86e3-4ea2-8269-fbc6052e7158",
+                  "description": "Kontrollzelle prüfen",
+                  "checkboxes": [
+                    {
+                      "id": "b7e3c2bc-7dd8-4b53-b738-5d741485d887",
+                      "label": "in ordnung",
+                      "checked": false
+                    },
+                    {
+                      "id": "9ccfcdfe-5148-4bc7-8398-6220d61f3db2",
+                      "label": "behoben",
+                      "checked": false
+                    },
+                    {
+                      "id": "b85939b3-4e83-4f4f-818f-f6a7692834f8",
+                      "label": "nicht in ordung",
+                      "checked": true
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "55d6e3d3-497e-4893-a8dd-206c9fb86733",
+      "label": "Bereifung",
+      "subSections": [
+        {
+          "id": "7f35fece-30da-4385-ae52-ca3a036049fd",
+          "label": "Reifenart",
+          "textInput": [
+            {
+              "id": "92725b5a-1402-4a8f-b6ee-325c1ca5017e",
+              "label": "Reifengröße",
+              "trainingsId": "59163532-b168-4470-a705-f5786bf99dd9"
+            }
+          ],
+          "checkboxGroupsWithoutTasks": [
+            {
+              "id": "ac3047c7-b833-46ec-9245-d110c0d94366",
+              "label": "Reifentype",
+              "checkboxes": [
+                {
+                  "id": "658d490d-e1c9-4488-804f-2eb45f302586",
+                  "label": "Ganzjahresreifen",
+                  "checked": true
+                },
+                {
+                  "id": "ac82b02b-c138-494e-9d9b-c3a24f28fb20",
+                  "label": "Winterreifen",
+                  "checked": false
+                },
+                {
+                  "id": "c91628a4-b691-4746-b96e-71f43d07a752",
+                  "label": "Sommerreifen",
+                  "checked": false
+                }
+              ]
+            }
+          ],
+          "checkboxGroupsWithTasks": [
+            {
+              "id": "0e75b6fc-d10c-491e-beee-74e11fe3248e",
+              "label": "Zustand",
+              "tasks": [
+                {
+                  "id": "3efeb9ab-8490-4f01-a2b8-11c7a0431952",
+                  "description": "auf korrekte reifen art prüfen",
+                  "checkboxes": [
+                    {
+                      "id": "71b99d5f-3e4f-49e4-973f-1917d8c57923",
+                      "label": "behoben",
+                      "checked": false
+                    },
+                    {
+                      "id": "de53da6e-ec07-4a3f-8880-8db12b898b5e",
+                      "label": "nicht in ordung",
+                      "checked": false
+                    },
+                    {
+                      "id": "6f3cbf64-1547-495b-b37d-f6cf838e2f72",
+                      "label": "in ordnung",
+                      "checked": true
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ]
 }

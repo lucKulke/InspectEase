@@ -19,6 +19,7 @@ import {
   ISubSectionResponse,
   ITaskResponse,
   ITextInputResponse,
+  LogEntry,
 } from "@/lib/database/form-filler/formFillerInterfaces";
 import { UUID } from "crypto";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -30,12 +31,18 @@ import {
   updateSubCheckboxValue,
   updateTextInputFieldValue,
   upsertMainCheckboxesValues,
+  requestIntentRecognition,
+  getIntentRecognitionDomain,
 } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { Separator } from "@/components/ui/separator";
 import { constructNow } from "date-fns";
 import { IFormCheckboxResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { useFormActivity } from "@/hooks/useFormActivity";
+import { AIInteractionBar } from "./AIInteractionBar";
+import { motion, AnimatePresence } from "framer-motion";
+import { v4 as uuid4 } from "uuid";
+import { LogStream } from "./LogStream";
 //import { TextInputField } from "./TextInputField";
 
 interface MainCompProps {
@@ -74,6 +81,11 @@ export const MainComp = ({
     userId,
     url: sessionAwarenessFeatureUrl,
   });
+  const [aiLogs, setAiLogs] = useState<LogEntry[]>([]);
+  const [logsOpen, setLogsOpen] = useState<boolean>(false);
+  const [aiConnectionStatus, setAiConnectionStatus] =
+    useState<string>("not connected");
+  const [isThinking, setIsThinking] = useState<boolean>(false);
 
   const { showNotification } = useNotification();
   const [fillableSubCheckboxes, setFillableSubCheckboxes] =
@@ -87,6 +99,18 @@ export const MainComp = ({
 
   const [selectedMainSections, setSelectedMainSections] = useState<UUID[]>([]);
   const [selectedSubSections, setSelectedSubSections] = useState<UUID[]>([]);
+
+  const [aiSelectedFields, setAiSelectedFields] = useState<UUID[]>([]);
+
+  useEffect(() => {
+    if (aiSelectedFields) {
+      const timer = setTimeout(() => {
+        setAiSelectedFields([]);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [aiSelectedFields]);
 
   const handleSelectMainSection = (mainSectionId: UUID) => {
     if (selectedMainSections.includes(mainSectionId)) {
@@ -394,6 +418,283 @@ export const MainComp = ({
     setFillableTextInputFields(copy);
   };
 
+  const handeAiCheckSubCheckbox = async (
+    mainCheckboxId: UUID,
+    checkboxId: UUID,
+    selectionGroup: ICheckboxGroupData,
+    taskId: UUID,
+    value: boolean
+  ) => {
+    let newValue: boolean = false;
+    let unCheck: ISubCheckboxResponse[] = [];
+    const copy = { ...fillableSubCheckboxes };
+    copy[mainCheckboxId] = copy[mainCheckboxId].map((subCheckbox) => {
+      if (subCheckbox.id === checkboxId) {
+        console.log(selectionGroup.checkboxes_selected_together);
+        console.log(
+          selectionGroup.checkboxes_selected_together?.includes(mainCheckboxId)
+        );
+
+        if (value == false) {
+          subCheckbox.checked = false;
+          newValue = false;
+        } else {
+          selectionGroup.main_checkbox.forEach((mainCheckbox) => {
+            const row = copy[mainCheckbox.id].filter(
+              (subCheck) => subCheck.task_id === taskId
+            );
+
+            const subCheck = row.filter(
+              (subCheck) => subCheck.id !== subCheckbox.id
+            )[0];
+            subCheck ? unCheck.push(subCheck) : null;
+            subCheckbox.checked = value;
+            newValue = value;
+          });
+        }
+      }
+      return subCheckbox;
+    });
+
+    console.log("uncheck list", unCheck);
+
+    const checkboxesThatNeedToBeUnchecked: ISubCheckboxResponse[] = [];
+
+    if (
+      !selectionGroup.checkboxes_selected_together?.includes(mainCheckboxId)
+    ) {
+      unCheck.forEach((subCheckbox) => {
+        let mainCheckbox: string | null = null;
+        for (const [key, value] of Object.entries(copy)) {
+          value.forEach((sub) => {
+            if (sub.id === subCheckbox.id) {
+              mainCheckbox = key;
+            }
+          });
+        }
+
+        if (mainCheckbox) {
+          copy[mainCheckbox].map((sub) => {
+            if (sub.id === subCheckbox.id) {
+              sub.checked = false;
+              checkboxesThatNeedToBeUnchecked.push(sub);
+            }
+            return sub;
+          });
+        }
+      });
+    } else {
+      unCheck.forEach((subCheckbox) => {
+        let mainCheckbox: string | null = null;
+        for (const [key, value] of Object.entries(copy)) {
+          value.forEach((sub) => {
+            if (sub.id === subCheckbox.id) {
+              mainCheckbox = key;
+            }
+          });
+        }
+        if (
+          mainCheckbox &&
+          !selectionGroup.checkboxes_selected_together?.includes(mainCheckbox)
+        ) {
+          copy[mainCheckbox].map((sub) => {
+            if (sub.id === subCheckbox.id) {
+              sub.checked = false;
+              checkboxesThatNeedToBeUnchecked.push(sub);
+            }
+            return sub;
+          });
+        }
+      });
+    }
+
+    setFillableSubCheckboxes(copy);
+
+    handleAutoCheckMainCheckbox(selectionGroup);
+
+    await updateSubCheckboxValue(formData.id, checkboxId, newValue);
+    await upsertSubCheckboxesValues(checkboxesThatNeedToBeUnchecked);
+  };
+
+  const getMainCheckboxIdAndSelectionGroupAndTaskIdbasedOnCheckboxId = (
+    checkboxId: string
+  ): {
+    sub: {
+      mainSection: UUID;
+      subSection: UUID;
+      mainCheckboxId: UUID;
+      selectionGroup: ICheckboxGroupData;
+      taskId: UUID;
+    } | null;
+    main: {
+      mainSection: UUID;
+      subSection: UUID;
+      selectionGroup: ICheckboxGroupData;
+    } | null;
+  } | null => {
+    let data = null;
+    formData.main_section.forEach((mainSection) => {
+      mainSection.sub_section.forEach((subSection) => {
+        subSection.checkbox_group.forEach((group) => {
+          group.main_checkbox.forEach((mainCheckbox) => {
+            if (mainCheckbox.id === checkboxId) {
+              data = {
+                main: {
+                  mainSection: mainSection.id,
+                  subSection: subSection.id,
+                  selectionGroup: group,
+                },
+                sub: null,
+              };
+              return;
+            }
+            mainCheckbox.sub_checkbox.forEach((subCheckbox) => {
+              console.log(subCheckbox.id, checkboxId);
+              if (subCheckbox.id === checkboxId) {
+                data = {
+                  sub: {
+                    mainSection: mainSection.id,
+                    subSection: subSection.id,
+                    mainCheckboxId: mainCheckbox.id,
+                    selectionGroup: group,
+                    taskId: subCheckbox.task_id,
+                  },
+                  main: null,
+                };
+                return;
+              }
+            });
+          });
+        });
+      });
+    });
+
+    return data;
+  };
+
+  function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  const getSubSectionOfTextInputField = (
+    textInputFieldId: UUID
+  ): { subSection: UUID; mainSection: UUID } | null => {
+    let subSectionId = null;
+    formData.main_section.forEach((mainSection) => {
+      mainSection.sub_section.forEach((subSection) => {
+        subSection.text_input.forEach((textInputField) => {
+          if (textInputField.id === textInputFieldId)
+            subSectionId = {
+              subSection: subSection.id,
+              mainSection: mainSection.id,
+            };
+        });
+      });
+    });
+    return subSectionId;
+  };
+
+  const processAiResponse = async (userInput: string) => {
+    setIsThinking(true);
+    setLogsOpen(true);
+    const ws = await connectToIntentLogs(formData.id);
+    const response = await requestIntentRecognition(
+      formData.id,
+      userInput,
+      formData.id
+    );
+    console.log("response", response);
+
+    if (response) {
+      if (response.checkboxes.length > 0) {
+        for (let index = 0; index < response.checkboxes.length; index++) {
+          const checkbox = response.checkboxes[index];
+          console.log(checkbox);
+          const data =
+            getMainCheckboxIdAndSelectionGroupAndTaskIdbasedOnCheckboxId(
+              checkbox.id
+            );
+          if (data) {
+            console.log("set checkboxes", data);
+            if (checkbox.checked)
+              if (data.sub) {
+                setSelectedMainSections((prev) => {
+                  if (data.sub && !prev.includes(data.sub.mainSection)) {
+                    prev.push(data.sub.mainSection);
+                  }
+                  return prev;
+                });
+                setSelectedSubSections((prev) => {
+                  if (data.sub && !prev.includes(data.sub.subSection)) {
+                    prev.push(data.sub.subSection);
+                  }
+                  return prev;
+                });
+                await handeAiCheckSubCheckbox(
+                  data.sub.mainCheckboxId,
+                  checkbox.id as UUID,
+                  data.sub.selectionGroup,
+                  data.sub.taskId,
+                  checkbox.checked
+                );
+                const copy = [...aiSelectedFields, data.sub.taskId as UUID];
+                setAiSelectedFields(copy);
+              } else if (data.main) {
+                setSelectedMainSections((prev) => {
+                  if (data.main && !prev.includes(data.main.mainSection)) {
+                    prev.push(data.main.mainSection);
+                  }
+                  return prev;
+                });
+                setSelectedSubSections((prev) => {
+                  if (data.main && !prev.includes(data.main.subSection)) {
+                    prev.push(data.main.subSection);
+                  }
+                  return prev;
+                });
+                await handleCheckMainCheckbox(
+                  checkbox.id as UUID,
+                  data.main.selectionGroup
+                );
+                setAiSelectedFields((prev) => [...prev, checkbox.id as UUID]);
+              }
+            await sleep(500);
+          }
+        }
+      }
+      if (response.textInputFields.length > 0) {
+        for (let index = 0; index < response.textInputFields.length; index++) {
+          const textInputField = response.textInputFields[index];
+          const data = getSubSectionOfTextInputField(textInputField.id as UUID);
+          console.log("subsection id", data);
+
+          if (data) {
+            setSelectedMainSections((prev) => {
+              if (!prev.includes(data.mainSection)) {
+                prev.push(data.mainSection);
+              }
+              return prev;
+            });
+            setSelectedSubSections((prev) => {
+              if (!prev.includes(data.subSection)) {
+                prev.push(data.subSection);
+              }
+              return prev;
+            });
+            await handleSaveNewTextInput(
+              data.subSection,
+              textInputField.id as UUID,
+              textInputField.value
+            );
+            setAiSelectedFields((prev) => [...prev, textInputField.id as UUID]);
+          }
+          await sleep(500);
+        }
+      }
+    }
+    setIsThinking(false);
+  };
+
   function sortMainSections(a: IMainSectionResponse, b: IMainSectionResponse) {
     if (a.order_number < b.order_number) return -1;
 
@@ -437,8 +738,49 @@ export const MainComp = ({
     return 0;
   }
 
+  const connectToIntentLogs = async (uuid: string) => {
+    setAiConnectionStatus("connecting");
+
+    const ws = new WebSocket(
+      `wss://${await getIntentRecognitionDomain()}/intent-logs/ws`
+    );
+
+    ws.onopen = () => {
+      ws.send(uuid); // Send UUID first
+      setAiConnectionStatus("connected");
+      setAiLogs([]);
+    };
+
+    ws.onmessage = (event) => {
+      const newLogEntry: LogEntry = JSON.parse(event.data);
+      if (newLogEntry.message === "START") {
+        setAiLogs([]);
+      } else if (newLogEntry.message === "DONE") {
+        ws.close();
+        setAiConnectionStatus("disconnected");
+      } else {
+        setAiLogs((prev) => [...prev, newLogEntry]);
+      }
+    };
+
+    ws.onerror = (err) => {
+      console.error("WebSocket error", err);
+      ws.close();
+      setAiConnectionStatus("disconnected");
+    };
+
+    return ws;
+  };
+
   return (
-    <div>
+    <div className="mb-36">
+      <LogStream
+        logs={aiLogs}
+        setLogs={setAiLogs}
+        connectionStatus={aiConnectionStatus}
+        isOpen={logsOpen}
+        setIsOpen={setLogsOpen}
+      ></LogStream>
       <ul className="space-y-2">
         {formData.main_section.sort(sortMainSections).map((mainSection) => (
           <li key={mainSection.id}>
@@ -456,92 +798,196 @@ export const MainComp = ({
                   <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 )}
               </CardHeader>
-              {selectedMainSections.includes(mainSection.id) && (
-                <CardContent>
-                  <ul className="space-y-4">
-                    {mainSection.sub_section
-                      .sort(sortSubSections)
-                      .map((subSection) => (
-                        <li className={subSection.id} key={subSection.id}>
-                          <Card>
-                            <CardHeader
-                              className="cursor-pointer flex flex-row items-center space-y-0 py-4 select-none"
-                              onClick={() =>
-                                handleSelectSubSection(subSection.id)
-                              }
-                            >
-                              <CardTitle className="flex-1 text-xl">
-                                {subSection.name}
-                              </CardTitle>
-                              {selectedSubSections.includes(subSection.id) ? (
-                                <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                              ) : (
-                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                              )}
-                            </CardHeader>
-                            {selectedSubSections.includes(subSection.id) && (
-                              <CardContent className="pt-2 pb-6">
-                                <ul className="space-y-4">
-                                  {subSection.checkbox_group.map(
-                                    (selectionGroup) => (
-                                      <li key={selectionGroup.id}>
-                                        <ul className="space-y-2">
-                                          <li key={selectionGroup.id}>
-                                            <Card>
-                                              <CardHeader>
-                                                <CardTitle>
-                                                  {selectionGroup.name}
-                                                </CardTitle>
-                                              </CardHeader>
-                                              <CardContent>
-                                                {selectionGroup.task.length >
-                                                0 ? (
-                                                  <Table>
-                                                    <TableHeader>
-                                                      <TableRow>
-                                                        <TableHead className="text-left flex items-end">
-                                                          task
-                                                        </TableHead>
-                                                        {fillableMainCheckboxes[
-                                                          selectionGroup.id
-                                                        ]
-                                                          .sort(
-                                                            sortMainCheckboxes
-                                                          )
-                                                          .map((checkbox) => (
-                                                            <TableHead
-                                                              className="text-center space-y-2 w-[100px]"
-                                                              key={
-                                                                checkbox.id +
-                                                                "head"
-                                                              }
-                                                            >
-                                                              <Checkbox
-                                                                disabled
-                                                                checked={
-                                                                  checkbox.checked
-                                                                }
-                                                              ></Checkbox>
-                                                              <p>
-                                                                {checkbox.label}
-                                                              </p>
-                                                            </TableHead>
-                                                          ))}
-                                                      </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                      {selectionGroup.task
-                                                        .sort(sortTasks)
-                                                        .map((task) => (
-                                                          <TableRow
-                                                            key={
-                                                              task.id +
-                                                              "tablerow"
-                                                            }
-                                                          >
-                                                            <TableCell className="font-medium text-left py-4">
-                                                              {task.description}
-                                                            </TableCell>
+
+              <AnimatePresence initial={false}>
+                {selectedMainSections.includes(mainSection.id) && (
+                  <motion.div
+                    key="main-content"
+                    initial="collapsed"
+                    animate="open"
+                    exit="collapsed"
+                    variants={{
+                      open: { height: "auto", opacity: 1 },
+                      collapsed: { height: 0, opacity: 0 },
+                    }}
+                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <CardContent>
+                      <ul className="space-y-4">
+                        {mainSection.sub_section
+                          .sort(sortSubSections)
+                          .map((subSection) => (
+                            <li className={subSection.id} key={subSection.id}>
+                              <Card>
+                                <CardHeader
+                                  className="cursor-pointer flex flex-row items-center space-y-0 py-4 select-none"
+                                  onClick={() =>
+                                    handleSelectSubSection(subSection.id)
+                                  }
+                                >
+                                  <CardTitle className="flex-1 text-xl">
+                                    {subSection.name}
+                                  </CardTitle>
+                                  {selectedSubSections.includes(
+                                    subSection.id
+                                  ) ? (
+                                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                                  )}
+                                </CardHeader>
+
+                                <AnimatePresence initial={false}>
+                                  {selectedSubSections.includes(
+                                    subSection.id
+                                  ) && (
+                                    <motion.div
+                                      key="sub-content"
+                                      initial="collapsed"
+                                      animate="open"
+                                      exit="collapsed"
+                                      variants={{
+                                        open: { height: "auto", opacity: 1 },
+                                        collapsed: { height: 0, opacity: 0 },
+                                      }}
+                                      transition={{
+                                        duration: 0.3,
+                                        ease: "easeInOut",
+                                      }}
+                                      className="overflow-hidden"
+                                    >
+                                      <CardContent className="pt-2 pb-6">
+                                        <ul className="space-y-4">
+                                          {subSection.checkbox_group.map(
+                                            (selectionGroup) => (
+                                              <li key={selectionGroup.id}>
+                                                <ul className="space-y-2">
+                                                  <li key={selectionGroup.id}>
+                                                    <Card>
+                                                      <CardHeader>
+                                                        <CardTitle>
+                                                          {selectionGroup.name}
+                                                        </CardTitle>
+                                                      </CardHeader>
+                                                      <CardContent>
+                                                        {selectionGroup.task
+                                                          .length > 0 ? (
+                                                          <Table>
+                                                            <TableHeader>
+                                                              <TableRow>
+                                                                <TableHead className="text-left flex items-end">
+                                                                  task
+                                                                </TableHead>
+                                                                {fillableMainCheckboxes[
+                                                                  selectionGroup
+                                                                    .id
+                                                                ]
+                                                                  .sort(
+                                                                    sortMainCheckboxes
+                                                                  )
+                                                                  .map(
+                                                                    (
+                                                                      checkbox
+                                                                    ) => (
+                                                                      <TableHead
+                                                                        className="text-center space-y-2 w-[100px]"
+                                                                        key={
+                                                                          checkbox.id +
+                                                                          "head"
+                                                                        }
+                                                                      >
+                                                                        <Checkbox
+                                                                          disabled
+                                                                          checked={
+                                                                            checkbox.checked
+                                                                          }
+                                                                        ></Checkbox>
+                                                                        <p>
+                                                                          {
+                                                                            checkbox.label
+                                                                          }
+                                                                        </p>
+                                                                      </TableHead>
+                                                                    )
+                                                                  )}
+                                                              </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                              {selectionGroup.task
+                                                                .sort(sortTasks)
+                                                                .map((task) => (
+                                                                  <TableRow
+                                                                    className={`${
+                                                                      aiSelectedFields.includes(
+                                                                        task.id
+                                                                      ) &&
+                                                                      "bg-green-300"
+                                                                    }`}
+                                                                    key={
+                                                                      task.id +
+                                                                      "tablerow"
+                                                                    }
+                                                                  >
+                                                                    <TableCell className="font-medium text-left py-4">
+                                                                      {
+                                                                        task.description
+                                                                      }
+                                                                    </TableCell>
+                                                                    {fillableMainCheckboxes[
+                                                                      selectionGroup
+                                                                        .id
+                                                                    ]
+                                                                      .sort(
+                                                                        sortMainCheckboxes
+                                                                      )
+                                                                      .map(
+                                                                        (
+                                                                          mainCheckbox
+                                                                        ) => {
+                                                                          const currentCheckbox =
+                                                                            fillableSubCheckboxes[
+                                                                              mainCheckbox
+                                                                                .id
+                                                                            ].filter(
+                                                                              (
+                                                                                subCheckbox
+                                                                              ) =>
+                                                                                subCheckbox.task_id ===
+                                                                                task.id
+                                                                            )[0];
+
+                                                                          return (
+                                                                            <TableCell
+                                                                              key={
+                                                                                currentCheckbox.id +
+                                                                                "cell"
+                                                                              }
+                                                                              className="font-medium text-center whitespace-nowrap py-4"
+                                                                            >
+                                                                              <Checkbox
+                                                                                checked={
+                                                                                  currentCheckbox.checked
+                                                                                }
+                                                                                onClick={() => {
+                                                                                  handleCheckSubCheckbox(
+                                                                                    mainCheckbox.id,
+                                                                                    currentCheckbox.id,
+                                                                                    selectionGroup,
+                                                                                    task.id
+                                                                                  );
+                                                                                }}
+                                                                              ></Checkbox>
+                                                                            </TableCell>
+                                                                          );
+                                                                        }
+                                                                      )}
+                                                                  </TableRow>
+                                                                ))}
+                                                            </TableBody>
+                                                          </Table>
+                                                        ) : (
+                                                          <div>
                                                             {fillableMainCheckboxes[
                                                               selectionGroup.id
                                                             ]
@@ -552,122 +998,99 @@ export const MainComp = ({
                                                                 (
                                                                   mainCheckbox
                                                                 ) => {
-                                                                  const currentCheckbox =
-                                                                    fillableSubCheckboxes[
-                                                                      mainCheckbox
-                                                                        .id
-                                                                    ].filter(
-                                                                      (
-                                                                        subCheckbox
-                                                                      ) =>
-                                                                        subCheckbox.task_id ===
-                                                                        task.id
-                                                                    )[0];
-
                                                                   return (
-                                                                    <TableCell
+                                                                    <div
+                                                                      className={`flex items-center space-x-2 ${
+                                                                        aiSelectedFields.includes(
+                                                                          mainCheckbox.id
+                                                                        ) &&
+                                                                        "bg-green-300"
+                                                                      }`}
                                                                       key={
-                                                                        currentCheckbox.id +
-                                                                        "cell"
+                                                                        mainCheckbox.id
                                                                       }
-                                                                      className="font-medium text-center whitespace-nowrap py-4"
                                                                     >
                                                                       <Checkbox
                                                                         checked={
-                                                                          currentCheckbox.checked
+                                                                          mainCheckbox.checked
                                                                         }
                                                                         onClick={() => {
-                                                                          handleCheckSubCheckbox(
+                                                                          handleCheckMainCheckbox(
                                                                             mainCheckbox.id,
-                                                                            currentCheckbox.id,
-                                                                            selectionGroup,
-                                                                            task.id
+                                                                            selectionGroup
                                                                           );
                                                                         }}
                                                                       ></Checkbox>
-                                                                    </TableCell>
+                                                                      <p>
+                                                                        {
+                                                                          mainCheckbox.label
+                                                                        }
+                                                                      </p>
+                                                                    </div>
                                                                   );
                                                                 }
                                                               )}
-                                                          </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                  </Table>
-                                                ) : (
-                                                  <div>
-                                                    {fillableMainCheckboxes[
-                                                      selectionGroup.id
-                                                    ]
-                                                      .sort(sortMainCheckboxes)
-                                                      .map((mainCheckbox) => {
-                                                        return (
-                                                          <div
-                                                            className="flex items-center space-x-2"
-                                                            key={
-                                                              mainCheckbox.id
-                                                            }
-                                                          >
-                                                            <Checkbox
-                                                              checked={
-                                                                mainCheckbox.checked
-                                                              }
-                                                              onClick={() => {
-                                                                handleCheckMainCheckbox(
-                                                                  mainCheckbox.id,
-                                                                  selectionGroup
-                                                                );
-                                                              }}
-                                                            ></Checkbox>
-                                                            <p>
-                                                              {
-                                                                mainCheckbox.label
-                                                              }
-                                                            </p>
                                                           </div>
-                                                        );
-                                                      })}
-                                                  </div>
-                                                )}
-                                              </CardContent>
-                                            </Card>
-                                          </li>
+                                                        )}
+                                                      </CardContent>
+                                                    </Card>
+                                                  </li>
+                                                </ul>
+                                              </li>
+                                            )
+                                          )}
                                         </ul>
-                                      </li>
-                                    )
+                                        <Separator className="mt-5"></Separator>
+                                        {(
+                                          fillableTextInputFields[
+                                            subSection.id
+                                          ] ?? []
+                                        ).length > 0 && (
+                                          <ul className="mt-5">
+                                            {fillableTextInputFields[
+                                              subSection.id
+                                            ]
+                                              .sort(sortTextInputFields)
+                                              .map((inputField) => {
+                                                return (
+                                                  <li key={inputField.id}>
+                                                    <TextInputField
+                                                      aiSelectedFields={
+                                                        aiSelectedFields
+                                                      }
+                                                      handleSaveNewTextInput={
+                                                        handleSaveNewTextInput
+                                                      }
+                                                      fillableInputField={
+                                                        inputField
+                                                      }
+                                                    ></TextInputField>
+                                                  </li>
+                                                );
+                                              })}
+                                          </ul>
+                                        )}
+                                      </CardContent>
+                                    </motion.div>
                                   )}
-                                </ul>
-                                <Separator className="mt-5"></Separator>
-                                {(fillableTextInputFields[subSection.id] ?? [])
-                                  .length > 0 && (
-                                  <ul className="mt-5">
-                                    {fillableTextInputFields[subSection.id]
-                                      .sort(sortTextInputFields)
-                                      .map((inputField) => {
-                                        return (
-                                          <li key={inputField.id}>
-                                            <TextInputField
-                                              handleSaveNewTextInput={
-                                                handleSaveNewTextInput
-                                              }
-                                              fillableInputField={inputField}
-                                            ></TextInputField>
-                                          </li>
-                                        );
-                                      })}
-                                  </ul>
-                                )}
-                              </CardContent>
-                            )}
-                          </Card>
-                        </li>
-                      ))}
-                  </ul>
-                </CardContent>
-              )}
+                                </AnimatePresence>
+                              </Card>
+                            </li>
+                          ))}
+                      </ul>
+                    </CardContent>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </Card>
           </li>
         ))}
       </ul>
+      <AIInteractionBar
+        processAiResposne={processAiResponse}
+        formId={formData.id}
+        isThinking={isThinking}
+      ></AIInteractionBar>
     </div>
   );
 };

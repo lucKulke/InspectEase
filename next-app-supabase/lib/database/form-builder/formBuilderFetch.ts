@@ -21,6 +21,7 @@ import {
   IInspectableObjectWithPropertiesResponse,
   IStringExtractionTrainingExampleResponse,
   IStringExtractionTrainingResponse,
+  IStringExtractionTrainingWithExamplesResponse,
 } from "./formBuilderInterfaces";
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
@@ -761,6 +762,31 @@ export class DBActionsFormBuilderFetch {
     return {
       stringExtractionTraining: data ? data[0] : null,
       stringExtractionTrainingError: error as SupabaseError | null,
+    };
+  }
+
+  async fetchStringExtractionTrainingWithExamples(trainingId: UUID): Promise<{
+    stringExtractionTrainingWithExamples: IStringExtractionTrainingWithExamplesResponse | null;
+
+    stringExtractionTrainingWithExamplesError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("string_extraction_training")
+      .select(`*, string_extraction_training_example(*)`)
+      .eq("id", trainingId)
+      .single();
+
+    console.log("fetch string extraction training with examples in db:", data);
+    if (error) {
+      console.error(
+        "fetch string extraction training with examples in db error: ",
+        error
+      );
+    }
+
+    return {
+      stringExtractionTrainingWithExamples: data,
+      stringExtractionTrainingWithExamplesError: error as SupabaseError | null,
     };
   }
 
