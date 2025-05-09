@@ -75,19 +75,22 @@ def getCheckboxesReady(sub_section: SubSection):
             
     return checkboxes
 
-def stringExtractionTemplate(training: TrainingsDataItem, user_sentence: str):
-    string_extraction_prompt = f"You are an intelligent extraction assistant.\n\nYour task is to extract the most relevant string or phrase from the user's sentence.\nReturn only the extracted string, without additional text or formatting.\n\ntask: {training.prompt}"
-
+def stringExtractionTemplate(training: TrainingsDataItem | None, user_sentence: str, text_input_field_label: str):
+    
+    addition = training.prompt if training else "Extract the" + text_input_field_label
+    
+    
+    string_extraction_prompt = "You are an intelligent extraction assistant.\n\nYour task is to extract the most relevant string or phrase from the user's sentence.\nReturn only the extracted string, without additional text or formatting.\n\ntask: " + addition
+        
     messages = [("system", string_extraction_prompt)]
-
-    for example in training.examples:
-        messages.append(("human", example.user))
-        messages.append(("ai", example.ai))
+    
+    if training:
+        for example in training.examples:
+            messages.append(("human", example.user))
+            messages.append(("ai", example.ai))
     
     messages.append(("human", user_sentence))
-    
-    
-
+        
     string_extraction_template = ChatPromptTemplate.from_messages(
        messages
     )
@@ -95,7 +98,7 @@ def stringExtractionTemplate(training: TrainingsDataItem, user_sentence: str):
     return string_extraction_template
 
 
-def getTrainingsDataItem(trainings: List[TrainingsDataItem], sub_section: SubSection , text_input_field_id: str) -> TrainingsDataItem:
+def getTrainingsDataItem(trainings: List[TrainingsDataItem], sub_section: SubSection , text_input_field_id: str) -> TrainingsDataItem | None:
     trainings_id = None
     for text_input_field in sub_section.textInput:
         if text_input_field.id == text_input_field_id:
@@ -104,6 +107,8 @@ def getTrainingsDataItem(trainings: List[TrainingsDataItem], sub_section: SubSec
     for training in trainings:
         if training.id == trainings_id:
             return training
+    
+    return None
 
 def getTextInputFieldLabel(sub_section: SubSection, text_input_field_id: str) -> str | None:
     for text_input_field in sub_section.textInput:

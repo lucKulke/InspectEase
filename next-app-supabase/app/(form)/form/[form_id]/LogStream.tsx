@@ -119,46 +119,51 @@ export const LogStream = ({
                 </Button>
               </div>
             </div>
-
-            {/* Log content */}
-            <AnimatePresence>
-              {!isMinimized && (
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: "auto" }}
-                  exit={{ height: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div
-                    ref={logContainerRef}
-                    className="p-3 font-mono text-xs overflow-y-auto"
-                    style={{ maxHeight }}
+            <div className="flex justify-between">
+              {/* Log content */}
+              <AnimatePresence>
+                {!isMinimized && (
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: "auto" }}
+                    exit={{ height: 0 }}
+                    transition={{ duration: 0.2 }}
                   >
-                    {logs.length === 0 ? (
-                      <div className="text-muted-foreground italic py-4 text-center">
-                        Waiting for logs...
-                      </div>
-                    ) : (
-                      logs.map((log) => (
-                        <motion.div
-                          key={log.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="mb-1 leading-relaxed"
-                        >
-                          <span className="text-muted-foreground">
-                            [{formatTimestamp(log.timestamp)}]
-                          </span>{" "}
-                          <span className={getLogTypeColor(log.type)}>
-                            {log.message}
-                          </span>
-                        </motion.div>
-                      ))
-                    )}
-                  </div>
-                </motion.div>
+                    <div
+                      ref={logContainerRef}
+                      className="p-3 font-mono text-xs overflow-y-auto"
+                      style={{ maxHeight }}
+                    >
+                      {logs.length === 0 ? (
+                        <div className="text-muted-foreground italic py-4 text-center">
+                          Waiting for logs...
+                        </div>
+                      ) : (
+                        logs.map((log) => (
+                          <motion.div
+                            key={log.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mb-1 leading-relaxed"
+                          >
+                            <span className="text-muted-foreground">
+                              [{formatTimestamp(log.timestamp)}]
+                            </span>{" "}
+                            <span className={getLogTypeColor(log.type)}>
+                              {log.intent.length > 0 && `(${log.intent}) : `}
+                              {log.message}
+                            </span>
+                          </motion.div>
+                        ))
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {connectionStatus === "connected" && (
+                <img src="/tenor.gif" alt="gif" width="150" height="200" />
               )}
-            </AnimatePresence>
+            </div>
           </div>
         </motion.div>
       )}

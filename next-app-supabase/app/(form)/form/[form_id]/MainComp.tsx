@@ -32,6 +32,7 @@ import {
   updateTextInputFieldValue,
   upsertMainCheckboxesValues,
   requestIntentRecognition,
+  getIntentRecognitionDomain,
 } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { Separator } from "@/components/ui/separator";
@@ -81,9 +82,10 @@ export const MainComp = ({
     url: sessionAwarenessFeatureUrl,
   });
   const [aiLogs, setAiLogs] = useState<LogEntry[]>([]);
-  const [logsOpen, setLogsOpen] = useState<boolean>(true);
+  const [logsOpen, setLogsOpen] = useState<boolean>(false);
   const [aiConnectionStatus, setAiConnectionStatus] =
     useState<string>("not connected");
+  const [isThinking, setIsThinking] = useState<boolean>(false);
 
   const { showNotification } = useNotification();
   const [fillableSubCheckboxes, setFillableSubCheckboxes] =
@@ -593,6 +595,8 @@ export const MainComp = ({
   };
 
   const processAiResponse = async (userInput: string) => {
+    setIsThinking(true);
+    setLogsOpen(true);
     const ws = await connectToIntentLogs(formData.id);
     const response = await requestIntentRecognition(
       formData.id,
@@ -688,6 +692,7 @@ export const MainComp = ({
         }
       }
     }
+    setIsThinking(false);
   };
 
   function sortMainSections(a: IMainSectionResponse, b: IMainSectionResponse) {
@@ -735,20 +740,25 @@ export const MainComp = ({
 
   const connectToIntentLogs = async (uuid: string) => {
     setAiConnectionStatus("connecting");
-    const ws = new WebSocket(`ws://localhost:8000/intent-logs/ws`);
+
+    const ws = new WebSocket(
+      `wss://${await getIntentRecognitionDomain()}/intent-logs/ws`
+    );
 
     ws.onopen = () => {
       ws.send(uuid); // Send UUID first
       setAiConnectionStatus("connected");
+      setAiLogs([]);
     };
 
     ws.onmessage = (event) => {
-      if (event.data === "DONE") {
+      const newLogEntry: LogEntry = JSON.parse(event.data);
+      if (newLogEntry.message === "START") {
+        setAiLogs([]);
+      } else if (newLogEntry.message === "DONE") {
         ws.close();
         setAiConnectionStatus("disconnected");
       } else {
-        const newLogEntry: LogEntry = JSON.parse(event.data);
-        console.log("get message", event.data.toString());
         setAiLogs((prev) => [...prev, newLogEntry]);
       }
     };
@@ -763,7 +773,7 @@ export const MainComp = ({
   };
 
   return (
-    <div className="mb-12">
+    <div className="mb-36">
       <LogStream
         logs={aiLogs}
         setLogs={setAiLogs}
@@ -1079,6 +1089,7 @@ export const MainComp = ({
       <AIInteractionBar
         processAiResposne={processAiResponse}
         formId={formData.id}
+        isThinking={isThinking}
       ></AIInteractionBar>
     </div>
   );

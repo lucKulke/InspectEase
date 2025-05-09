@@ -22,9 +22,12 @@ from datetime import datetime
 
 app = FastAPI()
 
+redis_host = "localhost"
+if os.environ.get('REDIS_DB'):
+    redis_host = os.environ.get('REDIS_DB')
 # "info" | "warning" | "error" | "success";
 
-redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
+redis_client = redis.Redis(host=redis_host, port=6379, decode_responses=True)
 
 
 
@@ -37,7 +40,7 @@ async def emit(uuid: str, intent: str, message: str, type: str = "info" ):
 # Intent endpoint
 @app.post("/intent")
 async def get_intent(user_input: UserInput, uuid: str):
-
+    await emit(uuid, intent="",  message="START", type="info")
     
     llm = getModelWrapper(user_input)
     user_sentence = user_input.userSentence
@@ -52,10 +55,13 @@ async def get_intent(user_input: UserInput, uuid: str):
     try:
         raw = multi_intent_chain.invoke({"sentence": user_sentence})
         intents = json.loads(raw)
-        #await emit(uuid, message=f"successfully extracted {len(intents)} intent{'s' if len(intents) > 1 else ''}: {intents}", type="success")
-
+        # print(f"intents {intents}")
+        # if not isinstance(intents, list):
+        #     raise InterruptedError
+        # await emit(uuid, message=f"successfully extracted {len(intents)} intent{'s' if len(intents) > 1 else ''}: {intents}", type="success")
     except:
         await emit(uuid, intent="",  message="Error during multi intent recognition", type="error")
+        await emit(uuid, intent="",  message="DONE", type="error")
         return response
         
     
@@ -68,6 +74,11 @@ async def get_intent(user_input: UserInput, uuid: str):
         sub_section = getSubSectionData(
             sub_section_id=subCategory, form=user_input.form
         )
+        if not sub_section:
+            await emit(uuid, intent="",  message="Could not find sub category", type="error")
+            await emit(uuid, intent="",  message="DONE", type="error")
+            return intent_response
+            
         await emit(uuid, intent=intent, message=f"identifyed sub category '{sub_section.label}'", type="success")
 
         text_input_fields = getTextInputFieldsReady(sub_section=sub_section)
@@ -81,12 +92,19 @@ async def get_intent(user_input: UserInput, uuid: str):
         
         if text_input_field != "None":
             text_input_field_label = getTextInputFieldLabel(sub_section=sub_section, text_input_field_id = text_input_field)
-            await emit(uuid,intent=intent, message=f"is text input field with label {text_input_field_label}", type="success")
+            if not text_input_field_label:
+                await emit(uuid, intent="", message="Could not find sub text input field", type="error")
+                await emit(uuid, intent="",  message="DONE", type="error")
+                return intent_response
+            
+            await emit(uuid,intent=intent, message=f"is text input field with label '{text_input_field_label}'", type="success")
+            
             string_extraction_training = getTrainingsDataItem(
                 trainings=user_input.form.trainingsData,
                 sub_section=sub_section,
                 text_input_field_id=text_input_field
             )
+           
             string_extraction_template = stringExtractionTemplate(
                 training=string_extraction_training, user_sentence=intent
             )
@@ -103,8 +121,14 @@ async def get_intent(user_input: UserInput, uuid: str):
                 "checkboxes": checkboxes,
                 "sentence": intent
             })
-            checked_checkboxes = json.loads(raw)
-            await emit(uuid,intent=intent, message=f"filled out checkboxes '{checked_checkboxes}'", type="success")
+            try:
+                checked_checkboxes = json.loads(raw)
+                await emit(uuid,intent=intent, message=f"filled out checkboxes '{checked_checkboxes}'", type="success")
+            except: 
+                await emit(uuid,intent=intent, message=f"Could not find checkbox", type="error")
+                await emit(uuid, intent="",  message="DONE", type="error")
+                return intent_response
+            
             if isinstance(checked_checkboxes, list):
                 intent_response["checkboxes"] += checked_checkboxes
             elif isinstance(checked_checkboxes, dict):

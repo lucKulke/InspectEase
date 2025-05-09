@@ -320,7 +320,7 @@ async function apiCall(
   };
   try {
     const response = await fetch(
-      `${process.env.INTENT_RECOGNITION_URL}/intent?uuid=${processId}`,
+      `https://${process.env.INTENT_RECOGNITION_DOMAIN}/intent?uuid=${processId}`,
       {
         method: "POST",
         headers: {
@@ -364,4 +364,8 @@ export async function requestIntentRecognition(
   } else {
     return false;
   }
+}
+
+export async function getIntentRecognitionDomain() {
+  return process.env.INTENT_RECOGNITION_DOMAIN;
 }
