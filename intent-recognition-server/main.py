@@ -106,7 +106,7 @@ async def get_intent(user_input: UserInput, uuid: str):
             )
            
             string_extraction_template = stringExtractionTemplate(
-                training=string_extraction_training, user_sentence=intent
+                training=string_extraction_training, user_sentence=intent, text_input_field_label=text_input_field_label
             )
             string_extraction_chain = string_extraction_template | llm | StrOutputParser()
             extracted_string = string_extraction_chain.invoke({})
