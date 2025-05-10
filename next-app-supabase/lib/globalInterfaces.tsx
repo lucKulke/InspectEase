@@ -42,3 +42,34 @@ export interface ActiveForm {
   activeUsers: number;
   lastActive: number;
 }
+
+export interface WhisperSegment {
+  id: number;
+  seek: number;
+  start: number;
+  end: number;
+  text: string;
+  tokens: number[];
+  temperature: number;
+  avg_logprob: number;
+  compression_ratio: number;
+  no_speech_prob: number;
+}
+
+export interface WhisperOutput {
+  detected_language: string;
+  device: string;
+  model: string;
+  segments: WhisperSegment[];
+  transcription: string;
+  translation: string | null;
+}
+
+export interface WhisperResponse {
+  delayTime: number;
+  executionTime: number;
+  id: string;
+  output: WhisperOutput;
+  status: "COMPLETED" | "FAILED" | "IN_PROGRESS";
+  workerId: string;
+}

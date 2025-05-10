@@ -597,12 +597,10 @@ export const MainComp = ({
   const processAiResponse = async (userInput: string) => {
     setIsThinking(true);
     setLogsOpen(true);
-    const ws = await connectToIntentLogs(formData.id);
-    const response = await requestIntentRecognition(
-      formData.id,
-      userInput,
-      formData.id
-    );
+
+    const id = uuid4();
+    const ws = await connectToIntentLogs(id);
+    const response = await requestIntentRecognition(formData.id, userInput, id);
     console.log("response", response);
 
     if (response) {

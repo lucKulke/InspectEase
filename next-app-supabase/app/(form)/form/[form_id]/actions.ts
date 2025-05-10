@@ -9,7 +9,7 @@ import {
 } from "@/lib/database/form-filler/formFillerInterfaces";
 import { DBActionsFormFillerUpdate } from "@/lib/database/form-filler/formFillerUpdate";
 import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
-import { SupabaseError } from "@/lib/globalInterfaces";
+import { SupabaseError, WhisperResponse } from "@/lib/globalInterfaces";
 import { createClient } from "@/utils/supabase/server";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { UUID } from "crypto";
@@ -368,4 +368,23 @@ export async function requestIntentRecognition(
 
 export async function getIntentRecognitionDomain() {
   return process.env.INTENT_RECOGNITION_DOMAIN;
+}
+
+export async function transcribeAudio(
+  audioString: string
+): Promise<WhisperResponse> {
+  const url = `${process.env.WHISPER_ENDPOINT_URL}/runsync`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.WHISPER_ENDPOINT_API_KEY}`,
+    },
+    body: JSON.stringify({
+      input: { model: "base", audio_base64: audioString },
+    }),
+  });
+
+  return await res.json();
 }
