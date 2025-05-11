@@ -373,18 +373,18 @@ export async function getIntentRecognitionDomain() {
 export async function transcribeAudio(
   audioString: string
 ): Promise<WhisperResponse> {
-  const url = `${process.env.WHISPER_ENDPOINT_URL}/runsync`;
+  const url = `${process.env.WHISPER_ENDPOINT_URL}/transcribe`;
 
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.WHISPER_ENDPOINT_API_KEY}`,
     },
     body: JSON.stringify({
-      input: { model: "base", audio_base64: audioString },
+      audio_base64: audioString,
     }),
   });
 
+  console.log(res.json());
   return await res.json();
 }

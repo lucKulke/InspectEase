@@ -6,6 +6,7 @@ import { UUID } from "crypto";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/Spinner";
 import { VoiceInput } from "./VoiceInput";
+import AudioRecorder from "./test";
 
 interface AIInteractionBarProps {
   formId: UUID;
@@ -23,6 +24,8 @@ export const AIInteractionBar = ({
 
   return (
     <div className="border-2 bg-gray-50 fixed bottom-0 w-full h-40 flex  space-x-6 justify-center items-center">
+      {/* <LiveTranscriber></LiveTranscriber> */}
+      <AudioRecorder></AudioRecorder>
       <VoiceInput
         processAiResposne={processAiResposne}
         setUserInput={setUserInput}
