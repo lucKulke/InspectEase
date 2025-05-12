@@ -367,13 +367,17 @@ export async function requestIntentRecognition(
 }
 
 export async function getIntentRecognitionDomain() {
-  return process.env.INTENT_RECOGNITION_DOMAIN;
+  return process.env.INTENT_RECOGNITION_DOMAIN!;
+}
+
+export async function getLiveTranscriptionDomain() {
+  return process.env.LIVE_TRANSCIPTION_DOMAIN!;
 }
 
 export async function transcribeAudio(
   audioString: string
 ): Promise<WhisperResponse> {
-  const url = `${process.env.WHISPER_ENDPOINT_URL}/transcribe`;
+  const url = `${process.env.WHISPER_ENDPOINT_URL!}/transcribe`;
 
   const res = await fetch(url, {
     method: "POST",

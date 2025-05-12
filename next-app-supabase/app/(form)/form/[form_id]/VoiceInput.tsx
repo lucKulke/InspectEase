@@ -1,12 +1,14 @@
 // components/VoiceInput.tsx
 import { useState, useRef, useEffect } from "react";
-import { transcribeAudio } from "./actions";
+import { getLiveTranscriptionDomain, transcribeAudio } from "./actions";
 
 import { Mic, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNotification } from "@/app/context/NotificationContext";
 
 interface VoiceInputProps {
   setUserInput: React.Dispatch<React.SetStateAction<string>>;
+  userInput: string;
   processAiResposne: (userInput: string) => Promise<void>;
   setTranscribing: React.Dispatch<React.SetStateAction<boolean>>;
   isThinking: boolean;
@@ -14,6 +16,7 @@ interface VoiceInputProps {
 
 export const VoiceInput = ({
   setUserInput,
+  userInput,
   processAiResposne,
   setTranscribing,
   isThinking,
@@ -23,12 +26,24 @@ export const VoiceInput = ({
   const audioContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const [transcript, setTranscript] = useState("");
+  const hasMounted = useRef(false);
+  const { showNotification } = useNotification();
 
   const handleStart = async () => {
-    ws.current = new WebSocket("ws://localhost:8000/ws/audio");
+    const getLiveTranscriptionURL = await getLiveTranscriptionDomain();
+    ws.current = new WebSocket(`wss://ai-relay.inspect-ease.com/ws/transcribe`);
     ws.current.onmessage = (event) => {
-      setUserInput((prev) => prev + " " + event.data);
+      if (event.data.length > 1 && userInput !== event.data)
+        if (event.data === "TOO_LONG") {
+          setIsRecording(false);
+          showNotification(
+            "Recording voice",
+            `Audio message was to long... Connection was closed!`,
+            "warning"
+          );
+        } else {
+          setUserInput(event.data);
+        }
     };
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -63,12 +78,23 @@ export const VoiceInput = ({
     streamRef.current?.getTracks().forEach((track) => track.stop());
     ws.current?.close();
   };
-
   useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
+
     if (isRecording) {
+      setTranscribing(true);
       handleStart();
     } else {
       handleStop();
+
+      // ✨ Trigger AI response only if stopped *after* recording
+      if (userInput && userInput.length > 1) {
+        setTranscribing(false);
+        processAiResposne(userInput);
+      }
     }
   }, [isRecording]);
 
