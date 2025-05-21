@@ -31,7 +31,9 @@ export const VoiceInput = ({
 
   const handleStart = async () => {
     const getLiveTranscriptionURL = await getLiveTranscriptionDomain();
-    ws.current = new WebSocket(`wss://ai-relay.inspect-ease.com/ws/transcribe`);
+    ws.current = new WebSocket(
+      `wss://${getLiveTranscriptionURL}/ws/transcribe`
+    );
     ws.current.onmessage = (event) => {
       if (event.data.length > 1 && userInput !== event.data)
         if (event.data === "TOO_LONG") {
