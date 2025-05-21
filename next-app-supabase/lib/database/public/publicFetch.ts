@@ -1,4 +1,8 @@
-import { IUserProfile, SupabaseError } from "@/lib/globalInterfaces";
+import {
+  ITeamResponse,
+  IUserProfile,
+  SupabaseError,
+} from "@/lib/globalInterfaces";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { UUID } from "crypto";
 
@@ -27,6 +31,27 @@ export class DBActionsPublicFetch {
     return {
       userProfile: data,
       userProfileError: error as SupabaseError | null,
+    };
+  }
+
+  async fetchTeam(teamId: UUID): Promise<{
+    team: ITeamResponse | null;
+    teamError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("team")
+      .select()
+      .eq("id", teamId)
+      .maybeSingle();
+
+    console.log("fetch team from db:", data);
+    if (error) {
+      console.error("fetch team from db error: ", error);
+    }
+
+    return {
+      team: data,
+      teamError: error as SupabaseError | null,
     };
   }
 }

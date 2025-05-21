@@ -14,10 +14,11 @@ import { FormFilter } from "./formFilter";
 import { DBActionsFormFillerFetch } from "@/lib/database/form-filler/formFillerFetch";
 import { UUID } from "crypto";
 import { MainAddButton } from "@/components/MainAddButton";
+import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
 
 export default async function FormFillerPage() {
   const supabase = await createClient("form_filler");
-
+  const supabasePublic = await createClient();
   const { data: user } = await supabase.auth.getUser();
 
   if (!user.user) {
@@ -27,9 +28,15 @@ export default async function FormFillerPage() {
   const dbActions = new DBActionsFormFillerFetch(supabase);
   const wsUrl = `wss://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/ws/dashboard`;
 
+  const publicFetchActions = new DBActionsPublicFetch(supabasePublic);
+
+  const { userProfile, userProfileError } =
+    await publicFetchActions.fetchUserProfile(user.user.id as UUID);
+
   const { forms, formsError } = await dbActions.fetchAllFillableForms(
     user.user?.id as UUID
   );
+  let allForms = forms;
 
   return (
     <div className="">
@@ -40,7 +47,7 @@ export default async function FormFillerPage() {
         </div>
       </div>
 
-      <FormFilter wsUrl={wsUrl} forms={forms}></FormFilter>
+      <FormFilter wsUrl={wsUrl} forms={allForms}></FormFilter>
     </div>
   );
 }

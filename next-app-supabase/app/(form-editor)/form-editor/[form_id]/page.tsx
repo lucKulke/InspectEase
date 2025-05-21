@@ -26,6 +26,13 @@ export default async function FormEditorPage({
   const formId = (await params).form_id;
 
   const supabase = await createClient("form_builder");
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
   const supabaseStorage = await createClient();
   const dbActions = new DBActionsFormBuilderFetch(supabase);
   const storageActions = new DBActionsBucket(supabaseStorage);
@@ -119,16 +126,18 @@ export default async function FormEditorPage({
   return (
     <div className="mt-10 p-4">
       <div>
-        <Link
-          className="flex items-center mb-2"
-          href={
-            formBuilderLinks["inspectableObjects"].href +
-            "/" +
-            inspectableObjectInspectionFormWithProps.object_id
-          }
-        >
-          <ArrowBigLeft /> Back
-        </Link>
+        {inspectableObjectInspectionFormWithProps?.user_id === user.id && (
+          <Link
+            className="flex items-center mb-2"
+            href={
+              formBuilderLinks["inspectableObjects"].href +
+              "/" +
+              inspectableObjectInspectionFormWithProps.object_id
+            }
+          >
+            <ArrowBigLeft /> Back
+          </Link>
+        )}
       </div>
       <div className="w-1/4">
         <FormMetadataCard

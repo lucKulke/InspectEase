@@ -192,6 +192,40 @@ export class DBActionsFormBuilderFetch {
     };
   }
 
+  async fetchAllInspectableObjectsWithPropertiesFromTeam(
+    userIds: UUID[]
+  ): Promise<{
+    inspectableObjectsWithProps: IInspectableObjectWithPropertiesResponse[];
+    inspectableObjectsWithPropsError: SupabaseError;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object")
+      .select(
+        `
+    *, 
+    inspectable_object_property(*)
+    
+  `
+      )
+      .in("user_id", userIds);
+
+    console.log(
+      "fetch all inspectable objects with its properties from team in db:",
+      data
+    );
+    if (error) {
+      console.error(
+        "fetch inspectable all objects with its properties from team in db error: ",
+        error
+      );
+    }
+
+    return {
+      inspectableObjectsWithProps: data ? data : [],
+      inspectableObjectsWithPropsError: error as SupabaseError,
+    };
+  }
+
   async fetchInspectableObjectsByProfileId(profileId: UUID): Promise<{
     inspectableObjects: IInspectableObjectResponse[];
     inspectableObjectsError: SupabaseError;
@@ -224,6 +258,29 @@ export class DBActionsFormBuilderFetch {
     console.log("fetch inspectable object profiles in db:", data);
     if (error) {
       console.error("fetch inspectable object profiles in db error: ", error);
+    }
+
+    return {
+      inspectableObjectProfiles: data ? data : [],
+      inspectableObjectProfilesError: error as SupabaseError | null,
+    };
+  }
+
+  async fetchInspectableObjectProfilesFromTeam(userIds: UUID[]): Promise<{
+    inspectableObjectProfiles: IInspectableObjectProfileResponse[];
+    inspectableObjectProfilesError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_profile")
+      .select("*")
+      .in("user_id", userIds);
+
+    console.log("fetch inspectable object profiles from team in db:", data);
+    if (error) {
+      console.error(
+        "fetch inspectable object profiles from team in db error: ",
+        error
+      );
     }
 
     return {
@@ -284,6 +341,31 @@ export class DBActionsFormBuilderFetch {
     console.log("fetch all inspectable object profile in db:", data);
     if (error) {
       console.log("fetch all inspectable object profile in db error: ", error);
+    }
+
+    return {
+      inspectableObjectProfilePropertys: data ? data : [],
+      inspectableObjectProfilePropertysError: error as SupabaseError | null,
+    };
+  }
+
+  async fetchAllInspectableObjectProfileObjPropertysFromTeam(
+    userIds: UUID[]
+  ): Promise<{
+    inspectableObjectProfilePropertys: IInspectableObjectProfileObjPropertyResponse[];
+    inspectableObjectProfilePropertysError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_profile_obj_property")
+      .select("*")
+      .in("user_id", userIds);
+
+    console.log("fetch all inspectable object profile from team in db:", data);
+    if (error) {
+      console.log(
+        "fetch all inspectable object profile from team in db error: ",
+        error
+      );
     }
 
     return {
@@ -616,6 +698,40 @@ export class DBActionsFormBuilderFetch {
     };
   }
 
+  async fetchAllInspectableObjectInspectionFormsWithPropsFromTeam(
+    userIds: UUID[]
+  ): Promise<{
+    inspectableObjectInspectionForms: IInspectableObjectInspectionFormWithProps[];
+    inspectableObjectInspectionFormsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_inspection_form")
+      .select(
+        `
+        *,
+        inspectable_object_inspection_form_property(*)
+
+      `
+      )
+      .in("user_id", userIds);
+
+    console.log(
+      "fetch all inspectable object inspection forms with props from team in db:",
+      data
+    );
+    if (error) {
+      console.error(
+        "fetch all inspectable object inspection forms with props from team in db error: ",
+        error
+      );
+    }
+
+    return {
+      inspectableObjectInspectionForms: data ? data : [],
+      inspectableObjectInspectionFormsError: error as SupabaseError | null,
+    };
+  }
+
   async fetchInspectableObjectProfileFormTypesWithProps(
     profileId: UUID
   ): Promise<{
@@ -675,6 +791,41 @@ export class DBActionsFormBuilderFetch {
     if (error) {
       console.error(
         "fetch all inspectable object profile form types with props in db error tessssst: ",
+        error
+      );
+    }
+
+    return {
+      inspectableObjectProfileFormTypesWithProps: data ? data : [],
+      inspectableObjectProfileFormTypesWithPropsError:
+        error as SupabaseError | null,
+    };
+  }
+
+  async fetchAllInspectableObjectProfileFormTypesWithPropsFromTeam(
+    userIds: UUID[]
+  ): Promise<{
+    inspectableObjectProfileFormTypesWithProps: IInspectableObjectProfileFormTypeWithProps[];
+
+    inspectableObjectProfileFormTypesWithPropsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("inspectable_object_profile_form_type")
+      .select(
+        `
+        *,
+        inspectable_object_profile_form_type_property(*)
+        `
+      )
+      .in("user_id", userIds);
+
+    console.log(
+      "fetch all inspectable object profile form types with props from team in db :",
+      data
+    );
+    if (error) {
+      console.error(
+        "fetch all inspectable object profile form types with props from team in db error : ",
         error
       );
     }

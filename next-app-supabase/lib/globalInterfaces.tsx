@@ -32,9 +32,21 @@ export interface AnnotationsApiResponse {
 
 export interface IUserProfile {
   user_id: UUID;
-  first_name: string;
-  last_name: string;
-  openai_token: string;
+  first_name: string | null;
+  last_name: string | null;
+  openai_token: string | null;
+  team_id: UUID | null;
+}
+
+export interface ITeamInsert {
+  name: string;
+}
+
+export interface ITeamResponse extends ITeamInsert {
+  id: UUID;
+  created_at: Date | string;
+  owner_id: UUID;
+  members: UUID[];
 }
 
 export interface ActiveForm {

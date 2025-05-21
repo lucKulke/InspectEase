@@ -58,4 +58,26 @@ export class DBActionsFormFillerFetch {
       formsError: error as SupabaseError | null,
     };
   }
+
+  async fetchAllFillableFormsFromTeam(userIds: UUID[]): Promise<{
+    forms: IFillableFormPlusFillableFields[] | null;
+    formsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("form")
+      .select(
+        `*, main_section(sub_section(text_input(value),checkbox_group(main_checkbox(checked,sub_checkbox(checked)))))`
+      )
+      .in("user_id", userIds);
+
+    console.log("fetch all fillable forms from team in db:", data);
+    if (error) {
+      console.error("fetch all fillable forms from team in db error: ", error);
+    }
+
+    return {
+      forms: data,
+      formsError: error as SupabaseError | null,
+    };
+  }
 }

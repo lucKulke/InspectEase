@@ -133,6 +133,7 @@ export interface IInspectableObjectInspectionFormResponse
   created_at: Date | string;
   updated_at: Date | string;
   document_id: UUID;
+  user_id: UUID;
 }
 
 // ---------------
