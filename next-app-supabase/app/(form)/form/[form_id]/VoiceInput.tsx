@@ -1,12 +1,14 @@
 // components/VoiceInput.tsx
 import { useState, useRef, useEffect } from "react";
-import { transcribeAudio } from "./actions";
+import { getLiveTranscriptionDomain, transcribeAudio } from "./actions";
 
 import { Mic, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNotification } from "@/app/context/NotificationContext";
 
 interface VoiceInputProps {
   setUserInput: React.Dispatch<React.SetStateAction<string>>;
+  userInput: string;
   processAiResposne: (userInput: string) => Promise<void>;
   setTranscribing: React.Dispatch<React.SetStateAction<boolean>>;
   isThinking: boolean;
@@ -14,65 +16,87 @@ interface VoiceInputProps {
 
 export const VoiceInput = ({
   setUserInput,
+  userInput,
   processAiResposne,
   setTranscribing,
   isThinking,
 }: VoiceInputProps) => {
   const [isRecording, setIsRecording] = useState(false);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunks = useRef<Blob[]>([]);
+  const ws = useRef<WebSocket | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const hasMounted = useRef(false);
+  const { showNotification } = useNotification();
 
-  const blobToBase64 = (blob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = (reader.result as string).split(",")[1]; // remove "data:...base64,"
-        resolve(base64String);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
+  const handleStart = async () => {
+    const getLiveTranscriptionURL = await getLiveTranscriptionDomain();
+    ws.current = new WebSocket(
+      `wss://${getLiveTranscriptionURL}/ws/transcribe`
+    );
+    ws.current.onmessage = (event) => {
+      if (event.data.length > 1 && userInput !== event.data)
+        if (event.data === "TOO_LONG") {
+          setIsRecording(false);
+          showNotification(
+            "Recording voice",
+            `Audio message was to long... Connection was closed!`,
+            "warning"
+          );
+        } else {
+          setUserInput(event.data);
+        }
+    };
 
-  const startRecording = async () => {
-    setUserInput("");
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    streamRef.current = stream;
 
-    const mediaRecorder = new MediaRecorder(stream);
-    mediaRecorderRef.current = mediaRecorder;
-    audioChunks.current = [];
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext!;
+    const audioContext = new AudioContextClass({
+      sampleRate: 16000,
+    });
+    audioContextRef.current = audioContext;
 
-    mediaRecorder.ondataavailable = (event) => {
-      audioChunks.current.push(event.data);
+    const source = audioContext.createMediaStreamSource(stream);
+    const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+    processor.onaudioprocess = (e) => {
+      const input = e.inputBuffer.getChannelData(0);
+      const int16Buffer = convertFloat32ToInt16(input);
+      if (ws.current?.readyState === WebSocket.OPEN) {
+        ws.current.send(int16Buffer);
+      }
     };
 
-    mediaRecorder.onstop = async () => {
-      setTranscribing(true);
-      const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
+    source.connect(processor);
+    processor.connect(audioContext.destination);
 
-      const base64Audio = await blobToBase64(audioBlob);
-
-      const result = await transcribeAudio(base64Audio);
-      setTranscribing(false);
-      setUserInput(result.output.transcription);
-
-      processAiResposne(result.output.transcription);
-    };
-
-    mediaRecorder.start();
-    setIsRecording(true);
+    processorRef.current = processor;
   };
 
-  const stopRecording = () => {
-    mediaRecorderRef.current?.stop();
-    setIsRecording(false);
+  const handleStop = () => {
+    processorRef.current?.disconnect();
+    audioContextRef.current?.close();
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    ws.current?.close();
   };
-
   useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
+
     if (isRecording) {
-      startRecording();
+      setTranscribing(true);
+      handleStart();
     } else {
-      stopRecording();
+      handleStop();
+
+      // ✨ Trigger AI response only if stopped *after* recording
+      if (userInput && userInput.length > 1) {
+        setTranscribing(false);
+        processAiResposne(userInput);
+      }
     }
   }, [isRecording]);
 
@@ -116,6 +140,16 @@ export const VoiceInput = ({
     </button>
   );
 };
+
+// Convert Float32 [-1, 1] to Int16
+function convertFloat32ToInt16(buffer: Float32Array): ArrayBuffer {
+  const l = buffer.length;
+  const int16 = new Int16Array(l);
+  for (let i = 0; i < l; i++) {
+    int16[i] = Math.max(-1, Math.min(1, buffer[i])) * 0x7fff;
+  }
+  return int16.buffer;
+}
 
 // <div>
 //   <button onClick={isRecording ? stopRecording : startRecording}>
