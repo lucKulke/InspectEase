@@ -39,8 +39,7 @@ export class DBActionsFormBuilderFetch {
   }> {
     const { data, error } = await this.supabase
       .from("inspectable_object")
-      .select("*")
-      .eq("user_id", userId);
+      .select("*");
 
     console.log("fetch inspectable objects in db:", data);
     if (error) {
@@ -172,8 +171,7 @@ export class DBActionsFormBuilderFetch {
     inspectable_object_property(*)
     
   `
-      )
-      .eq("user_id", userId);
+      );
 
     console.log(
       "fetch all inspectable objects with its properties in db:",
@@ -218,8 +216,7 @@ export class DBActionsFormBuilderFetch {
   }> {
     const { data, error } = await this.supabase
       .from("inspectable_object_profile")
-      .select("*")
-      .eq("user_id", userId);
+      .select("*");
 
     console.log("fetch inspectable object profiles in db:", data);
     if (error) {
@@ -278,8 +275,7 @@ export class DBActionsFormBuilderFetch {
   }> {
     const { data, error } = await this.supabase
       .from("inspectable_object_profile_obj_property")
-      .select("*")
-      .eq("user_id", userId);
+      .select("*");
 
     console.log("fetch all inspectable object profile in db:", data);
     if (error) {
@@ -596,8 +592,7 @@ export class DBActionsFormBuilderFetch {
         inspectable_object_inspection_form_property(*)
 
       `
-      )
-      .eq("user_id", userId);
+      );
 
     console.log(
       "fetch all inspectable object inspection forms with props in db:",
@@ -665,8 +660,7 @@ export class DBActionsFormBuilderFetch {
         *,
         inspectable_object_profile_form_type_property(*)
         `
-      )
-      .eq("user_id", userId);
+      );
 
     console.log(
       "fetch all inspectable object profile form types with props in db tessssset:",

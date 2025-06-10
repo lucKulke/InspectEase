@@ -45,8 +45,7 @@ export class DBActionsFormFillerFetch {
       .from("form")
       .select(
         `*, main_section(sub_section(text_input(value),checkbox_group(main_checkbox(checked,sub_checkbox(checked)))))`
-      )
-      .eq("user_id", userId);
+      );
 
     console.log("fetch all fillable form in db:", data);
     if (error) {
