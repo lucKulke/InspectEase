@@ -18,8 +18,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import type { ITeamResponse } from "@/lib/database/public/interface";
-import { getTeamsSvgUrl } from "@/lib/storage/actions";
+import type { ITeamResponse } from "@/lib/database/public/publicInterface";
+import { getTeamsSvgUrl } from "./actions";
 import { Button } from "../ui/button";
 
 export function TeamSwitcher({

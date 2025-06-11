@@ -20,6 +20,10 @@ import {
   NotepadTextDashed,
   Pi,
   Cpu,
+  Group,
+  Car,
+  Blocks,
+  Mic,
 } from "lucide-react";
 
 import { NavUser } from "@/components/SideBar/NavUser";
@@ -38,7 +42,8 @@ import { NavSections } from "./NavSections";
 import {
   ITeamResponse,
   IUserProfileResponse,
-} from "@/lib/database/public/interface";
+} from "@/lib/database/public/publicInterface";
+import { NavMain } from "./NavMain";
 
 // This is sample data.
 const dataBuilder = {
@@ -50,43 +55,66 @@ const dataBuilder = {
   apps: [
     {
       name: "Builder",
-      logo: Wrench,
-      path: "/builder",
+      logo: Blocks,
+      path: "/form-builder",
     },
     {
-      name: "Runner",
-      logo: Microscope,
-      path: "/runner",
+      name: "Filler",
+      logo: Mic,
+      path: "/form-filler",
+    },
+  ],
+  navMain: [
+    {
+      title: "Dashboard",
+      url: "/form-builder",
+      icon: CircleGauge,
+      isActive: false,
+      items: [],
+    },
+    {
+      title: "Groups",
+      url: "/form-builder/inspectable-object-profiles",
+      icon: Group,
+      isActive: false,
+      items: [
+        {
+          title: "create",
+          url: "/form-builder/inspectable-object-profiles/create",
+        },
+      ],
+    },
+    {
+      title: "Objects",
+      url: "/form-builder/inspectable-objects",
+      icon: Car,
+      isActive: false,
+      items: [
+        {
+          title: "create",
+          url: "/form-builder/inspectable-objects/create",
+        },
+      ],
     },
   ],
 
-  sections: [
-    {
-      name: "Dashboard",
-      url: "/builder",
-      icon: CircleGauge,
-    },
-    {
-      name: "Test Plans",
-      url: "/builder/test-plans",
-      icon: NotepadTextDashed,
-    },
-    {
-      name: "Analyse",
-      url: "/builder/analysis",
-      icon: Microscope,
-    },
-    {
-      name: "Formulas",
-      url: "/builder/formulas",
-      icon: Pi,
-    },
-    {
-      name: "Instruments",
-      url: "/builder/instruments",
-      icon: Cpu,
-    },
-  ],
+  // sections: [
+  //   {
+  //     name: "Dashboard",
+  //     url: "/form-builder",
+  //     icon: CircleGauge,
+  //   },
+  //   {
+  //     name: "Groups",
+  //     url: "/form-builder/inspectable-object-profiles",
+  //     icon: Group,
+  //   },
+  //   {
+  //     name: "Objects",
+  //     url: "/form-builder/inspectable-objects",
+  //     icon: Car,
+  //   },
+  // ],
 };
 
 const dataRunner = {
@@ -98,29 +126,103 @@ const dataRunner = {
   apps: [
     {
       name: "Builder",
-      logo: Wrench,
-      path: "/builder",
+      logo: Blocks,
+      path: "/form-builder",
     },
     {
       name: "Runner",
-      logo: Microscope,
-      path: "/runner",
+      logo: Mic,
+      path: "/form-filler",
+    },
+  ],
+  navMain: [
+    {
+      title: "Dashboard",
+      url: "#",
+      icon: SquareTerminal,
+      isActive: true,
+      items: [
+        {
+          title: "History",
+          url: "#",
+        },
+        {
+          title: "Starred",
+          url: "#",
+        },
+        {
+          title: "Settings",
+          url: "#",
+        },
+      ],
+    },
+    {
+      title: "Playground",
+      url: "#",
+      icon: SquareTerminal,
+      isActive: true,
+      items: [
+        {
+          title: "History",
+          url: "#",
+        },
+        {
+          title: "Starred",
+          url: "#",
+        },
+        {
+          title: "Settings",
+          url: "#",
+        },
+      ],
+    },
+    {
+      title: "Models",
+      url: "#",
+      icon: Bot,
+      items: [
+        {
+          title: "Genesis",
+          url: "#",
+        },
+        {
+          title: "Explorer",
+          url: "#",
+        },
+        {
+          title: "Quantum",
+          url: "#",
+        },
+      ],
     },
   ],
 
-  sections: [
-    {
-      name: "Order",
-      url: "#",
-      icon: ListOrdered,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
+  // sections: [
+  //   {
+  //     name: "Order",
+  //     url: "#",
+  //     icon: ListOrdered,
+  //   },
+  //   {
+  //     name: "Travel",
+  //     url: "#",
+  //     icon: Map,
+  //   },
+  // ],
 };
+
+const sections = [
+  {
+    name: "Order",
+    url: "#",
+    icon: ListOrdered,
+  },
+  {
+    name: "Travel",
+    url: "#",
+    icon: Map,
+  },
+];
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: User;
@@ -134,21 +236,21 @@ export function AppSidebar({
   teams,
   ...props
 }: AppSidebarProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
 
   let data = null;
 
-  if (pathname.startsWith("/runner")) {
+  if (pathname.startsWith("/form-filler")) {
     dataRunner.apps = [
       {
-        name: "Runner",
-        logo: Microscope,
-        path: "/runner",
+        name: "Filler",
+        logo: Mic,
+        path: "/form-filler",
       },
       {
         name: "Builder",
-        logo: Wrench,
-        path: "/builder",
+        logo: Blocks,
+        path: "/form-builder",
       },
     ];
     data = dataRunner;
@@ -156,13 +258,13 @@ export function AppSidebar({
     dataBuilder.apps = [
       {
         name: "Builder",
-        logo: Wrench,
-        path: "/builder",
+        logo: Blocks,
+        path: "/form-builder",
       },
       {
-        name: "Runner",
-        logo: Microscope,
-        path: "/runner",
+        name: "Filler",
+        logo: Mic,
+        path: "/form-filler",
       },
     ];
 
@@ -179,7 +281,8 @@ export function AppSidebar({
         <AppSwitcher apps={data.apps} />
       </SidebarHeader>
       <SidebarContent>
-        <NavSections sections={data.sections} />
+        <NavMain items={data.navMain} />{" "}
+        {/* <NavSections sections={sections}></NavSections> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} profile={profile} teams={teams} />

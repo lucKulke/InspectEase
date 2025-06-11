@@ -38,18 +38,18 @@ export default function RootLayout({
             defaultTheme="system"
             enableSystem
           > */}
-        <ThemeProvider>
-          <NotificationProvider>
-            <div className="flex justify-between">
+        {/* <ThemeProvider> */}
+        <NotificationProvider>
+          {/* <div className="flex justify-between">
               <BackHomeButton></BackHomeButton>
               <ThemeSwitch />
-            </div>
+            </div> */}
 
-            <NotificationBanner />
+          <NotificationBanner />
 
-            {children}
-          </NotificationProvider>
-        </ThemeProvider>
+          {children}
+        </NotificationProvider>
+        {/* </ThemeProvider> */}
         {/* </NextThemesProvider> */}
       </body>
     </html>

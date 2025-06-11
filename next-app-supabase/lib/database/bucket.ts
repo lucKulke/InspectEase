@@ -34,4 +34,16 @@ export class DBActionsBucket {
 
     return { bucketResponse: data, bucketError: error };
   }
+
+  async getTeamsSvgUrl(
+    fileName: string | null
+  ): Promise<{ publicUrl: string | null }> {
+    if (!fileName) return { publicUrl: null };
+
+    const { data: url } = this.supabase.storage
+      .from("teams_svgs")
+      .getPublicUrl(`${fileName}.svg`);
+
+    return { publicUrl: url.publicUrl };
+  }
 }

@@ -22,9 +22,9 @@ import Link from "next/link";
 import type {
   ITeamResponse,
   IUserProfileResponse,
-} from "@/lib/database/public/interface";
+} from "@/lib/database/public/publicInterface";
 import { TeamSwitcher } from "./TeamSwitcher";
-import { switchActiveTeam } from "@/lib/gloabalActions";
+import { switchActiveTeam } from "@/lib/globalActions";
 import { UUID } from "crypto";
 
 export function NavUser({
@@ -47,7 +47,7 @@ export function NavUser({
     console.log("Selected team:", team);
     if (!profile) return;
     const { updatedProfile, updatedProfileError } = await switchActiveTeam(
-      profile?.id,
+      profile?.user_id,
       team ? (team.id as UUID) : null
     );
     // You can add your team switching logic here
