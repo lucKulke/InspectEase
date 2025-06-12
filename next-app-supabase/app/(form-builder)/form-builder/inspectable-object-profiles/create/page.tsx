@@ -26,7 +26,7 @@ export default async function InspectableObjectCreatePage() {
             <BreadcrumbList>
               <BreadcrumbItem className="hidden md:block">
                 <BreadcrumbLink href="/form-builder/inspectable-object-profiles">
-                  Group
+                  Profile
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
@@ -37,10 +37,9 @@ export default async function InspectableObjectCreatePage() {
           </Breadcrumb>
         </div>
       </header>
-      <div className="flex justify-center p-5">
+      <div className="flex justify-center m-10 mt-12">
         <CreateProfileCard />
       </div>
-      ;
     </>
   );
 }

@@ -6,6 +6,7 @@ import {
   IInspectableObjectProfileFormTypeInsert,
   IInspectableObjectProfileFormTypePropertyInsert,
   IInspectableObjectProfileFormTypePropertyResponse,
+  IInspectableObjectProfileInsert,
   IInspectableObjectProfileObjPropertyInsert,
   IInspectableObjectProfileObjPropertyResponse,
   IStringExtractionTrainingInsert,
@@ -16,6 +17,16 @@ import { DBActionsFormBuilderDelete } from "@/lib/database/form-builder/formBuil
 import { createClient } from "@/utils/supabase/server";
 import { UUID } from "crypto";
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
+
+export async function updateProfile(
+  profileId: UUID,
+  profileData: IInspectableObjectProfileInsert
+) {
+  const supbase = await createClient("form_builder");
+  const dbActions = new DBActionsFormBuilderUpdate(supbase);
+
+  return await dbActions.updateInspectableObjectProfile(profileId, profileData);
+}
 
 export async function createProfileObjProperty(
   property: IInspectableObjectProfileObjPropertyInsert
@@ -128,9 +139,9 @@ export async function createNewStringExtractionTraining(
   return await dbActions.createNewStringExtractionTraining(newTraining);
 }
 
-export async function deleteStringExtractionTraining(trainingId: UUID) {
+export async function deleteStringExtractionTraining(trainingIds: UUID[]) {
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderDelete(supabase);
 
-  return await dbActions.deleteStringExtractionTraining(trainingId);
+  return await dbActions.deleteStringExtractionTrainings(trainingIds);
 }

@@ -88,7 +88,7 @@ export const CreateProfileCard = () => {
     <Card className="w-1/2">
       <div className="flex justify-between items-center">
         <CardHeader>
-          <CardTitle>Profile</CardTitle>
+          <CardTitle>New Profile</CardTitle>
           <CardDescription>
             Enter the profiles name and description.
           </CardDescription>

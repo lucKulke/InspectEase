@@ -73,7 +73,7 @@ const dataBuilder = {
       items: [],
     },
     {
-      title: "Groups",
+      title: "Profiles",
       url: "/form-builder/inspectable-object-profiles",
       icon: Group,
       isActive: false,

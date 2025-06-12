@@ -13,17 +13,22 @@ import {
 import { IInspectableObjectProfileResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { SupabaseError } from "@/lib/globalInterfaces";
 import { IconType, profileIcons } from "@/lib/availableIcons";
+import { deleteProfiles } from "./actions";
+import { useNotification } from "@/app/context/NotificationContext";
+import { UUID } from "crypto";
 
-interface ObjectGroupTableProps {
+interface ObjectProfilesTableProps {
   inspectableObjectProfiles: IInspectableObjectProfileResponse[];
   inspectableObjectProfilesError: SupabaseError | null;
 }
 
-export const ObjectGroupTable = ({
+export const ObjectProfilesTable = ({
   inspectableObjectProfiles,
   inspectableObjectProfilesError,
-}: ObjectGroupTableProps) => {
+}: ObjectProfilesTableProps) => {
+  const { showNotification } = useNotification();
   // Example column definitions
+  const [data, setData] = useState(inspectableObjectProfiles);
   const [columns, setColumns] = useState<ColumnDef[]>([
     {
       key: "icon_key",
@@ -48,14 +53,14 @@ export const ObjectGroupTable = ({
       header: "Created At",
       sortable: true,
       className: "text-left",
-      cell: (value) => new Date(value).toLocaleString(),
+      cell: (value) => new Date(value).toISOString(),
     },
     {
       key: "updated_at",
       header: "Updated At",
       sortable: true,
       className: "text-left",
-      cell: (value) => new Date(value).toLocaleString(),
+      cell: (value) => new Date(value).toISOString(),
     },
     {
       key: "object_count",
@@ -91,57 +96,83 @@ export const ObjectGroupTable = ({
   ]);
 
   // Example data
-  const [data, setData] = useState(
-    inspectableObjectProfiles
-    //[
-    // {
-    //   id: 1,
-    //   name: "John Doe",
-    //   email: "john@example.com",
-    //   role: "Admin",
-    //   status: "Active",
-    //   lastLogin: "2023-06-10",
-    // },
-    // {
-    //   id: 2,
-    //   name: "Jane Smith",
-    //   email: "jane@example.com",
-    //   role: "User",
-    //   status: "Inactive",
-    //   lastLogin: "2023-05-22",
-    // },
-    // {
-    //   id: 3,
-    //   name: "Alice Johnson",
-    //   email: "alice@example.com",
-    //   role: "User",
-    //   status: "Active",
-    //   lastLogin: "2023-06-11",
-    // },
-    // {
-    //   id: 4,
-    //   name: "Bob Williams",
-    //   email: "bob@example.com",
-    //   role: "Admin",
-    //   status: "Active",
-    //   lastLogin: "2023-06-09",
-    // },
-    // {
-    //   id: 5,
-    //   name: "Charlie Brown",
-    //   email: "charlie@example.com",
-    //   role: "User",
-    //   status: "Inactive",
-    //   lastLogin: "2023-04-15",
-    // },
-    //]
-  );
+
+  //[
+  // {
+  //   id: 1,
+  //   name: "John Doe",
+  //   email: "john@example.com",
+  //   role: "Admin",
+  //   status: "Active",
+  //   lastLogin: "2023-06-10",
+  // },
+  // {
+  //   id: 2,
+  //   name: "Jane Smith",
+  //   email: "jane@example.com",
+  //   role: "User",
+  //   status: "Inactive",
+  //   lastLogin: "2023-05-22",
+  // },
+  // {
+  //   id: 3,
+  //   name: "Alice Johnson",
+  //   email: "alice@example.com",
+  //   role: "User",
+  //   status: "Active",
+  //   lastLogin: "2023-06-11",
+  // },
+  // {
+  //   id: 4,
+  //   name: "Bob Williams",
+  //   email: "bob@example.com",
+  //   role: "Admin",
+  //   status: "Active",
+  //   lastLogin: "2023-06-09",
+  // },
+  // {
+  //   id: 5,
+  //   name: "Charlie Brown",
+  //   email: "charlie@example.com",
+  //   role: "User",
+  //   status: "Inactive",
+  //   lastLogin: "2023-04-15",
+  // },
+  //]
+
+  const handleDelete = async (profileId: string[]) => {
+    const {
+      deletedInspectableObjectProfile,
+      deletedInspectableObjectProfileError,
+    } = await deleteProfiles(profileId as UUID[]);
+
+    if (deletedInspectableObjectProfileError) {
+      showNotification(
+        "Delete profile",
+        `Error: ${deletedInspectableObjectProfileError.message} (${deletedInspectableObjectProfileError.code})`,
+        "error"
+      );
+      return;
+    }
+    showNotification(
+      "Delete profile",
+      `Successfully deleted selected profiles`,
+      "info"
+    );
+    const deletedIds = deletedInspectableObjectProfile?.map((p) => p.id);
+    console.log(deletedIds);
+
+    setData((prev) =>
+      prev.filter((profile) => !deletedIds?.includes(profile.id))
+    );
+  };
 
   return (
     <DynamicTable
       basePath="/form-builder/inspectable-object-profiles"
       columns={columns}
       data={data}
+      onBulkDelete={handleDelete}
     />
   );
 };

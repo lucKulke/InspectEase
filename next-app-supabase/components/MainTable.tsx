@@ -1,8 +1,7 @@
 "use client";
 
 import type React from "react";
-
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -11,10 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronsUpDown, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export type ColumnDef = {
@@ -32,6 +31,8 @@ interface DynamicTableProps {
   data: Record<string, any>[];
   className?: string;
   basePath: string;
+  onBulkDelete?: (selectedIds: string[]) => void;
+  rowsPerPage?: number;
 }
 
 export function DynamicTable({
@@ -39,65 +40,93 @@ export function DynamicTable({
   data,
   className,
   basePath,
+  onBulkDelete,
+  rowsPerPage,
 }: DynamicTableProps) {
   const router = useRouter();
-
+  const [deleting, setDeleting] = useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{
     key: string | null;
     direction: SortDirection;
-  }>({
-    key: null,
-    direction: null,
-  });
+  }>({ key: null, direction: null });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Auto rowsPerPage if not provided
+  const estimatedRowHeight = 48;
+  const headerOffset = 300;
+  const [autoRowsPerPage, setAutoRowsPerPage] = useState(rowsPerPage ?? 10);
+
+  useEffect(() => {
+    if (rowsPerPage !== undefined) return;
+    const computeRows = () => {
+      const availableHeight = window.innerHeight - headerOffset;
+      const rows = Math.floor(availableHeight / estimatedRowHeight);
+      setAutoRowsPerPage(Math.max(1, rows));
+    };
+    computeRows();
+    window.addEventListener("resize", computeRows);
+    return () => window.removeEventListener("resize", computeRows);
+  }, [rowsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, sortConfig]);
 
   const handleSort = (key: string) => {
     setSortConfig((current) => {
       if (current.key === key) {
-        // Cycle through: asc -> desc -> null
-        if (current.direction === "asc") {
-          return { key, direction: "desc" };
-        } else if (current.direction === "desc") {
-          return { key: null, direction: null };
-        } else {
-          return { key, direction: "asc" };
-        }
+        if (current.direction === "asc") return { key, direction: "desc" };
+        if (current.direction === "desc") return { key: null, direction: null };
+        return { key, direction: "asc" };
       }
-      // New column, start with ascending
       return { key, direction: "asc" };
     });
   };
 
-  const sortedData = useMemo(() => {
-    if (!sortConfig.key || !sortConfig.direction) {
-      return data;
-    }
+  const filteredData = useMemo(() => {
+    if (!searchTerm) return data;
+    return data.filter((row) =>
+      Object.values(row)
+        .join(" ")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+    );
+  }, [data, searchTerm]);
 
-    return [...data].sort((a, b) => {
+  const sortedData = useMemo(() => {
+    if (!sortConfig.key || !sortConfig.direction) return filteredData;
+    return [...filteredData].sort((a, b) => {
       const aValue = a[sortConfig.key!];
       const bValue = b[sortConfig.key!];
-
-      if (aValue === null || aValue === undefined) return 1;
-      if (bValue === null || bValue === undefined) return -1;
-
+      if (aValue == null) return 1;
+      if (bValue == null) return -1;
       if (typeof aValue === "string" && typeof bValue === "string") {
         return sortConfig.direction === "asc"
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       }
-
-      if (sortConfig.direction === "asc") {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
+      return sortConfig.direction === "asc"
+        ? aValue > bValue
+          ? 1
+          : -1
+        : aValue < bValue
+        ? 1
+        : -1;
     });
-  }, [data, sortConfig]);
+  }, [filteredData, sortConfig]);
+
+  const effectiveRowsPerPage = rowsPerPage ?? autoRowsPerPage;
+
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * effectiveRowsPerPage;
+    return sortedData.slice(start, start + effectiveRowsPerPage);
+  }, [sortedData, currentPage, effectiveRowsPerPage]);
 
   const getSortIcon = (key: string) => {
-    if (sortConfig.key !== key) {
+    if (sortConfig.key !== key)
       return <ChevronsUpDown className="ml-1 h-4 w-4" />;
-    }
-
     return sortConfig.direction === "asc" ? (
       <ChevronUp className="ml-1 h-4 w-4" />
     ) : (
@@ -105,11 +134,66 @@ export function DynamicTable({
     );
   };
 
+  const toggleSelectAll = (checked: boolean) => {
+    const idsOnPage = paginatedData.map((row) => row.id);
+    setSelectedIds((prev) => {
+      const updated = new Set(prev);
+      idsOnPage.forEach((id) =>
+        checked ? updated.add(id) : updated.delete(id)
+      );
+      return updated;
+    });
+  };
+
+  useEffect(() => {
+    const totalPages = Math.ceil(sortedData.length / effectiveRowsPerPage);
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [sortedData, currentPage, effectiveRowsPerPage]);
+
+  const isAllSelected = paginatedData.every((row) => selectedIds.has(row.id));
+
+  const handleDelete = () => {
+    if (onBulkDelete && selectedIds.size > 0) {
+      onBulkDelete(Array.from(selectedIds));
+      setSelectedIds(new Set());
+    }
+  };
+
   return (
     <div className={cn("w-full overflow-auto", className)}>
+      {/* Search and Delete Row */}
+      <div className="mb-4 flex justify-between items-center">
+        <input
+          type="text"
+          placeholder="Search..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full rounded border px-3 py-2 text-sm max-w-xs"
+        />
+        {selectedIds.size > 0 && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleDelete}
+            className="ml-4"
+          >
+            <Trash2 className="h-4 w-4 mr-2" /> Delete ({selectedIds.size})
+          </Button>
+        )}
+      </div>
+
+      {/* Table */}
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-10">
+              <Checkbox
+                checked={isAllSelected}
+                onCheckedChange={(val) => toggleSelectAll(Boolean(val))}
+              />
+            </TableHead>
             {columns.map((column) => (
               <TableHead key={column.key} className={cn(column.className)}>
                 {column.sortable !== false ? (
@@ -139,22 +223,35 @@ export function DynamicTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedData.length === 0 ? (
+          {paginatedData.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
+              <TableCell
+                colSpan={columns.length + 1}
+                className="h-24 text-center"
+              >
                 No results.
               </TableCell>
             </TableRow>
           ) : (
-            sortedData.map((row, rowIndex) => (
-              <TableRow
-                key={rowIndex}
-                onClick={() => router.push(basePath + "/" + row.id)}
-              >
+            paginatedData.map((row, rowIndex) => (
+              <TableRow key={row.id} className="cursor-pointer">
+                <TableCell>
+                  <Checkbox
+                    checked={selectedIds.has(row.id)}
+                    onCheckedChange={(val) => {
+                      setSelectedIds((prev) => {
+                        const updated = new Set(prev);
+                        val ? updated.add(row.id) : updated.delete(row.id);
+                        return updated;
+                      });
+                    }}
+                  />
+                </TableCell>
                 {columns.map((column) => (
                   <TableCell
                     key={`${rowIndex}-${column.key}`}
                     className={column.className}
+                    onClick={() => router.push(basePath + "/" + row.id)}
                   >
                     {column.cell
                       ? column.cell(row[column.key], row)
@@ -169,6 +266,25 @@ export function DynamicTable({
           )}
         </TableBody>
       </Table>
+
+      {/* Pagination */}
+      {sortedData.length > effectiveRowsPerPage && (
+        <div className="mt-4 flex justify-center gap-2">
+          {Array.from(
+            { length: Math.ceil(sortedData.length / effectiveRowsPerPage) },
+            (_, index) => (
+              <Button
+                key={index + 1}
+                variant={index + 1 === currentPage ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(index + 1)}
+              >
+                {index + 1}
+              </Button>
+            )
+          )}
+        </div>
+      )}
     </div>
   );
 }

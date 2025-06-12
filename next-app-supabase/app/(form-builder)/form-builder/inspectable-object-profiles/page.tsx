@@ -1,11 +1,8 @@
 import React from "react";
-import { InspectableObjectProfilesTable } from "./InspectableObjectProfilesTable";
-import { PageHeading } from "@/components/PageHeading";
+
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
-import { MainAddButton } from "@/components/MainAddButton";
-import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
+
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -14,7 +11,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import { ObjectGroupTable } from "./ObjectGroupTable";
+import { ObjectProfilesTable } from "./ObjectProfilesTable";
 
 export default async function InspectableObjectProfilesPage() {
   const supabase = await createClient("form_builder");
@@ -39,7 +36,7 @@ export default async function InspectableObjectProfilesPage() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbPage>Groups</BreadcrumbPage>
+                <BreadcrumbPage>Profiles</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -47,10 +44,10 @@ export default async function InspectableObjectProfilesPage() {
       </header>
       <div className="p-5">
         <div className="flex justify-center m-10">
-          <ObjectGroupTable
+          <ObjectProfilesTable
             inspectableObjectProfiles={inspectableObjectProfiles}
             inspectableObjectProfilesError={inspectableObjectProfilesError}
-          ></ObjectGroupTable>
+          ></ObjectProfilesTable>
           {/* <InspectableObjectProfilesTable
             inspectableObjectProfiles={inspectableObjectProfiles}
             inspectableObjectProfilesError={inspectableObjectProfilesError}

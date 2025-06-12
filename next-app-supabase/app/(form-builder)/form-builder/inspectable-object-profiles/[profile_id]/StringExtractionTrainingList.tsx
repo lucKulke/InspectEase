@@ -38,6 +38,7 @@ import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 import { IStringExtractionTrainingResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { Ellipsis, Logs, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { ColumnDef, DynamicTable } from "@/components/MainTable";
 
 interface StringExtractionTrainingListProps {
   profileId: UUID;
@@ -57,6 +58,25 @@ export const StringExtractionTrainingList = ({
   );
 
   const [newTrainingsLabel, setNewTrainingsLabel] = useState<string>("");
+
+  const [columns, setColumns] = useState<ColumnDef[]>([
+    {
+      key: "name",
+      header: "Name",
+      sortable: true,
+    },
+    {
+      key: "prompt",
+      header: "Prompt",
+      sortable: true,
+    },
+    {
+      key: "created_at",
+      header: "Created at",
+      sortable: true,
+      className: "text-right ",
+    },
+  ]);
 
   const handleCreateNewTraining = async () => {
     const { stringExtractionTraining, stringExtractionTrainingError } =
@@ -87,136 +107,106 @@ export const StringExtractionTrainingList = ({
     }
   };
 
-  const handleDeleteStringExtractionTraining = async (trainingId: UUID) => {
-    console.log("id", trainingId);
+  const handleDeleteStringExtractionTrainings = async (
+    trainingIds: string[]
+  ) => {
     const {
       deletedStringExtractionTraining,
       deletedStringExtractionTrainingError,
-    } = await deleteStringExtractionTraining(trainingId);
+    } = await deleteStringExtractionTraining(trainingIds as UUID[]);
 
     if (deletedStringExtractionTrainingError) {
       showNotification(
-        "Delete training",
+        "Delete trainings",
         `Error: ${deletedStringExtractionTrainingError.message} (${deletedStringExtractionTrainingError.code})`,
         "error"
       );
     } else if (deletedStringExtractionTraining) {
       showNotification(
-        "Delete training",
-        `Successfully deleted training with id '${deletedStringExtractionTraining.id}'`,
+        "Delete trainings",
+        `Successfully deleted trainings `,
         "info"
       );
-      setList(list.filter((training) => training.id !== trainingId));
+      const deletedIds = deletedStringExtractionTraining.map(
+        (training) => training.id
+      );
+      setList(list.filter((training) => !deletedIds?.includes(training.id)));
       router.refresh();
     }
   };
 
   return (
     <div>
-      <div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Text Extraction Training</CardTitle>
-            <CardDescription>
-              train ai to extract the correct substrings
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <p className="text-sm text-slate-600">Trainings</p>
-              <Button
-                onClick={() => {
-                  setOpenCreateNewTrainingDialog(true);
-                }}
-              >
+      <Card>
+        <CardHeader>
+          <CardTitle>Text Extraction Training</CardTitle>
+          <CardDescription>
+            train ai to extract the correct substrings
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-slate-600">Trainings</p>
+            <Button
+              onClick={() => {
+                setOpenCreateNewTrainingDialog(true);
+              }}
+            >
+              Create
+            </Button>
+          </div>
+
+          <div className="mt-5">
+            <DynamicTable
+              basePath={
+                formBuilderLinks["inspectableObjectProfiles"].href +
+                "/" +
+                profileId +
+                "/string-extraction-training"
+              }
+              rowsPerPage={5}
+              columns={columns}
+              data={list}
+              onBulkDelete={handleDeleteStringExtractionTrainings}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog
+        open={openCreateNewTrainingDialog}
+        onOpenChange={setOpenCreateNewTrainingDialog}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create new from type</DialogTitle>
+            <DialogDescription>Add a new form type</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="newTrainingLabel" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="newTrainingLabel"
+                value={newTrainingsLabel} // Controlled input
+                onChange={(e) => setNewTrainingsLabel(e.target.value)} // Update state on input change
+                className="col-span-3"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            {newTrainingsLabel.length > 3 ? (
+              <Button onClick={() => handleCreateNewTraining()}>Create</Button>
+            ) : (
+              <Button disabled variant="outline">
                 Create
               </Button>
-            </div>
-
-            <ul className="space-y-3 mt-5">
-              {list &&
-                list.map((training) => (
-                  <li
-                    className="flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-point"
-                    key={training.id}
-                  >
-                    <p>{training.name}</p>
-
-                    <DropdownMenu modal={false}>
-                      <DropdownMenuTrigger>
-                        <Ellipsis className="text-slate-500 "></Ellipsis>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <Link
-                            className="w-full h-full"
-                            href={
-                              formBuilderLinks["inspectableObjectProfiles"]
-                                .href +
-                              "/" +
-                              profileId +
-                              "/string-extraction-training/" +
-                              training.id
-                            }
-                          >
-                            view
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() =>
-                            handleDeleteStringExtractionTraining(training.id)
-                          }
-                        >
-                          delete <Trash2></Trash2>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </li>
-                ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Dialog
-          open={openCreateNewTrainingDialog}
-          onOpenChange={setOpenCreateNewTrainingDialog}
-        >
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Create new from type</DialogTitle>
-              <DialogDescription>Add a new form type</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="newTrainingLabel" className="text-right">
-                  Name
-                </Label>
-                <Input
-                  id="newTrainingLabel"
-                  value={newTrainingsLabel} // Controlled input
-                  onChange={(e) => setNewTrainingsLabel(e.target.value)} // Update state on input change
-                  className="col-span-3"
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              {newTrainingsLabel.length > 3 ? (
-                <Button onClick={() => handleCreateNewTraining()}>
-                  Create
-                </Button>
-              ) : (
-                <Button disabled variant="outline">
-                  Create
-                </Button>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

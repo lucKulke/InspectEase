@@ -26,23 +26,23 @@ export class DBActionsFormBuilderDelete {
     this.supabase = supabase;
   }
 
-  async deleteInspectableObjectProfile(profileId: UUID): Promise<{
-    deletedInspectableObjectProfile: IInspectableObjectProfileResponse;
+  async deleteInspectableObjectProfiles(profileIds: UUID[]): Promise<{
+    deletedInspectableObjectProfile: IInspectableObjectProfileResponse[] | null;
     deletedInspectableObjectProfileError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("inspectable_object_profile")
       .delete()
-      .eq("id", profileId)
+      .in("id", profileIds)
       .select();
 
-    console.log("delete inspectable object profiles in db:", data);
+    console.log("deleted inspectable object profiles in db:", data);
     if (error) {
       console.error("delete inspectable object profiles in db error: ", error);
     }
 
     return {
-      deletedInspectableObjectProfile: data ? data[0] : null,
+      deletedInspectableObjectProfile: data,
       deletedInspectableObjectProfileError: error as SupabaseError | null,
     };
   }
@@ -390,23 +390,23 @@ export class DBActionsFormBuilderDelete {
     };
   }
 
-  async deleteStringExtractionTraining(trainingId: UUID): Promise<{
-    deletedStringExtractionTraining: IStringExtractionTrainingResponse | null;
+  async deleteStringExtractionTrainings(trainingIds: UUID[]): Promise<{
+    deletedStringExtractionTraining: IStringExtractionTrainingResponse[] | null;
     deletedStringExtractionTrainingError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("string_extraction_training")
       .delete()
-      .eq("id", trainingId)
+      .in("id", trainingIds)
       .select();
 
-    console.log("delete training in db:", data);
+    console.log("delete trainings in db:", data);
     if (error) {
-      console.error("delete training in db error:", error);
+      console.error("delete trainings in db error:", error);
     }
 
     return {
-      deletedStringExtractionTraining: data ? data[0] : null,
+      deletedStringExtractionTraining: data,
       deletedStringExtractionTrainingError: error as SupabaseError | null,
     };
   }
