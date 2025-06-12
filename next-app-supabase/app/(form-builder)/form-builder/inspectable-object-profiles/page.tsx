@@ -14,6 +14,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
+import { ObjectGroupTable } from "./ObjectGroupTable";
 
 export default async function InspectableObjectProfilesPage() {
   const supabase = await createClient("form_builder");
@@ -46,10 +47,14 @@ export default async function InspectableObjectProfilesPage() {
       </header>
       <div className="p-5">
         <div className="flex justify-center m-10">
-          <InspectableObjectProfilesTable
+          <ObjectGroupTable
             inspectableObjectProfiles={inspectableObjectProfiles}
             inspectableObjectProfilesError={inspectableObjectProfilesError}
-          />
+          ></ObjectGroupTable>
+          {/* <InspectableObjectProfilesTable
+            inspectableObjectProfiles={inspectableObjectProfiles}
+            inspectableObjectProfilesError={inspectableObjectProfilesError}
+          /> */}
         </div>
       </div>
     </>
