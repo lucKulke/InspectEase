@@ -1,35 +1,41 @@
 import { MainNavBar } from "@/components/MainNavBar";
 import Link from "next/link";
-import { Mic, Wrench } from "lucide-react";
-import { formFillerLinks } from "@/lib/links/formFillerLinks";
+import { Edit3, Wrench } from "lucide-react";
+import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 
-const FormFillerNavbarIcon = () => {
-  return (
-    <Link
-      href={formFillerLinks.home.href}
-      className="flex 
-   space-x-3 items-center"
-    >
-      <Mic size={36}></Mic>
-      <p className="font-bold text-xl">Form Filler</p>
-    </Link>
+import { AppSidebar } from "@/components/SideBar/AppSidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
+import { createClient } from "@/utils/supabase/server";
+import { UUID } from "crypto";
+import { redirect } from "next/navigation";
+import { ReactNode } from "react";
+
+interface FillerLayoutProps {
+  children: ReactNode;
+}
+
+export default async function FillerLayout({ children }: FillerLayoutProps) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/auth/login");
+  const publicFetch = new DBActionsPublicFetch(supabase);
+
+  const { userProfile, userProfileError } = await publicFetch.fetchUserProfile(
+    user.id as UUID
   );
-};
 
-export default function FormFillerLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+  const { teams, teamsError } = await publicFetch.fetchAllTeams(
+    user.id as UUID
+  );
+
   return (
-    <div className="m-auto max-w-[1400px] p-4">
-      <MainNavBar
-        icon={FormFillerNavbarIcon()}
-        links={formFillerLinks}
-      ></MainNavBar>
-      <div className="border-2 rounded-xl min-h-screen mt-4 dark:border-slate-500 border-black p-4">
-        {children}
-      </div>
-    </div>
+    <SidebarProvider>
+      <AppSidebar user={user} profile={userProfile} teams={teams} />
+      <SidebarInset>{children}</SidebarInset>
+    </SidebarProvider>
   );
 }

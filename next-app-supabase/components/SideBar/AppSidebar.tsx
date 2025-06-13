@@ -54,14 +54,14 @@ const dataBuilder = {
   },
   apps: [
     {
-      name: "Builder",
-      logo: Blocks,
-      path: "/form-builder",
-    },
-    {
       name: "Filler",
       logo: Mic,
       path: "/form-filler",
+    },
+    {
+      name: "Builder",
+      logo: Blocks,
+      path: "/form-builder",
     },
   ],
   navMain: [
@@ -117,7 +117,7 @@ const dataBuilder = {
   // ],
 };
 
-const dataRunner = {
+const dataFiller = {
   user: {
     name: "Unknown",
     email: "m@unknown.com",
@@ -130,99 +130,26 @@ const dataRunner = {
       path: "/form-builder",
     },
     {
-      name: "Runner",
+      name: "Filler",
       logo: Mic,
       path: "/form-filler",
     },
   ],
   navMain: [
     {
-      title: "Dashboard",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
+      title: "Forms",
+      url: "/form-filler",
+      icon: NotepadText,
+      isActive: false,
       items: [
         {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
+          title: "select",
+          url: "/form-filler/select-form",
         },
       ],
     },
   ],
-
-  // sections: [
-  //   {
-  //     name: "Order",
-  //     url: "#",
-  //     icon: ListOrdered,
-  //   },
-  //   {
-  //     name: "Travel",
-  //     url: "#",
-  //     icon: Map,
-  //   },
-  // ],
 };
-
-const sections = [
-  {
-    name: "Order",
-    url: "#",
-    icon: ListOrdered,
-  },
-  {
-    name: "Travel",
-    url: "#",
-    icon: Map,
-  },
-];
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: User;
@@ -241,33 +168,8 @@ export function AppSidebar({
   let data = null;
 
   if (pathname.startsWith("/form-filler")) {
-    dataRunner.apps = [
-      {
-        name: "Filler",
-        logo: Mic,
-        path: "/form-filler",
-      },
-      {
-        name: "Builder",
-        logo: Blocks,
-        path: "/form-builder",
-      },
-    ];
-    data = dataRunner;
+    data = dataFiller;
   } else {
-    dataBuilder.apps = [
-      {
-        name: "Builder",
-        logo: Blocks,
-        path: "/form-builder",
-      },
-      {
-        name: "Filler",
-        logo: Mic,
-        path: "/form-filler",
-      },
-    ];
-
     data = dataBuilder;
   }
 

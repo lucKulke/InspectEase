@@ -33,6 +33,7 @@ import { deleteForm } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { ActiveForm } from "@/lib/globalInterfaces";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface FormFilterProps {
   forms: IFillableFormPlusFillableFields[] | null;
@@ -41,6 +42,18 @@ interface FormFilterProps {
 
 export const FormFilter = ({ forms, wsUrl }: FormFilterProps) => {
   if (!forms) return <div>No forms yet</div>;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(tabFromUrl || "inProgress");
+
+  useEffect(() => {
+    if (tabFromUrl !== activeTab) {
+      const params = new URLSearchParams(Array.from(searchParams.entries()));
+      params.set("tab", activeTab);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    }
+  }, [activeTab]);
 
   const { data, isConnected } = useWebSocket<ActiveForm[]>(wsUrl);
   const [activeForms, setActiveForms] = useState<ActiveForm[]>([]);
@@ -52,7 +65,6 @@ export const FormFilter = ({ forms, wsUrl }: FormFilterProps) => {
   }, [data]);
 
   const { showNotification } = useNotification();
-  const [activeTab, setActiveTab] = useState("inProgress");
 
   const [fillableForms, setFillableForms] =
     useState<IFillableFormPlusFillableFields[]>(forms);
@@ -89,7 +101,7 @@ export const FormFilter = ({ forms, wsUrl }: FormFilterProps) => {
     }
   };
   return (
-    <div className="container mx-auto px-4">
+    <>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="inProgress">In-progress</TabsTrigger>
@@ -178,6 +190,6 @@ export const FormFilter = ({ forms, wsUrl }: FormFilterProps) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 };

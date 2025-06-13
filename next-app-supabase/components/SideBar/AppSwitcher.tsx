@@ -18,7 +18,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export function AppSwitcher({
   apps,
@@ -30,11 +30,13 @@ export function AppSwitcher({
   }[];
 }) {
   const router = useRouter();
-
+  const pathname = usePathname() ?? "";
   const { isMobile } = useSidebar();
-  const [activeTeam, setActiveTeam] = React.useState(apps[0]);
+  const activeApp = apps.find((app) => {
+    return pathname.includes(app.path);
+  });
 
-  if (!activeTeam) {
+  if (!activeApp) {
     return null;
   }
 
@@ -48,12 +50,10 @@ export function AppSwitcher({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <activeTeam.logo className="size-4" />
+                <activeApp.logo className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">
-                  {activeTeam.name}
-                </span>
+                <span className="truncate font-semibold">{activeApp.name}</span>
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>

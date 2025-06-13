@@ -14,6 +14,16 @@ import { FormFilter } from "./formFilter";
 import { DBActionsFormFillerFetch } from "@/lib/database/form-filler/formFillerFetch";
 import { UUID } from "crypto";
 import { MainAddButton } from "@/components/MainAddButton";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export default async function FormFillerPage() {
   const supabase = await createClient("form_filler");
@@ -32,15 +42,23 @@ export default async function FormFillerPage() {
   );
 
   return (
-    <div className="">
-      <div className="flex items-center justify-between">
-        <PageHeading>Form Filler</PageHeading>
-        <div className="mr-2 flex">
-          <MainAddButton href={formFillerLinks["selectForm"].href} />
+    <>
+      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem className="hidden md:block">
+                <BreadcrumbPage>Forms</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         </div>
+      </header>
+      <div className="m-5 ml-8 mr-8">
+        <FormFilter wsUrl={wsUrl} forms={forms}></FormFilter>
       </div>
-
-      <FormFilter wsUrl={wsUrl} forms={forms}></FormFilter>
-    </div>
+    </>
   );
 }
