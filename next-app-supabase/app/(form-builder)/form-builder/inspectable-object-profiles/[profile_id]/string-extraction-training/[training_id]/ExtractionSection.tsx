@@ -216,7 +216,7 @@ export const ExtractionSection = ({
   };
 
   return (
-    <main className="m-10 mt-12">
+    <main>
       <h1 className="text-3xl font-bold mb-6">
         AI String Extraction Trainer: {stringExtractionTraining?.name}
       </h1>

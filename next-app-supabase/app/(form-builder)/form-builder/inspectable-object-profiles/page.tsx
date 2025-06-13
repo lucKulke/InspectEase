@@ -42,17 +42,15 @@ export default async function InspectableObjectProfilesPage() {
           </Breadcrumb>
         </div>
       </header>
-      <div className="p-5">
-        <div className="flex justify-center m-10">
-          <ObjectProfilesTable
-            inspectableObjectProfiles={inspectableObjectProfiles}
-            inspectableObjectProfilesError={inspectableObjectProfilesError}
-          ></ObjectProfilesTable>
-          {/* <InspectableObjectProfilesTable
+      <div className="m-5 ml-8 mr-8">
+        <ObjectProfilesTable
+          inspectableObjectProfiles={inspectableObjectProfiles}
+          inspectableObjectProfilesError={inspectableObjectProfilesError}
+        ></ObjectProfilesTable>
+        {/* <InspectableObjectProfilesTable
             inspectableObjectProfiles={inspectableObjectProfiles}
             inspectableObjectProfilesError={inspectableObjectProfilesError}
           /> */}
-        </div>
       </div>
     </>
   );

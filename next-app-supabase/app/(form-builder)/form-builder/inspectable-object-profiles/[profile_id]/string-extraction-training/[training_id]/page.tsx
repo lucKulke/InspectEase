@@ -83,7 +83,7 @@ export default async function TextInputFieldTrainingPage({
           </Breadcrumb>
         </div>
       </header>
-      <div>
+      <div className="m-5 ml-8 mr-8">
         <ExtractionSection
           stringExtractionTraining={stringExtractionTraining}
           stringExtractionTrainingExamples={stringExtractionTrainingExamples}

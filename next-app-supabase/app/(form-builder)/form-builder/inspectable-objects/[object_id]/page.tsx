@@ -13,7 +13,7 @@ import { ErrorHandler } from "../../../../../components/ErrorHandler";
 import { SupabaseError } from "@/lib/globalInterfaces";
 
 import { MainAddButton } from "@/components/MainAddButton";
-import { InspectionPlanTypes } from "./InspectionPlansTable";
+import { InspectionPlanTypes } from "./InspectionPlanTypes";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 import { DiscAlbum } from "lucide-react";
 import {
@@ -114,7 +114,7 @@ export default async function ObjectPage({
         </div>
       </header>
 
-      <div className="m-10 mt-12">
+      <div className="m-5 ml-8 mr-8">
         <ObjectCard
           objectProfileProps={profileProperties}
           objectInfo={inspectableObjectWithPropertiesAndProfile}

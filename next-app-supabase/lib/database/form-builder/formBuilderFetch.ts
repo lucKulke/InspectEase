@@ -215,7 +215,7 @@ export class DBActionsFormBuilderFetch {
     inspectableObjectProfilesError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
-      .from("inspectable_object_profile()")
+      .from("inspectable_object_profile")
       .select("*");
 
     console.log("fetch inspectable object profiles in db:", data);

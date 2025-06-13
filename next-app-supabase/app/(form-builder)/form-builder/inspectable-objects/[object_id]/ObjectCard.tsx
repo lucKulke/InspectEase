@@ -143,7 +143,7 @@ export const ObjectCard = ({
 
   return (
     <div>
-      <Card className="w-1/2">
+      <Card className="max-w-[500px]">
         <div className="flex justify-between">
           <CardHeader>
             <CardTitle>Metadata</CardTitle>

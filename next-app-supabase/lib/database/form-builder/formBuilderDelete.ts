@@ -346,14 +346,14 @@ export class DBActionsFormBuilderDelete {
       deletedFormTextInputFieldsError: error as SupabaseError | null,
     };
   }
-  async deleteEntireForm(formId: UUID): Promise<{
-    deletedForm: IInspectableObjectInspectionFormResponse | null;
-    deletedFormError: SupabaseError | null;
+  async deleteEntireForms(formIds: UUID[]): Promise<{
+    deletedForms: IInspectableObjectInspectionFormResponse[] | null;
+    deletedFormsError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("inspectable_object_inspection_form")
       .delete()
-      .eq("id", formId)
+      .in("id", formIds)
       .select();
 
     console.log("delete entire form in db:", data);
@@ -362,8 +362,8 @@ export class DBActionsFormBuilderDelete {
     }
 
     return {
-      deletedForm: data ? data[0] : null,
-      deletedFormError: error as SupabaseError | null,
+      deletedForms: data,
+      deletedFormsError: error,
     };
   }
 

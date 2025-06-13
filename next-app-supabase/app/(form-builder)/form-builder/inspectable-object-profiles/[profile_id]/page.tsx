@@ -93,7 +93,7 @@ export default async function InspectableObjectProfilePage({
         </div>
       </header>
 
-      <div className="m-12">
+      <div className="m-5 ml-8 mr-8">
         <MetadataCard
           profileId={inspectableObjectProfileWithObjProps.id}
           name={inspectableObjectProfileWithObjProps.name}

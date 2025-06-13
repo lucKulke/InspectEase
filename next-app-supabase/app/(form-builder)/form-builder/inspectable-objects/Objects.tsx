@@ -40,38 +40,35 @@ export const Objects = ({ profiles, objects }: ObjectsProps) => {
   }, [activeTab]);
 
   return (
-    <div className="m-10">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          {profiles.map((profile) => {
-            return (
-              <TabsTrigger
-                key={profile.id}
-                value={profile.id}
-                className="space-x-2"
-              >
-                {profileIcons[profile.icon_key as IconType]}
-                <p>{profile.name}</p>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <TabsList className="mb-4">
         {profiles.map((profile) => {
-          const inspectableObjectProfilePropertys =
-            objects[profile.id].profileProps;
-          const inspectableObjectsWitProps =
-            objects[profile.id].objectsWithProps;
           return (
-            <TabsContent key={profile.id} value={profile.id}>
-              <InspectableObjectsTable
-                profile={profile}
-                profileProps={inspectableObjectProfilePropertys}
-                objectsWithProps={inspectableObjectsWitProps}
-              ></InspectableObjectsTable>
-            </TabsContent>
+            <TabsTrigger
+              key={profile.id}
+              value={profile.id}
+              className="space-x-2"
+            >
+              {profileIcons[profile.icon_key as IconType]}
+              <p>{profile.name}</p>
+            </TabsTrigger>
           );
         })}
-      </Tabs>
-    </div>
+      </TabsList>
+      {profiles.map((profile) => {
+        const inspectableObjectProfilePropertys =
+          objects[profile.id].profileProps;
+        const inspectableObjectsWitProps = objects[profile.id].objectsWithProps;
+        return (
+          <TabsContent key={profile.id} value={profile.id}>
+            <InspectableObjectsTable
+              profile={profile}
+              profileProps={inspectableObjectProfilePropertys}
+              objectsWithProps={inspectableObjectsWitProps}
+            ></InspectableObjectsTable>
+          </TabsContent>
+        );
+      })}
+    </Tabs>
   );
 };

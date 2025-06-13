@@ -182,7 +182,13 @@ export const NewInspectionFormCard = ({
       "info"
     );
     setLoading(false);
-    redirect(formBuilderLinks["inspectableObjects"].href + "/" + objectId);
+    redirect(
+      formBuilderLinks["inspectableObjects"].href +
+        "/" +
+        objectId +
+        "?tab=" +
+        selectedFormTypeId
+    );
   };
 
   function compare(

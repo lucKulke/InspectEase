@@ -102,7 +102,7 @@ export default async function ObjectsPage() {
           </Breadcrumb>
         </div>
       </header>
-      <div>
+      <div className="m-5 ml-8 mr-8">
         <Objects
           objects={objects}
           profiles={inspectableObjectProfiles.sort(compare)}

@@ -37,7 +37,7 @@ export default async function InspectableObjectCreatePage() {
           </Breadcrumb>
         </div>
       </header>
-      <div className="flex justify-center m-10 mt-12">
+      <div className="flex justify-center m-5 ml-8 mr-8">
         <CreateProfileCard />
       </div>
     </>

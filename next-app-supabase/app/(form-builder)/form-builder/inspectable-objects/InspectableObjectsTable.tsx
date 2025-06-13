@@ -66,7 +66,7 @@ export const InspectableObjectsTable = ({
   const router = useRouter();
   const { showNotification } = useNotification();
 
-  const testobjects = objectsWithProps.map((object) => {
+  const objectList = objectsWithProps.map((object) => {
     const newObject: Record<string, string> = {};
     profileProps.sort(compareProfileProps).map((profileProp) => {
       const objProp = object.inspectable_object_property.filter(
@@ -79,7 +79,7 @@ export const InspectableObjectsTable = ({
     return newObject;
   });
 
-  const [objects, setObjects] = useState<any[]>(testobjects);
+  const [objects, setObjects] = useState<any[]>(objectList);
   const [openDeleteAlertDialog, setOpenDeleteAlertDialog] =
     useState<boolean>(false);
   const [selectedObjectId, setSelectedObjectId] = useState<UUID>();
