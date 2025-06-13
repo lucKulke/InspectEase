@@ -25,7 +25,7 @@ export default async function InspectableObjectProfilesPage() {
   const dbActions = new DBActionsFormBuilderFetch(supabase);
 
   const { inspectableObjectProfiles, inspectableObjectProfilesError } =
-    await dbActions.fetchInspectableObjectProfiles(user.id);
+    await dbActions.fetchInspectableObjectProfiles();
 
   return (
     <>

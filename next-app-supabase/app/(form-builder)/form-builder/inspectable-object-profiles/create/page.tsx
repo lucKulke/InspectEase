@@ -26,7 +26,7 @@ export default async function InspectableObjectCreatePage() {
             <BreadcrumbList>
               <BreadcrumbItem className="hidden md:block">
                 <BreadcrumbLink href="/form-builder/inspectable-object-profiles">
-                  Profile
+                  Profiles
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />

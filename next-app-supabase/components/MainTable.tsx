@@ -15,7 +15,18 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
-
+import { v4 as uuidv4 } from "uuid";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 export type ColumnDef = {
   key: string;
   header: string;
@@ -33,6 +44,7 @@ interface DynamicTableProps {
   basePath: string;
   onBulkDelete?: (selectedIds: string[]) => void;
   rowsPerPage?: number;
+  alertDialogDescription?: string;
 }
 
 export function DynamicTable({
@@ -42,6 +54,7 @@ export function DynamicTable({
   basePath,
   onBulkDelete,
   rowsPerPage,
+  alertDialogDescription,
 }: DynamicTableProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState<boolean>(false);
@@ -52,6 +65,7 @@ export function DynamicTable({
   }>({ key: null, direction: null });
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [openDeleteAlertDialog, setOpenDeleteAlertDialog] = useState(false);
 
   // Auto rowsPerPage if not provided
   const estimatedRowHeight = 48;
@@ -155,6 +169,7 @@ export function DynamicTable({
   const isAllSelected = paginatedData.every((row) => selectedIds.has(row.id));
 
   const handleDelete = () => {
+    setOpenDeleteAlertDialog(false);
     if (onBulkDelete && selectedIds.size > 0) {
       onBulkDelete(Array.from(selectedIds));
       setSelectedIds(new Set());
@@ -176,7 +191,7 @@ export function DynamicTable({
           <Button
             variant="destructive"
             size="sm"
-            onClick={handleDelete}
+            onClick={() => setOpenDeleteAlertDialog(true)}
             className="ml-4"
           >
             <Trash2 className="h-4 w-4 mr-2" /> Delete ({selectedIds.size})
@@ -190,7 +205,7 @@ export function DynamicTable({
           <TableRow>
             <TableHead className="w-10">
               <Checkbox
-                checked={isAllSelected}
+                checked={paginatedData.length === 0 ? false : isAllSelected}
                 onCheckedChange={(val) => toggleSelectAll(Boolean(val))}
               />
             </TableHead>
@@ -224,7 +239,7 @@ export function DynamicTable({
         </TableHeader>
         <TableBody>
           {paginatedData.length === 0 ? (
-            <TableRow>
+            <TableRow key={uuidv4()}>
               <TableCell
                 colSpan={columns.length + 1}
                 className="h-24 text-center"
@@ -285,6 +300,31 @@ export function DynamicTable({
           )}
         </div>
       )}
+      <AlertDialog
+        open={openDeleteAlertDialog}
+        onOpenChange={setOpenDeleteAlertDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {alertDialogDescription ??
+                "This action cannot be undone. This will permanently delete the selected rows from our servers."}
+            </AlertDialogDescription>
+            <p>Selected: {selectedIds.size}</p>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                handleDelete();
+              }}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

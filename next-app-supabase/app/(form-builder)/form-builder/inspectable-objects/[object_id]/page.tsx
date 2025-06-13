@@ -13,9 +13,19 @@ import { ErrorHandler } from "../../../../../components/ErrorHandler";
 import { SupabaseError } from "@/lib/globalInterfaces";
 
 import { MainAddButton } from "@/components/MainAddButton";
-import { InspectionPlansTable } from "./InspectionPlansTable";
+import { InspectionPlanTypes } from "./InspectionPlansTable";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 import { DiscAlbum } from "lucide-react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 
 export default async function ObjectPage({
   params,
@@ -83,29 +93,50 @@ export default async function ObjectPage({
   if (!inspectableObjectInspectionForms) return <div></div>;
 
   return (
-    <div>
-      <PageHeading>Object</PageHeading>
-      <ObjectCard
-        objectProfileProps={profileProperties}
-        objectInfo={inspectableObjectWithPropertiesAndProfile}
-      ></ObjectCard>
-      <div className="flex justify-between m-6 items-center ">
-        <p className="text-slate-500">Inspection plans</p>
-        <MainAddButton
-          href={
-            formBuilderLinks["inspectableObjects"].href +
-            "/" +
-            objectId +
-            "/inspection-forms/create"
-          }
-        ></MainAddButton>
+    <>
+      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem className="hidden md:block">
+                <BreadcrumbLink href="/form-builder/inspectable-objects">
+                  Objects
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="hidden md:block" />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{objectId}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </header>
+
+      <div className="m-10 mt-12">
+        <ObjectCard
+          objectProfileProps={profileProperties}
+          objectInfo={inspectableObjectWithPropertiesAndProfile}
+        ></ObjectCard>
+        <div className="flex justify-between m-6 items-center ">
+          <p className="text-slate-500">Inspection plans</p>
+          <MainAddButton
+            href={
+              formBuilderLinks["inspectableObjects"].href +
+              "/" +
+              objectId +
+              "/inspection-forms/create"
+            }
+          ></MainAddButton>
+        </div>
+        <div className=" m-5">
+          <InspectionPlanTypes
+            inspectionFormsWithProps={inspectableObjectInspectionForms}
+            profileFormTypes={inspectableObjectProfileFormTypesWithProps}
+          ></InspectionPlanTypes>
+        </div>
       </div>
-      <div className=" m-5">
-        <InspectionPlansTable
-          inspectionFormsWithProps={inspectableObjectInspectionForms}
-          profileFormTypes={inspectableObjectProfileFormTypesWithProps}
-        ></InspectionPlansTable>
-      </div>
-    </div>
+    </>
   );
 }

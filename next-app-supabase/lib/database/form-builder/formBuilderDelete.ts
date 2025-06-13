@@ -146,19 +146,19 @@ export class DBActionsFormBuilderDelete {
     };
   }
 
-  async deleteInspectableObject(objectId: UUID): Promise<{
+  async deleteInspectableObjects(objectIds: UUID[]): Promise<{
     inspectableObject: IInspectableObjectProfileResponse | null;
     inspectableObjectError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("inspectable_object")
       .delete()
-      .eq("id", objectId)
+      .in("id", objectIds)
       .select();
 
-    console.log("delete inspectable object in db:", data);
+    console.log("delete inspectable objects in db:", data);
     if (error) {
-      console.error("delete inspectable object  in db error:", error);
+      console.error("delete inspectable objects  in db error:", error);
     }
 
     return {

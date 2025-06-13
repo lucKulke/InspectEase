@@ -7,9 +7,25 @@ import { createClient } from "@/utils/supabase/server";
 
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import { MainAddButton } from "@/components/MainAddButton";
-import { IInspectableObjectProfileResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
+import {
+  IInspectableObjectProfileObjPropertyResponse,
+  IInspectableObjectProfileResponse,
+  IInspectableObjectWithPropertiesResponse,
+} from "@/lib/database/form-builder/formBuilderInterfaces";
 import { Objects } from "./Objects";
 import { profileIcons } from "@/lib/availableIcons";
+
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { ErrorHandler } from "@/components/ErrorHandler";
 
 export default async function ObjectsPage() {
   const supabase = await createClient("form_builder");
@@ -23,7 +39,43 @@ export default async function ObjectsPage() {
   if (!user) return <div>No user! please go to login page...</div>;
 
   const { inspectableObjectProfiles, inspectableObjectProfilesError } =
-    await dbActions.fetchInspectableObjectProfiles(user.id);
+    await dbActions.fetchInspectableObjectProfiles();
+
+  const objects: Record<
+    string,
+    {
+      profileProps: IInspectableObjectProfileObjPropertyResponse[];
+      objectsWithProps: IInspectableObjectWithPropertiesResponse[];
+    }
+  > = {};
+
+  for (let index = 0; index < inspectableObjectProfiles.length; index++) {
+    const profile = inspectableObjectProfiles[index];
+    const {
+      inspectableObjectProfilePropertys,
+      inspectableObjectProfilePropertysError,
+    } = await dbActions.fetchInspectableObjectProfileObjPropertys(profile.id);
+    if (inspectableObjectProfilePropertysError)
+      return (
+        <ErrorHandler
+          error={inspectableObjectProfilePropertysError}
+        ></ErrorHandler>
+      );
+
+    const { inspectableObjectsWitProps, inspectableObjectsWitPropsError } =
+      await dbActions.fetchInspectableObjectsByProfileIdWithProperties(
+        profile.id
+      );
+    if (inspectableObjectsWitPropsError)
+      return (
+        <ErrorHandler error={inspectableObjectsWitPropsError}></ErrorHandler>
+      );
+
+    objects[profile.id] = {
+      profileProps: inspectableObjectProfilePropertys,
+      objectsWithProps: inspectableObjectsWitProps,
+    };
+  }
 
   function compare(
     a: IInspectableObjectProfileResponse,
@@ -36,25 +88,26 @@ export default async function ObjectsPage() {
   }
 
   return (
-    <div className="">
-      <div className="flex justify-between items-center">
-        <PageHeading>All Objects</PageHeading>
-
-        <MainAddButton
-          href={formBuilderLinks["createInspectableObject"].href}
-        />
+    <>
+      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem className="hidden md:block">
+                <BreadcrumbPage>Objects</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </header>
+      <div>
+        <Objects
+          objects={objects}
+          profiles={inspectableObjectProfiles.sort(compare)}
+        ></Objects>
       </div>
-      <ul>
-        {inspectableObjectProfiles.sort(compare).map((profile) => (
-          <li key={profile.id}>
-            <div className="flex items-center space-x-2 mt-4">
-              {profileIcons[profile.icon_key]}
-              <h2 className=" text-slate-600">{profile.name}</h2>
-            </div>
-            <Objects profile={profile}></Objects>
-          </li>
-        ))}
-      </ul>
-    </div>
+    </>
   );
 }
