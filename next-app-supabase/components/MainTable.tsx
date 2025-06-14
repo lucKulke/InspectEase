@@ -41,10 +41,12 @@ interface DynamicTableProps {
   columns: ColumnDef[];
   data: Record<string, any>[];
   className?: string;
-  basePath: string;
+  basePath?: string;
   onBulkDelete?: (selectedIds: string[]) => void;
+  onClick?: (id: string) => void;
   rowsPerPage?: number;
   alertDialogDescription?: string;
+  selectOnly?: boolean;
 }
 
 export function DynamicTable({
@@ -53,11 +55,14 @@ export function DynamicTable({
   className,
   basePath,
   onBulkDelete,
+  onClick,
   rowsPerPage,
+  selectOnly,
   alertDialogDescription,
 }: DynamicTableProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState<boolean>(false);
+  const isSelectOnly = selectOnly ?? false;
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{
     key: string | null;
@@ -66,6 +71,8 @@ export function DynamicTable({
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [openDeleteAlertDialog, setOpenDeleteAlertDialog] = useState(false);
+
+  const [clickedRows, setClickedRows] = useState<string[]>([]);
 
   // Auto rowsPerPage if not provided
   const estimatedRowHeight = 48;
@@ -150,11 +157,14 @@ export function DynamicTable({
 
   const toggleSelectAll = (checked: boolean) => {
     const idsOnPage = paginatedData.map((row) => row.id);
+    idsOnPage.forEach((id) => {
+      handleClickRows(id);
+    });
     setSelectedIds((prev) => {
       const updated = new Set(prev);
-      idsOnPage.forEach((id) =>
-        checked ? updated.add(id) : updated.delete(id)
-      );
+      idsOnPage.forEach((id) => {
+        checked ? updated.add(id) : updated.delete(id);
+      });
       return updated;
     });
   };
@@ -173,6 +183,27 @@ export function DynamicTable({
     if (onBulkDelete && selectedIds.size > 0) {
       onBulkDelete(Array.from(selectedIds));
       setSelectedIds(new Set());
+    }
+  };
+
+  const handleClick = (id: string) => {
+    if (onClick) {
+      onClick(id);
+    }
+  };
+
+  const handleClickRows = (id: string, action?: "replace") => {
+    if (action === "replace") {
+      setClickedRows((prev) => [id]);
+    } else {
+      setClickedRows((prev) => {
+        const updated = [...prev];
+        updated.includes(id)
+          ? updated.splice(updated.indexOf(id), 1)
+          : updated.push(id);
+
+        return updated;
+      });
     }
   };
 
@@ -204,11 +235,16 @@ export function DynamicTable({
         <TableHeader>
           <TableRow>
             <TableHead className="w-10">
-              <Checkbox
-                checked={paginatedData.length === 0 ? false : isAllSelected}
-                onCheckedChange={(val) => toggleSelectAll(Boolean(val))}
-              />
+              {!isSelectOnly && (
+                <Checkbox
+                  checked={paginatedData.length === 0 ? false : isAllSelected}
+                  onCheckedChange={(val) => {
+                    toggleSelectAll(Boolean(val));
+                  }}
+                />
+              )}
             </TableHead>
+
             {columns.map((column) => (
               <TableHead key={column.key} className={cn(column.className)}>
                 {column.sortable !== false ? (
@@ -249,24 +285,45 @@ export function DynamicTable({
             </TableRow>
           ) : (
             paginatedData.map((row, rowIndex) => (
-              <TableRow key={row.id} className="cursor-pointer">
+              <TableRow
+                key={row.id}
+                className={`cursor-pointer ${
+                  clickedRows.includes(row.id) ? "bg-muted" : ""
+                }`}
+                onClick={() => {
+                  if (selectOnly) {
+                    handleClickRows(row.id, "replace");
+                  } else {
+                    handleClickRows(row.id);
+                  }
+                }}
+              >
                 <TableCell>
-                  <Checkbox
-                    checked={selectedIds.has(row.id)}
-                    onCheckedChange={(val) => {
-                      setSelectedIds((prev) => {
-                        const updated = new Set(prev);
-                        val ? updated.add(row.id) : updated.delete(row.id);
-                        return updated;
-                      });
-                    }}
-                  />
+                  {!isSelectOnly && (
+                    <Checkbox
+                      checked={selectedIds.has(row.id)}
+                      onCheckedChange={(val) => {
+                        setSelectedIds((prev) => {
+                          const updated = new Set(prev);
+                          val ? updated.add(row.id) : updated.delete(row.id);
+                          return updated;
+                        });
+                      }}
+                    />
+                  )}
                 </TableCell>
+
                 {columns.map((column) => (
                   <TableCell
                     key={`${rowIndex}-${column.key}`}
                     className={column.className}
-                    onClick={() => router.push(basePath + "/" + row.id)}
+                    onClick={() => {
+                      if (onClick) {
+                        handleClick(row.id);
+                      } else {
+                        router.push(basePath + "/" + row.id);
+                      }
+                    }}
                   >
                     {column.cell
                       ? column.cell(row[column.key], row)

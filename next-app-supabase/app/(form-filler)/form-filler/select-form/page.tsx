@@ -1,12 +1,23 @@
 "use server";
 
 import React from "react";
-import { InspectionFormSelector } from "./inspectionFormSelector";
+import { InspectionFormSelector } from "./InspectionFormSelector";
 import { createClient } from "@/utils/supabase/server";
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import { ErrorHandler } from "@/components/ErrorHandler";
 import { UUID } from "crypto";
 import { PageHeading } from "@/components/PageHeading";
+
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export default async function SelectFormPage() {
   const supabase = await createClient("form_builder");
@@ -20,7 +31,7 @@ export default async function SelectFormPage() {
   const dbActions = new DBActionsFormBuilderFetch(supabase);
 
   const { inspectableObjectProfiles, inspectableObjectProfilesError } =
-    await dbActions.fetchInspectableObjectProfiles(user.id);
+    await dbActions.fetchInspectableObjectProfiles();
   if (inspectableObjectProfilesError)
     return <ErrorHandler error={inspectableObjectProfilesError}></ErrorHandler>;
 
@@ -66,15 +77,31 @@ export default async function SelectFormPage() {
       <ErrorHandler error={inspectableObjectProfileFormTypesWithPropsError} />
     );
   return (
-    <div>
-      <PageHeading>Select inspection form</PageHeading>
-      <InspectionFormSelector
-        profiles={inspectableObjectProfiles}
-        profileProps={inspectableObjectProfilePropertys}
-        objects={inspectableObjectsWithProps}
-        inspectionForms={inspectableObjectInspectionForms}
-        profileFormTypes={inspectableObjectProfileFormTypesWithProps}
-      ></InspectionFormSelector>
-    </div>
+    <>
+      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbLink href="/form-filler">Forms</BreadcrumbLink>
+              <BreadcrumbSeparator></BreadcrumbSeparator>
+              <BreadcrumbItem className="hidden md:block">
+                <BreadcrumbPage>Select Form</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </header>
+      <div className="m-5 ml-8 mr-8">
+        <InspectionFormSelector
+          profiles={inspectableObjectProfiles}
+          profileProps={inspectableObjectProfilePropertys}
+          objectsWithProps={inspectableObjectsWithProps}
+          inspectionForms={inspectableObjectInspectionForms}
+          profileFormTypes={inspectableObjectProfileFormTypesWithProps}
+        ></InspectionFormSelector>
+      </div>
+    </>
   );
 }

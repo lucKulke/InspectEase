@@ -79,6 +79,8 @@ export const InspectableObjectsTable = ({
     return newObject;
   });
 
+  console.log("objectList", objectList);
+
   const [objects, setObjects] = useState<any[]>(objectList);
   const [openDeleteAlertDialog, setOpenDeleteAlertDialog] =
     useState<boolean>(false);
