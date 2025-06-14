@@ -1,11 +1,17 @@
 import React from "react";
-import { InspectableObjectProfilesTable } from "./InspectableObjectProfilesTable";
-import { PageHeading } from "@/components/PageHeading";
+
 import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
 import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
-import { MainAddButton } from "@/components/MainAddButton";
-import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
+
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
+import { ObjectProfilesTable } from "./ObjectProfilesTable";
 
 export default async function InspectableObjectProfilesPage() {
   const supabase = await createClient("form_builder");
@@ -19,22 +25,33 @@ export default async function InspectableObjectProfilesPage() {
   const dbActions = new DBActionsFormBuilderFetch(supabase);
 
   const { inspectableObjectProfiles, inspectableObjectProfilesError } =
-    await dbActions.fetchInspectableObjectProfiles(user.id);
+    await dbActions.fetchInspectableObjectProfiles();
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <PageHeading>Profiles</PageHeading>
-        <MainAddButton
-          href={formBuilderLinks["createInspectableObjectProfile"].href}
-        />
-      </div>
-      <div className="flex justify-center m-10">
-        <InspectableObjectProfilesTable
+    <>
+      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="ml-1" />
+          <Separator orientation="vertical" className="mr-4 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem className="hidden md:block">
+                <BreadcrumbPage>Profiles</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </header>
+      <div className="m-5 ml-8 mr-8">
+        <ObjectProfilesTable
           inspectableObjectProfiles={inspectableObjectProfiles}
           inspectableObjectProfilesError={inspectableObjectProfilesError}
-        />
+        ></ObjectProfilesTable>
+        {/* <InspectableObjectProfilesTable
+            inspectableObjectProfiles={inspectableObjectProfiles}
+            inspectableObjectProfilesError={inspectableObjectProfilesError}
+          /> */}
       </div>
-    </div>
+    </>
   );
 }

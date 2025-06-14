@@ -26,23 +26,23 @@ export class DBActionsFormBuilderDelete {
     this.supabase = supabase;
   }
 
-  async deleteInspectableObjectProfile(profileId: UUID): Promise<{
-    deletedInspectableObjectProfile: IInspectableObjectProfileResponse;
+  async deleteInspectableObjectProfiles(profileIds: UUID[]): Promise<{
+    deletedInspectableObjectProfile: IInspectableObjectProfileResponse[] | null;
     deletedInspectableObjectProfileError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("inspectable_object_profile")
       .delete()
-      .eq("id", profileId)
+      .in("id", profileIds)
       .select();
 
-    console.log("delete inspectable object profiles in db:", data);
+    console.log("deleted inspectable object profiles in db:", data);
     if (error) {
       console.error("delete inspectable object profiles in db error: ", error);
     }
 
     return {
-      deletedInspectableObjectProfile: data ? data[0] : null,
+      deletedInspectableObjectProfile: data,
       deletedInspectableObjectProfileError: error as SupabaseError | null,
     };
   }
@@ -146,19 +146,19 @@ export class DBActionsFormBuilderDelete {
     };
   }
 
-  async deleteInspectableObject(objectId: UUID): Promise<{
+  async deleteInspectableObjects(objectIds: UUID[]): Promise<{
     inspectableObject: IInspectableObjectProfileResponse | null;
     inspectableObjectError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("inspectable_object")
       .delete()
-      .eq("id", objectId)
+      .in("id", objectIds)
       .select();
 
-    console.log("delete inspectable object in db:", data);
+    console.log("delete inspectable objects in db:", data);
     if (error) {
-      console.error("delete inspectable object  in db error:", error);
+      console.error("delete inspectable objects  in db error:", error);
     }
 
     return {
@@ -346,14 +346,14 @@ export class DBActionsFormBuilderDelete {
       deletedFormTextInputFieldsError: error as SupabaseError | null,
     };
   }
-  async deleteEntireForm(formId: UUID): Promise<{
-    deletedForm: IInspectableObjectInspectionFormResponse | null;
-    deletedFormError: SupabaseError | null;
+  async deleteEntireForms(formIds: UUID[]): Promise<{
+    deletedForms: IInspectableObjectInspectionFormResponse[] | null;
+    deletedFormsError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("inspectable_object_inspection_form")
       .delete()
-      .eq("id", formId)
+      .in("id", formIds)
       .select();
 
     console.log("delete entire form in db:", data);
@@ -362,8 +362,8 @@ export class DBActionsFormBuilderDelete {
     }
 
     return {
-      deletedForm: data ? data[0] : null,
-      deletedFormError: error as SupabaseError | null,
+      deletedForms: data,
+      deletedFormsError: error,
     };
   }
 
@@ -390,23 +390,23 @@ export class DBActionsFormBuilderDelete {
     };
   }
 
-  async deleteStringExtractionTraining(trainingId: UUID): Promise<{
-    deletedStringExtractionTraining: IStringExtractionTrainingResponse | null;
+  async deleteStringExtractionTrainings(trainingIds: UUID[]): Promise<{
+    deletedStringExtractionTraining: IStringExtractionTrainingResponse[] | null;
     deletedStringExtractionTrainingError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("string_extraction_training")
       .delete()
-      .eq("id", trainingId)
+      .in("id", trainingIds)
       .select();
 
-    console.log("delete training in db:", data);
+    console.log("delete trainings in db:", data);
     if (error) {
-      console.error("delete training in db error:", error);
+      console.error("delete trainings in db error:", error);
     }
 
     return {
-      deletedStringExtractionTraining: data ? data[0] : null,
+      deletedStringExtractionTraining: data,
       deletedStringExtractionTrainingError: error as SupabaseError | null,
     };
   }

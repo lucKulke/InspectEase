@@ -9,20 +9,19 @@ export class DBActionsFormFillerDelete {
   constructor(supabase: SupabaseClient<any, string, any>) {
     this.supabase = supabase;
   }
-  async deleteFillableForm(formId: UUID): Promise<{
-    deletedForm: IFillableFormResponse | null;
+  async deleteFillableForms(formIds: UUID[]): Promise<{
+    deletedForm: IFillableFormResponse[] | null;
     deletedFormError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("form")
       .delete()
-      .eq("id", formId)
-      .select()
-      .single();
+      .in("id", formIds)
+      .select();
 
-    console.log("delete fillable form in db:", data);
+    console.log("delete fillable forms in db:", data);
     if (error) {
-      console.error("delete fillable form in db error:", error);
+      console.error("delete fillable forms in db error:", error);
     }
 
     return {

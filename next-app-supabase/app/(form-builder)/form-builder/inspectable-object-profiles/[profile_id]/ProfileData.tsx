@@ -1,12 +1,6 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 import { FormConfigCard } from "./FormConfigCard";
 import { ObjectPropertyCard } from "./ObjectPropertyCard";
@@ -18,6 +12,7 @@ import {
   IStringExtractionTrainingResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { UUID } from "crypto";
+import { useSearchParams, useRouter } from "next/navigation";
 
 interface ProfileDataProps {
   profileId: UUID;
@@ -32,8 +27,31 @@ export const ProfileData = ({
   inspectableObjectProfileFormTypes,
   inspectableObjectProfileWithObjProps,
 }: ProfileDataProps) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get tab from URL or fallback to "objectProps"
+  const initialTab = searchParams.get("tab") || "objectProps";
+  const [currentTab, setCurrentTab] = useState(initialTab);
+
+  // Update URL on tab change
+  const handleTabChange = (value: string) => {
+    setCurrentTab(value);
+    const newParams = new URLSearchParams(Array.from(searchParams.entries()));
+    newParams.set("tab", value);
+    router.replace(`?${newParams.toString()}`);
+  };
+
+  useEffect(() => {
+    setCurrentTab(initialTab); // sync on load
+  }, [initialTab]);
+
   return (
-    <Tabs defaultValue="objectProps" className="w-full mt-5">
+    <Tabs
+      value={currentTab}
+      onValueChange={handleTabChange}
+      className="w-full mt-5"
+    >
       <TabsList className="mb-2">
         <TabsTrigger value="objectProps">Object properties</TabsTrigger>
         <TabsTrigger value="formConfig">Form Config</TabsTrigger>
@@ -45,22 +63,20 @@ export const ProfileData = ({
       <TabsContent value="objectProps">
         <ObjectPropertyCard
           profileData={inspectableObjectProfileWithObjProps}
-        ></ObjectPropertyCard>
+        />
       </TabsContent>
       <TabsContent value="formConfig">
         <FormConfigCard
           profileId={profileId}
           formTypes={inspectableObjectProfileFormTypes}
-        ></FormConfigCard>
+        />
       </TabsContent>
       <TabsContent value="stringExtractionTraining">
         <StringExtractionTrainingList
           trainingList={stringExtractionTrainings}
           profileId={profileId}
-        ></StringExtractionTrainingList>
+        />
       </TabsContent>
     </Tabs>
   );
 };
-
-export default ProfileData;

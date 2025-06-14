@@ -6,6 +6,16 @@ import { ErrorHandler } from "@/components/ErrorHandler";
 import Link from "next/link";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 import { ArrowBigLeft } from "lucide-react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 
 export default async function TextInputFieldTrainingPage({
   params,
@@ -17,6 +27,12 @@ export default async function TextInputFieldTrainingPage({
 
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderFetch(supabase);
+
+  const { inspectableObjectProfile, inspectableObjectProfileError } =
+    await dbActions.fetchInspectableObjectProfile(profileId);
+
+  if (inspectableObjectProfileError)
+    return <ErrorHandler error={inspectableObjectProfileError}></ErrorHandler>;
 
   const { stringExtractionTraining, stringExtractionTrainingError } =
     await dbActions.fetchStringExtractionTraining(trainingId);
@@ -37,20 +53,43 @@ export default async function TextInputFieldTrainingPage({
     );
 
   return (
-    <div>
-      <Link
-        className="flex items-center mb-2"
-        href={
-          formBuilderLinks["inspectableObjectProfiles"].href + "/" + profileId
-        }
-      >
-        <ArrowBigLeft /> Back to profile
-      </Link>
-      <ExtractionSection
-        stringExtractionTraining={stringExtractionTraining}
-        stringExtractionTrainingExamples={stringExtractionTrainingExamples}
-        trainingId={trainingId}
-      ></ExtractionSection>
-    </div>
+    <>
+      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem className="hidden md:block">
+                <BreadcrumbLink href="/form-builder/inspectable-object-profiles">
+                  Profile
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="hidden md:block" />
+              <BreadcrumbItem className="hidden md:block">
+                <BreadcrumbLink
+                  href={`/form-builder/inspectable-object-profiles/${profileId}?tab=stringExtractionTraining`}
+                >
+                  {inspectableObjectProfile?.name}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="hidden md:block" />
+              <BreadcrumbItem>
+                <BreadcrumbPage>
+                  {stringExtractionTraining?.name}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </header>
+      <div className="m-5 ml-8 mr-8">
+        <ExtractionSection
+          stringExtractionTraining={stringExtractionTraining}
+          stringExtractionTrainingExamples={stringExtractionTrainingExamples}
+          trainingId={trainingId}
+        ></ExtractionSection>
+      </div>
+    </>
   );
 }

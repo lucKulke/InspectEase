@@ -23,7 +23,7 @@ import {
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { Label } from "@radix-ui/react-dropdown-menu";
 import { UUID } from "crypto";
-import { PenLine, Trash2 } from "lucide-react";
+import { ArrowBigLeft, PenLine, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 import React, { useState } from "react";
@@ -141,17 +141,19 @@ export const FormMetadataCard = ({
   };
 
   const handleDeleteEntireForm = async () => {
-    const { deletedForm, deletedFormError } = await deleteEntireForm(formId);
-    if (deletedFormError) {
+    const { deletedForms, deletedFormsError } = await deleteEntireForm([
+      formId,
+    ]);
+    if (deletedFormsError) {
       showNotification(
         "Delete form",
-        `Error: ${deletedFormError.message} (${deletedFormError.code})`,
+        `Error: ${deletedFormsError.message} (${deletedFormsError.code})`,
         "error"
       );
-    } else if (deletedForm) {
+    } else if (deletedForms) {
       showNotification(
         "Delete form",
-        `Successfully deleted form with id '${deletedForm.id}'`,
+        `Successfully deleted form with id '${deletedForms[0].id}'`,
         "info"
       );
 
@@ -160,6 +162,20 @@ export const FormMetadataCard = ({
   };
   return (
     <>
+      <button
+        className="flex items-center"
+        onClick={() =>
+          router.push(
+            formBuilderLinks["inspectableObjects"].href +
+              "/" +
+              objId +
+              "?tab=" +
+              profileFormTypeWithProps.id
+          )
+        }
+      >
+        <ArrowBigLeft /> Back
+      </button>
       <Card>
         <div className="flex justify-between items-center">
           <CardHeader>

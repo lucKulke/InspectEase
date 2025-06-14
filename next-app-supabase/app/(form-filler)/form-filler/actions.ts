@@ -12,11 +12,11 @@ import { UUID } from "crypto";
 
 export async function fetchFormProgress(formId: UUID) {}
 
-export async function deleteForm(formId: UUID) {
+export async function deleteForms(formIds: UUID[]) {
   const supabase = await createClient("form_filler");
 
   const dbActions = new DBActionsFormFillerDelete(supabase);
-  return await dbActions.deleteFillableForm(formId);
+  return await dbActions.deleteFillableForms(formIds);
 }
 
 export async function updateFormProgressState(formId: UUID, value: boolean) {

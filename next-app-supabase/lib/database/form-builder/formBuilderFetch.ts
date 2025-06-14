@@ -210,7 +210,7 @@ export class DBActionsFormBuilderFetch {
     };
   }
 
-  async fetchInspectableObjectProfiles(userId: string): Promise<{
+  async fetchInspectableObjectProfiles(): Promise<{
     inspectableObjectProfiles: IInspectableObjectProfileResponse[];
     inspectableObjectProfilesError: SupabaseError | null;
   }> {

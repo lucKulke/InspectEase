@@ -14,7 +14,7 @@ export async function fetchUsersAvailableObjectProfiles(
   supabase: SupabaseClient<any, string, any>
 ) {
   const dbActions = new DBActionsFormBuilderFetch(supabase);
-  return await dbActions.fetchInspectableObjectProfiles(userId);
+  return await dbActions.fetchInspectableObjectProfiles();
 }
 
 export async function fetchObjectProfileObjPropertys(profileId: UUID) {

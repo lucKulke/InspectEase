@@ -117,19 +117,7 @@ export default async function FormEditorPage({
   );
 
   return (
-    <div className="mt-10 p-4">
-      <div>
-        <Link
-          className="flex items-center mb-2"
-          href={
-            formBuilderLinks["inspectableObjects"].href +
-            "/" +
-            inspectableObjectInspectionFormWithProps.object_id
-          }
-        >
-          <ArrowBigLeft /> Back
-        </Link>
-      </div>
+    <div className="mt-2 p-4">
       <div className="w-1/4">
         <FormMetadataCard
           formId={formId}

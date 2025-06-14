@@ -5,7 +5,7 @@ import { Reorder } from "framer-motion";
 import { IInspectableObjectProfileObjPropertyResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { deleteProfileObjProperty, updateProfileObjProperty } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
-import { Ellipsis, Trash2 } from "lucide-react";
+import { Ellipsis, GripHorizontal, Trash2 } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -17,6 +17,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { UUID } from "crypto";
 import { useRouter } from "next/navigation";
+
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 // Helper function to update order numbers
 
@@ -135,34 +142,31 @@ export const DraggableObjPropertyList = ({
           <Reorder.Item
             key={item.id}
             value={item}
-            className="flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-grab "
-            whileDrag={{ scale: 1.05 }}
+            className=" "
+            whileDrag={{ scale: 1.0 }}
             dragConstraints={{ top: 0, bottom: 0 }}
           >
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-500 font-bold w-6">
-                {item.order_number}.
-              </span>
-              <span>{item.name}</span>
-              <p className="text-sm text-slate-600">{item.description}</p>
-            </div>
-
-            <DropdownMenu modal={false}>
-              <DropdownMenuTrigger>
-                <Ellipsis className="text-slate-500 "></Ellipsis>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-
-                <DropdownMenuItem
-                  className="text-red-600"
+            <ContextMenu>
+              <ContextMenuTrigger className="flex items-center justify-between bg-white border p-4 rounded-md shadow cursor-grab">
+                <div className="flex items-center space-x-4">
+                  <span className="text-gray-500 font-bold w-6">
+                    {item.order_number}.
+                  </span>
+                  <span>{item.name}</span>
+                  <p className="text-sm text-slate-600">{item.description}</p>
+                </div>
+                <GripHorizontal></GripHorizontal>
+              </ContextMenuTrigger>
+              <ContextMenuContent>
+                <ContextMenuItem
+                  className="text-red-600 flex justify-between"
                   onClick={() => handleDeleteProperty(item.id)}
                 >
-                  delete <Trash2></Trash2>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <p>delete </p>
+                  <Trash2 size={20}></Trash2>
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenu>
           </Reorder.Item>
         ))}
       </Reorder.Group>

@@ -6,9 +6,9 @@ import { DBActionsFormBuilderDelete } from "@/lib/database/form-builder/formBuil
 import { revalidatePath } from "next/cache";
 import { validate as isValidUUID } from "uuid";
 
-export async function deleteObject(objectId: UUID) {
+export async function deleteObjects(objectIds: UUID[]) {
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderDelete(supabase);
 
-  return await dbActions.deleteInspectableObject(objectId);
+  return await dbActions.deleteInspectableObjects(objectIds);
 }

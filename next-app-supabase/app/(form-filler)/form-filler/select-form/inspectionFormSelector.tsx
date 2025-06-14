@@ -58,11 +58,13 @@ import {
 import { Label } from "@radix-ui/react-label";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/Spinner";
+import { SelectObject } from "./SelectObject";
+import { SelectFormTypes } from "./SelectFormTypes";
 
 interface InspectionFormSelectorProps {
   profiles: IInspectableObjectProfileResponse[];
   profileProps: IInspectableObjectProfileObjPropertyResponse[];
-  objects: IInspectableObjectWithPropertiesResponse[];
+  objectsWithProps: IInspectableObjectWithPropertiesResponse[];
   inspectionForms: IInspectableObjectInspectionFormWithProps[];
   profileFormTypes: IInspectableObjectProfileFormTypeWithProps[];
 }
@@ -70,7 +72,7 @@ interface InspectionFormSelectorProps {
 export const InspectionFormSelector = ({
   profiles,
   profileProps,
-  objects,
+  objectsWithProps,
   inspectionForms,
   profileFormTypes,
 }: InspectionFormSelectorProps) => {
@@ -79,7 +81,7 @@ export const InspectionFormSelector = ({
   const [selectedGroup, setSelectedGroup] = useState("");
   const [selectedObject, setSelectedObject] = useState("");
   const [selectedPlan, setSelectedPlan] = useState("");
-  const [activeTab, setActiveTab] = useState("select-group");
+  const [activeTab, setActiveTab] = useState<string>("select-group");
   const [formIdentifierString, setFormIdentifierString] = useState<string>("");
   const [formIdentifierStringError, setFormIdentifierStringError] = useState<
     string | null
@@ -132,27 +134,13 @@ export const InspectionFormSelector = ({
     setActiveTab(step);
   };
 
-  function compareProfileProps(
-    a: IInspectableObjectProfileObjPropertyResponse,
-    b: IInspectableObjectProfileObjPropertyResponse
-  ) {
-    if (a.order_number > b.order_number) return 1;
-    if (a.order_number < b.order_number) return -1;
-    return 0;
-  }
-  function compareFormTypeProps(
-    a: IInspectableObjectProfileFormTypePropertyResponse,
-    b: IInspectableObjectProfileFormTypePropertyResponse
-  ) {
-    if (a.order_number < b.order_number) return -1;
-
-    if (a.order_number > b.order_number) return 1;
-
-    return 0;
-  }
+  const handleSelectFormType = (formTypeId: string) => {
+    setSelectedPlan(formTypeId);
+    setOpenDialog(true);
+  };
 
   return (
-    <div className="p-4">
+    <>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3 mb-8">
           <TabsTrigger value="select-group">Select Group</TabsTrigger>
@@ -165,286 +153,110 @@ export const InspectionFormSelector = ({
         </TabsList>
 
         {/* Step 1: Select Object Group */}
-        <TabsContent value="select-group">
-          <Card>
-            <CardHeader>
-              <CardTitle>Select Object Group</CardTitle>
-              <CardDescription>
-                Choose the type of objects you want to inspect
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <label htmlFor="group-select" className="text-sm font-medium">
-                  Object Group
-                </label>
-                <Select value={selectedGroup} onValueChange={handleGroupChange}>
-                  <SelectTrigger id="group-select">
-                    <SelectValue placeholder="Select an object group" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {profiles.map((profile) => (
-                      <SelectItem key={profile.id} value={profile.id}>
-                        {profile.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button
-                onClick={() => selectedGroup && setActiveTab("select-object")}
-                disabled={!selectedGroup}
-                className="ml-auto"
-              >
-                Continue <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </Card>
+        <TabsContent value="select-group" className="p-2">
+          <div className="space-y-2">
+            <label htmlFor="group-select" className="text-sm font-medium">
+              Object Group
+            </label>
+            <Select value={selectedGroup} onValueChange={handleGroupChange}>
+              <SelectTrigger id="group-select">
+                <SelectValue placeholder="Select an object group" />
+              </SelectTrigger>
+              <SelectContent>
+                {profiles.map((profile) => (
+                  <SelectItem key={profile.id} value={profile.id}>
+                    {profile.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </TabsContent>
 
         {/* Step 2: Select Object from Table */}
-        <TabsContent value="select-object">
-          <Card>
-            <CardHeader>
-              <CardTitle>Select Object</CardTitle>
-              <CardDescription>Choose an object from the group</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {profileProps
-                      .filter(
-                        (profileProp) =>
-                          profileProp.profile_id === selectedGroup
-                      )
-                      .sort(compareProfileProps)
-                      .map((profileProp) => (
-                        <TableCell key={profileProp.id} className="font-bold">
-                          {profileProp.name}
-                        </TableCell>
-                      ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {objects
-                    .filter((object) => object.profile_id === selectedGroup)
-                    .map((object) => {
-                      return (
-                        <TableRow
-                          key={object.id}
-                          className={
-                            selectedObject === object.id
-                              ? "bg-muted"
-                              : "cursor-pointer hover:bg-muted/50"
-                          }
-                          onClick={() => handleObjectSelect(object.id)}
-                        >
-                          {profileProps
-                            .filter(
-                              (profileProp) =>
-                                profileProp.profile_id === selectedGroup
-                            )
-                            .sort(compareProfileProps)
-                            .map((profileProp) => {
-                              const objProp =
-                                object.inspectable_object_property.filter(
-                                  (objProp) =>
-                                    objProp.profile_property_id ===
-                                    profileProp.id
-                                )[0];
-
-                              return objProp ? (
-                                <TableCell key={objProp.id}>
-                                  {objProp.value}
-                                </TableCell>
-                              ) : (
-                                <TableCell key={uuidv4()}></TableCell>
-                              );
-                            })}
-                        </TableRow>
-                      );
-                    })}
-                </TableBody>
-              </Table>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button
-                variant="outline"
-                onClick={() => handleBack("select-group")}
-              >
-                Back
-              </Button>
-              <Button
-                onClick={() => selectedObject && setActiveTab("select-plan")}
-                disabled={!selectedObject}
-              >
-                Continue <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </Card>
+        <TabsContent value="select-object" className="p-2">
+          <SelectObject
+            profileProps={profileProps}
+            selectedGroup={selectedGroup}
+            objectsWithProps={objectsWithProps}
+            handleObjectSelect={handleObjectSelect}
+          ></SelectObject>
         </TabsContent>
 
         {/* Step 3: Select Inspection Plan */}
-        <TabsContent value="select-plan">
-          <Card>
-            <CardHeader>
-              <CardTitle>Select Inspection Plan</CardTitle>
-              <CardDescription>Choose an inspection</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <ul className="space-y-3">
-                {profileFormTypes
-                  .filter(
-                    (profileFormType) =>
-                      profileFormType.profile_id === selectedGroup
-                  )
-                  .map((formType) => (
-                    <li key={formType.id}>
-                      <h2>{formType.name}</h2>
-                      <ScrollArea className="border-2 border-black rounded-lg p-4">
-                        <Table>
-                          <TableCaption>
-                            All "{formType.name}" inspection plans for object
-                          </TableCaption>
-                          <TableHeader>
-                            <TableRow>
-                              {formType.inspectable_object_profile_form_type_property
-                                .sort(compareFormTypeProps)
-                                .map((formTypeProp) => (
-                                  <TableCell key={formTypeProp.id}>
-                                    <p className="font-bold">
-                                      {formTypeProp.name}
-                                    </p>
-                                  </TableCell>
-                                ))}
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {inspectionForms
-                              .filter(
-                                (inspectionForm) =>
-                                  inspectionForm.form_type_id === formType.id
-                              )
-                              .map((inspectionForm) => (
-                                <TableRow
-                                  key={inspectionForm.id}
-                                  onClick={() =>
-                                    setSelectedPlan(inspectionForm.id)
-                                  }
-                                  className={`${
-                                    selectedPlan === inspectionForm.id &&
-                                    "bg-slate-400"
-                                  }`}
-                                >
-                                  {formType.inspectable_object_profile_form_type_property
-                                    .sort(compareFormTypeProps)
-                                    .map((type) => {
-                                      const form =
-                                        inspectionForm.inspectable_object_inspection_form_property.filter(
-                                          (inspectionForm) =>
-                                            inspectionForm.form_type_prop_id ===
-                                            type.id
-                                        )[0];
+        <TabsContent value="select-plan" className="p-2">
+          <SelectFormTypes
+            inspectionFormsWithProps={inspectionForms}
+            profileFormTypes={profileFormTypes}
+            selectedGroup={selectedGroup}
+            selectedObject={selectedObject}
+            handleSelect={handleSelectFormType}
+          />
 
-                                      return form ? (
-                                        <TableCell key={form.id}>
-                                          {form?.value}
-                                        </TableCell>
-                                      ) : (
-                                        <TableCell key={uuidv4()}></TableCell>
-                                      );
-                                    })}
-                                </TableRow>
-                              ))}
-                          </TableBody>
-                        </Table>
-                      </ScrollArea>
-                    </li>
-                  ))}
-              </ul>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button
-                variant="outline"
-                onClick={() => handleBack("select-object")}
-              >
-                Back
-              </Button>
-              <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-                <DialogTrigger asChild>
-                  <Button disabled={!selectedPlan}>
-                    Continue to new Form{" "}
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <form onSubmit={handleCreateNewFillableForm}>
-                    <DialogHeader>
-                      <DialogTitle>Create New Inspection Form</DialogTitle>
-                      <DialogDescription>
-                        Enter a identifier string for the new inspection form.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid gap-2">
-                        <Label
-                          htmlFor="identifierString"
-                          className="flex items-center justify-between"
-                        >
-                          Identifier string
-                          <span className="text-xs text-muted-foreground">
-                            (Required)
-                          </span>
-                        </Label>
-                        <Input
-                          id="identifierString"
-                          value={formIdentifierString}
-                          onChange={(e) => {
-                            setFormIdentifierString(e.target.value);
-                            if (formIdentifierStringError)
-                              setFormIdentifierStringError(null);
-                          }}
-                          placeholder="e.g., REF-2023-001"
-                          className={
-                            formIdentifierStringError ? "border-red-500" : ""
-                          }
-                          autoFocus
-                        />
-                        {formIdentifierStringError && (
-                          <p className="text-sm text-red-500">
-                            {formIdentifierStringError}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      {isSubmitting ? (
-                        <Button variant={"outline"} className="w-20">
-                          <Spinner></Spinner>
-                        </Button>
-                      ) : (
-                        <>
-                          <Button
-                            variant="outline"
-                            type="button"
-                            onClick={() => setOpenDialog(false)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button type="submit">Create Form</Button>
-                        </>
-                      )}
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </CardFooter>
-          </Card>
+          <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+            <DialogContent className="sm:max-w-[425px]">
+              <form onSubmit={handleCreateNewFillableForm}>
+                <DialogHeader>
+                  <DialogTitle>Create New Inspection Form</DialogTitle>
+                  <DialogDescription>
+                    Enter a identifier string for the new inspection form.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label
+                      htmlFor="identifierString"
+                      className="flex items-center justify-between"
+                    >
+                      Identifier string
+                      <span className="text-xs text-muted-foreground">
+                        (Required)
+                      </span>
+                    </Label>
+                    <Input
+                      id="identifierString"
+                      value={formIdentifierString}
+                      onChange={(e) => {
+                        setFormIdentifierString(e.target.value);
+                        if (formIdentifierStringError)
+                          setFormIdentifierStringError(null);
+                      }}
+                      placeholder="e.g., REF-2023-001"
+                      className={
+                        formIdentifierStringError ? "border-red-500" : ""
+                      }
+                      autoFocus
+                    />
+                    {formIdentifierStringError && (
+                      <p className="text-sm text-red-500">
+                        {formIdentifierStringError}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <DialogFooter>
+                  {isSubmitting ? (
+                    <Button variant={"outline"} className="w-20">
+                      <Spinner></Spinner>
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        type="button"
+                        onClick={() => setOpenDialog(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit">Create Form</Button>
+                    </>
+                  )}
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
       </Tabs>
-    </div>
+    </>
   );
 };

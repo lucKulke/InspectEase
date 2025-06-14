@@ -35,7 +35,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 import { Cog, Ellipsis, Trash2 } from "lucide-react";
-import { deleteObject } from "./actions";
+import { deleteObjects } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { UUID } from "crypto";
 import { v4 as uuidv4 } from "uuid";
@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { useRouter } from "next/navigation";
+import { ColumnDef, DynamicTable } from "@/components/MainTable";
 
 interface InspectableObjectsTableProps {
   profileProps: IInspectableObjectProfileObjPropertyResponse[];
@@ -64,15 +65,40 @@ export const InspectableObjectsTable = ({
 }: InspectableObjectsTableProps) => {
   const router = useRouter();
   const { showNotification } = useNotification();
-  const [objects, setObjects] =
-    useState<IInspectableObjectWithPropertiesResponse[]>(objectsWithProps);
+
+  const objectList = objectsWithProps.map((object) => {
+    const newObject: Record<string, string> = {};
+    profileProps.sort(compareProfileProps).map((profileProp) => {
+      const objProp = object.inspectable_object_property.filter(
+        (objProp) => objProp.profile_property_id === profileProp.id
+      )[0];
+
+      newObject["id"] = object.id;
+      newObject[profileProp.name] = objProp?.value ?? "";
+    });
+    return newObject;
+  });
+
+  console.log("objectList", objectList);
+
+  const [objects, setObjects] = useState<any[]>(objectList);
   const [openDeleteAlertDialog, setOpenDeleteAlertDialog] =
     useState<boolean>(false);
   const [selectedObjectId, setSelectedObjectId] = useState<UUID>();
 
-  const handleDeleteObject = async (objectId: UUID) => {
-    const { inspectableObject, inspectableObjectError } = await deleteObject(
-      objectId
+  const [columns, setColumns] = useState<ColumnDef[]>(
+    profileProps.sort(compareProfileProps).map((profileProp) => ({
+      key: profileProp.name,
+      header: profileProp.name,
+      sortable: true,
+    }))
+  );
+
+  console.log("columns", columns);
+
+  const handleDeleteObjects = async (objectIds: string[]) => {
+    const { inspectableObject, inspectableObjectError } = await deleteObjects(
+      objectIds as UUID[]
     );
 
     if (inspectableObjectError) {
@@ -107,98 +133,12 @@ export const InspectableObjectsTable = ({
 
   return (
     <div>
-      <ScrollArea className="h-80 border-2 border-black rounded-lg p-4">
-        <Table>
-          <TableCaption>
-            A list of your {profile.name.toLowerCase()} objects.
-          </TableCaption>
-          <TableHeader>
-            <TableRow>
-              {profileProps.sort(compareProfileProps).map((profileProp) => (
-                <TableCell key={profileProp.id} className="font-bold">
-                  {profileProp.name}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {objects.map((object) => {
-              return (
-                <TableRow key={object.id}>
-                  {profileProps.sort(compareProfileProps).map((profileProp) => {
-                    const objProp = object.inspectable_object_property.filter(
-                      (objProp) =>
-                        objProp.profile_property_id === profileProp.id
-                    )[0];
-
-                    return objProp ? (
-                      <TableCell key={objProp.id}>{objProp.value}</TableCell>
-                    ) : (
-                      <TableCell key={uuidv4()}></TableCell>
-                    );
-                  })}
-                  <TableCell key={uuidv4()} className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <Ellipsis className="text-slate-500 "></Ellipsis>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onSelect={() => {
-                            router.push(
-                              formBuilderLinks["inspectableObjects"].href +
-                                "/" +
-                                object.id
-                            );
-                          }}
-                        >
-                          view
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onSelect={() => {
-                            setOpenDeleteAlertDialog(true);
-                            setSelectedObjectId(object.id);
-                          }}
-                        >
-                          delete <Trash2></Trash2>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </ScrollArea>
-      <AlertDialog
-        open={openDeleteAlertDialog}
-        onOpenChange={setOpenDeleteAlertDialog}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your
-              object and remove all its data from our servers (including
-              inspection plans).
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (selectedObjectId) handleDeleteObject(selectedObjectId);
-              }}
-            >
-              Continue
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DynamicTable
+        columns={columns}
+        data={objects}
+        basePath="inspectable-objects"
+        onBulkDelete={handleDeleteObjects}
+      ></DynamicTable>
     </div>
   );
 };

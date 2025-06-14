@@ -22,9 +22,9 @@ export async function assignFirstValueToFormProperty(
   return await dbActions.createInspectableObjectInspectionFormProperty(prop);
 }
 
-export async function deleteEntireForm(formId: UUID) {
+export async function deleteEntireForm(formIds: UUID[]) {
   const supabase = await createClient("form_builder");
   const dbActions = new DBActionsFormBuilderDelete(supabase);
 
-  return await dbActions.deleteEntireForm(formId);
+  return await dbActions.deleteEntireForms(formIds);
 }
