@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { InspectionFormSelector } from "./InspectionFormSelector";
+import { FormSelector } from "./FormSelector";
 
 export default async function SelectFormPage() {
   const supabase = await createClient("form_builder");
@@ -95,13 +95,13 @@ export default async function SelectFormPage() {
         </div>
       </header>
       <div className="m-5 ml-8 mr-8">
-        <InspectionFormSelector
+        <FormSelector
           profiles={inspectableObjectProfiles}
           profileProps={inspectableObjectProfilePropertys}
           objectsWithProps={inspectableObjectsWithProps}
           inspectionForms={inspectableObjectInspectionForms}
           profileFormTypes={inspectableObjectProfileFormTypesWithProps}
-        ></InspectionFormSelector>
+        ></FormSelector>
       </div>
     </>
   );

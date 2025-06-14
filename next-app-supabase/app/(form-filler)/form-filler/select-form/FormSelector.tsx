@@ -21,17 +21,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-
-import { Check, ChevronRight, Cog } from "lucide-react";
-import {
   IInspectableObjectInspectionFormWithProps,
   IInspectableObjectProfileFormTypePropertyResponse,
   IInspectableObjectProfileFormTypeWithProps,
@@ -61,7 +50,7 @@ import { Spinner } from "@/components/Spinner";
 import { SelectObject } from "./SelectObject";
 import { SelectFormTypes } from "./SelectFormTypes";
 
-interface InspectionFormSelectorProps {
+interface FormSelectorProps {
   profiles: IInspectableObjectProfileResponse[];
   profileProps: IInspectableObjectProfileObjPropertyResponse[];
   objectsWithProps: IInspectableObjectWithPropertiesResponse[];
@@ -69,13 +58,13 @@ interface InspectionFormSelectorProps {
   profileFormTypes: IInspectableObjectProfileFormTypeWithProps[];
 }
 
-export const InspectionFormSelector = ({
+export const FormSelector = ({
   profiles,
   profileProps,
   objectsWithProps,
   inspectionForms,
   profileFormTypes,
-}: InspectionFormSelectorProps) => {
+}: FormSelectorProps) => {
   const { showNotification } = useNotification();
   const router = useRouter();
   const [selectedGroup, setSelectedGroup] = useState("");
