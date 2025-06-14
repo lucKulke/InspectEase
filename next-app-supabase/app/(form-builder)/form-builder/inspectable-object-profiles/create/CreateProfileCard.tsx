@@ -85,7 +85,7 @@ export const CreateProfileCard = () => {
   }
 
   return (
-    <Card className="w-1/2">
+    <Card className="max-sm:w-full max-md:w-[400px] max-lg:w-[500px] max-xl:w-[600px] w-[700px]">
       <div className="flex justify-between items-center">
         <CardHeader>
           <CardTitle>New Profile</CardTitle>

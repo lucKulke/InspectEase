@@ -1,18 +1,22 @@
 "use client";
-import { ErrorHandler } from "@/components/ErrorHandler";
-import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuilderFetch";
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  IInspectableObjectProfileObjPropertyResponse,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   IInspectableObjectProfileResponse,
+  IInspectableObjectProfileObjPropertyResponse,
   IInspectableObjectWithPropertiesResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
-import { createClient } from "@/utils/supabase/server";
-import { UUID } from "crypto";
-import { InspectableObjectsTable } from "./InspectableObjectsTable";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IconType, profileIcons } from "@/lib/availableIcons";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { InspectableObjectsTable } from "./InspectableObjectsTable";
 
 interface ObjectsProps {
   profiles: IInspectableObjectProfileResponse[];
@@ -31,6 +35,11 @@ export const Objects = ({ profiles, objects }: ObjectsProps) => {
   const tabFromUrl = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(tabFromUrl || profiles[0].id);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tabsListRef = useRef<HTMLDivElement>(null);
+  // const [isOverflowing, setIsOverflowing] = useState(false);
+
+  // Handle syncing with URL
   useEffect(() => {
     if (tabFromUrl !== activeTab) {
       const params = new URLSearchParams(Array.from(searchParams.entries()));
@@ -39,22 +48,41 @@ export const Objects = ({ profiles, objects }: ObjectsProps) => {
     }
   }, [activeTab]);
 
+  // Detect overflow on resize
+  // useEffect(() => {
+  //   const checkOverflow = () => {
+  //     if (tabsListRef.current && containerRef.current) {
+  //       const listWidth = tabsListRef.current.scrollWidth;
+  //       const containerWidth = containerRef.current.offsetWidth;
+  //       setIsOverflowing(listWidth > containerWidth);
+  //     }
+  //   };
+
+  //   checkOverflow();
+  //   window.addEventListener("resize", checkOverflow);
+  //   return () => window.removeEventListener("resize", checkOverflow);
+  // }, [profiles]);
+
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="mb-4">
-        {profiles.map((profile) => {
-          return (
-            <TabsTrigger
-              key={profile.id}
-              value={profile.id}
-              className="space-x-2"
-            >
-              {profileIcons[profile.icon_key as IconType]}
-              <p>{profile.name}</p>
-            </TabsTrigger>
-          );
-        })}
-      </TabsList>
+      <div className="mb-4 ">
+        <Select value={activeTab} onValueChange={setActiveTab}>
+          <SelectTrigger className=" max-w-sm w-52">
+            <SelectValue placeholder="Select profile" />
+          </SelectTrigger>
+          <SelectContent>
+            {profiles.map((profile) => (
+              <SelectItem key={profile.id} value={profile.id}>
+                <div className="flex items-center space-x-2">
+                  <p>{profileIcons[profile.icon_key as IconType]}</p>
+                  <p> {profile.name}</p>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {profiles.map((profile) => {
         const inspectableObjectProfilePropertys =
           objects[profile.id].profileProps;
@@ -65,7 +93,7 @@ export const Objects = ({ profiles, objects }: ObjectsProps) => {
               profile={profile}
               profileProps={inspectableObjectProfilePropertys}
               objectsWithProps={inspectableObjectsWitProps}
-            ></InspectableObjectsTable>
+            />
           </TabsContent>
         );
       })}

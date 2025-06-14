@@ -2,18 +2,6 @@
 import React, { useEffect } from "react";
 
 import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableFooter,
-} from "@/components/ui/table";
-
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
   IInspectableObjectInspectionFormPropertyResponse,
   IInspectableObjectInspectionFormResponse,
   IInspectableObjectInspectionFormWithProps,
@@ -29,6 +17,14 @@ import { randomUUID, UUID } from "crypto";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { InspectionPlanTable } from "./InspectionPlanTable";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { profileIcons } from "@/lib/availableIcons";
 
 interface InspectionPlanTypesProps {
   inspectionFormsWithProps: IInspectableObjectInspectionFormWithProps[];
@@ -57,15 +53,22 @@ export const InspectionPlanTypes = ({
   return (
     <div className="">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          {profileFormTypes.map((type) => {
-            return (
-              <TabsTrigger key={type.id} value={type.id} className="space-x-2">
-                <p>{type.name}</p>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
+        <div className="mb-4 ">
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className=" max-w-sm w-52">
+              <SelectValue placeholder="Select profile" />
+            </SelectTrigger>
+            <SelectContent>
+              {profileFormTypes.map((profile) => (
+                <SelectItem key={profile.id} value={profile.id}>
+                  <div className="flex items-center space-x-2">
+                    <p> {profile.name}</p>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         {profileFormTypes.map((type) => {
           return (
             <TabsContent key={type.id} value={type.id}>
