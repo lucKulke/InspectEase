@@ -137,7 +137,7 @@ export const FormCard = ({
       <ContextMenuTrigger>
         <Card
           key={form.id}
-          className="h-full hover:shadow-md transition-shadow relative"
+          className="h-full hover:shadow-md transition-shadow relative max-w-[400px] overflow-hidden"
         >
           {isBeeingEdited.filter((f) => f.formId === form.id).length > 0 && (
             <div className="absolute top-2 right-2 ">
@@ -179,7 +179,7 @@ export const FormCard = ({
 
           <CardContent>
             <p className="text-sm text-gray-600">Form info:</p>
-            <ScrollArea className="h-44 border-2 p-2 rounded-xl mb-3">
+            <ScrollArea className="h-44 border-2 p-2 w-full  rounded-xl mb-3">
               <ul className="mb-4 space-y-2">
                 {Object.entries(form.form_props).map(([key, value]) => {
                   return (
@@ -187,7 +187,12 @@ export const FormCard = ({
                       key={key + form.id}
                       className="flex space-x-2 items-center"
                     >
-                      <p className="font-bold text-sm">{key}:</p> <p>{value}</p>
+                      <p className="font-bold whitespace-nowrap text-sm">
+                        {key}:
+                      </p>
+                      <p className="truncate overflow-hidden whitespace-nowrap text-ellipsis flex-1">
+                        {value}
+                      </p>
                     </li>
                   );
                 })}
