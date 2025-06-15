@@ -13,6 +13,7 @@ import {
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { UUID } from "crypto";
 import { useSearchParams, useRouter } from "next/navigation";
+import { PanelLeft, Sliders, ScanText } from "lucide-react";
 
 interface ProfileDataProps {
   profileId: UUID;
@@ -52,11 +53,27 @@ export const ProfileData = ({
       onValueChange={handleTabChange}
       className="w-full mt-5"
     >
-      <TabsList className="mb-2">
-        <TabsTrigger value="objectProps">Object properties</TabsTrigger>
-        <TabsTrigger value="formConfig">Form Config</TabsTrigger>
-        <TabsTrigger value="stringExtractionTraining">
-          String Extraction Training
+      <TabsList className="mb-2 max-sm:w-full">
+        <TabsTrigger
+          value="objectProps"
+          className=" max-sm:w-full flex items-center gap-2"
+        >
+          <PanelLeft className="h-4 w-4" />
+          <span className="hidden sm:inline">Object Props</span>
+        </TabsTrigger>
+        <TabsTrigger
+          value="formConfig"
+          className="max-sm:w-full flex items-center gap-2"
+        >
+          <Sliders className="h-4 w-4" />
+          <span className="hidden sm:inline">Form Config</span>
+        </TabsTrigger>
+        <TabsTrigger
+          value="stringExtractionTraining"
+          className="max-sm:w-full flex items-center gap-2"
+        >
+          <ScanText className="h-4 w-4" />
+          <span className="hidden sm:inline">String Extraction Training</span>
         </TabsTrigger>
       </TabsList>
 

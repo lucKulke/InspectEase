@@ -81,7 +81,7 @@ export const ObjectPropertyCard = ({ profileData }: ObjectPropertyCard) => {
 
   return (
     <div>
-      <Card className="min-w-[500px]">
+      <Card>
         <CardHeader>
           <CardTitle>Object properties</CardTitle>
           <CardDescription>

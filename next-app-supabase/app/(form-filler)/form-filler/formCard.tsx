@@ -178,7 +178,7 @@ export const FormCard = ({
           </div>
 
           <CardContent>
-            <p className="text-sm text-gray-600">Form info:</p>
+            <p className="text-sm text-gray-600">Metadata:</p>
             <ScrollArea className="h-44 border-2 p-2 w-full  rounded-xl mb-3">
               <ul className="mb-4 space-y-2">
                 {Object.entries(form.form_props).map(([key, value]) => {

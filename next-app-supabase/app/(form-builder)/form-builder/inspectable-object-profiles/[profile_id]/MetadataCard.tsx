@@ -90,7 +90,7 @@ export const MetadataCard = ({
 
   return (
     <>
-      <Card className="max-w-[400px] mt-2">
+      <Card className="max-sm:w-full w-[490px] mt-2">
         <div className="flex justify-between items-center">
           <CardHeader>
             <div className="flex space-x-2 items-center group">

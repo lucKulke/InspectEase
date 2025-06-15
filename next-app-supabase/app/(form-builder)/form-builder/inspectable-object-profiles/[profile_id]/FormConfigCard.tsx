@@ -127,42 +127,37 @@ export const FormConfigCard = ({
             </Button>
           </div>
 
-          <ul className="space-y-7 mt-7">
+          <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 mt-7">
             {formTypesList.map((type) => (
-              <li key={type.id}>
-                <Card>
-                  <div className="flex items-center justify-between">
-                    <CardHeader>
-                      <CardTitle>{type.name}</CardTitle>
-                      <CardDescription>{type.description}</CardDescription>
-                    </CardHeader>
-                    <DropdownMenu modal={false}>
-                      <DropdownMenuTrigger>
-                        <Ellipsis className="text-slate-500 m-5"></Ellipsis>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-
-                        <DropdownMenuItem>update</DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() => handleDeleteFormType(type.id)}
-                        >
-                          delete <Trash2></Trash2>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  <CardContent>
-                    <DraggableFormTypePropList
-                      type={type}
-                    ></DraggableFormTypePropList>
-                  </CardContent>
-                </Card>
-              </li>
+              <Card key={type.id}>
+                <div className="flex items-center justify-between">
+                  <CardHeader>
+                    <CardTitle>{type.name}</CardTitle>
+                    <CardDescription>{type.description}</CardDescription>
+                  </CardHeader>
+                  <DropdownMenu modal={false}>
+                    <DropdownMenuTrigger>
+                      <Ellipsis className="text-slate-500 m-5" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem>update</DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-red-600"
+                        onClick={() => handleDeleteFormType(type.id)}
+                      >
+                        delete <Trash2 />
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <CardContent>
+                  <DraggableFormTypePropList type={type} />
+                </CardContent>
+              </Card>
             ))}
-          </ul>
+          </div>
         </CardContent>
       </Card>
 

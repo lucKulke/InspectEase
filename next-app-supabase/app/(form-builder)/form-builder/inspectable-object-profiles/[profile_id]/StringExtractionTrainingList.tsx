@@ -177,9 +177,9 @@ export const StringExtractionTrainingList = ({
         open={openCreateNewTrainingDialog}
         onOpenChange={setOpenCreateNewTrainingDialog}
       >
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="">
           <DialogHeader>
-            <DialogTitle>Create new from type</DialogTitle>
+            <DialogTitle>Create String Extraction Training</DialogTitle>
             <DialogDescription>Add a new form type</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">

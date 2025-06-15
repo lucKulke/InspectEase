@@ -93,7 +93,7 @@ export const FormFilter = ({ forms, wsUrl }: FormFilterProps) => {
   return (
     <div className="w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="md:flex md:justify-between">
+        <div className="lg:flex lg:justify-between ">
           <TabsList className="mb-6">
             <TabsTrigger value="inProgress">In-progress</TabsTrigger>
             <TabsTrigger value="completed">Completed</TabsTrigger>
@@ -140,7 +140,7 @@ export const FormFilter = ({ forms, wsUrl }: FormFilterProps) => {
               No matching completed forms
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-4">
+            <div className="grid max-md:grid-cols-2 max-lg:grid-cols-2 max-xl:grid-cols-4 max-2xl:grid-cols-5 max-3xl:grid-cols-6 gap-4">
               {filteredForms
                 .filter((form) => !form.in_progress)
                 .sort(compare)
