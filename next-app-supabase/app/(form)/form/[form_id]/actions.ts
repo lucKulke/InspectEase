@@ -374,6 +374,10 @@ export async function getLiveTranscriptionDomain() {
   return process.env.LIVE_TRANSCIPTION_DOMAIN!;
 }
 
+export async function getDeepgramKey() {
+  return process.env.LIVE_TRANSCIPTION_DOMAIN!;
+}
+
 export async function transcribeAudio(
   audioString: string
 ): Promise<WhisperResponse> {

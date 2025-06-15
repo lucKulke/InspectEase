@@ -11,6 +11,8 @@ import {
   ISubCheckboxResponse,
   ITextInputResponse,
 } from "@/lib/database/form-filler/formFillerInterfaces";
+import { MicrophoneContextProvider } from "@/app/context/MicrophoneContextProvider";
+import { DeepgramContextProvider } from "@/app/context/DeepgramContextProvider";
 
 export default async function FormPage({
   params,
@@ -79,14 +81,17 @@ export default async function FormPage({
         <div className="flex justify-center">
           <h1 className="font-bold underline">{formData.identifier_string}</h1>
         </div>
-
-        <MainComp
-          sessionAwarenessFeatureUrl={`https://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/api/form-activity`}
-          formData={formData}
-          subCheckboxes={subCheckboxes}
-          mainCheckboxes={mainCheckboxes}
-          textInputFields={textInputFields}
-        ></MainComp>
+        <MicrophoneContextProvider>
+          <DeepgramContextProvider>
+            <MainComp
+              sessionAwarenessFeatureUrl={`https://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/api/form-activity`}
+              formData={formData}
+              subCheckboxes={subCheckboxes}
+              mainCheckboxes={mainCheckboxes}
+              textInputFields={textInputFields}
+            ></MainComp>
+          </DeepgramContextProvider>
+        </MicrophoneContextProvider>
       </div>
     </div>
   );

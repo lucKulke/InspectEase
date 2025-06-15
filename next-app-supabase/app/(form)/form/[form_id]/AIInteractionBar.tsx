@@ -6,6 +6,7 @@ import { UUID } from "crypto";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/Spinner";
 import { VoiceInput } from "./VoiceInput";
+import { VoiceInputV2 } from "./VoiceInputV2";
 
 interface AIInteractionBarProps {
   formId: UUID;
@@ -23,13 +24,20 @@ export const AIInteractionBar = ({
 
   return (
     <div className="border-2 bg-gray-50 fixed bottom-0 w-full h-40 flex  space-x-6 justify-center items-center">
-      <VoiceInput
+      <VoiceInputV2
+        setUserInput={setUserInput}
+        userInput={userInput}
+        processAiResposne={processAiResposne}
+        setTranscribing={setTranscribing}
+        isThinking={isThinking}
+      ></VoiceInputV2>
+      {/* <VoiceInput
         userInput={userInput}
         processAiResposne={processAiResposne}
         setUserInput={setUserInput}
         setTranscribing={setTranscribing}
         isThinking={isThinking}
-      ></VoiceInput>
+      ></VoiceInput> */}
       <div className="flex space-x-2">
         {transcribing ? (
           <Textarea
