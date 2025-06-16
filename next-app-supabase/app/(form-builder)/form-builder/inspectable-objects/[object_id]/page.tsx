@@ -119,19 +119,12 @@ export default async function ObjectPage({
           objectProfileProps={profileProperties}
           objectInfo={inspectableObjectWithPropertiesAndProfile}
         ></ObjectCard>
-        <div className="flex justify-between m-6 items-center ">
+        <div className="m-9">
           <p className="text-slate-500">Inspection plans</p>
-          <MainAddButton
-            href={
-              formBuilderLinks["inspectableObjects"].href +
-              "/" +
-              objectId +
-              "/inspection-forms/create"
-            }
-          ></MainAddButton>
         </div>
         <div className=" m-5">
           <InspectionPlanTypes
+            objectId={objectId}
             inspectionFormsWithProps={inspectableObjectInspectionForms}
             profileFormTypes={inspectableObjectProfileFormTypesWithProps}
           ></InspectionPlanTypes>

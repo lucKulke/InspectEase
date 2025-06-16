@@ -17,6 +17,20 @@ import {
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { IconType, profileIcons } from "@/lib/availableIcons";
 import { InspectableObjectsTable } from "./InspectableObjectsTable";
+import { useNotification } from "@/app/context/NotificationContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 interface ObjectsProps {
   profiles: IInspectableObjectProfileResponse[];
@@ -33,11 +47,14 @@ export const Objects = ({ profiles, objects }: ObjectsProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabFromUrl = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState(tabFromUrl || profiles[0].id);
+  const { showNotification } = useNotification();
+  const [openAlertDialog, setOpenAlertDialog] = useState<boolean>(
+    profiles.length === 0
+  );
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const tabsListRef = useRef<HTMLDivElement>(null);
-  // const [isOverflowing, setIsOverflowing] = useState(false);
+  const [activeTab, setActiveTab] = useState(
+    tabFromUrl || (profiles[0] ? profiles[0].id : "")
+  );
 
   // Handle syncing with URL
   useEffect(() => {
@@ -48,24 +65,9 @@ export const Objects = ({ profiles, objects }: ObjectsProps) => {
     }
   }, [activeTab]);
 
-  // Detect overflow on resize
-  // useEffect(() => {
-  //   const checkOverflow = () => {
-  //     if (tabsListRef.current && containerRef.current) {
-  //       const listWidth = tabsListRef.current.scrollWidth;
-  //       const containerWidth = containerRef.current.offsetWidth;
-  //       setIsOverflowing(listWidth > containerWidth);
-  //     }
-  //   };
-
-  //   checkOverflow();
-  //   window.addEventListener("resize", checkOverflow);
-  //   return () => window.removeEventListener("resize", checkOverflow);
-  // }, [profiles]);
-
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <div className="mb-4 ">
+      <div className="mb-4 flex justify-between ">
         <Select value={activeTab} onValueChange={setActiveTab}>
           <SelectTrigger className=" max-w-sm w-52">
             <SelectValue placeholder="Select profile" />
@@ -81,22 +83,57 @@ export const Objects = ({ profiles, objects }: ObjectsProps) => {
             ))}
           </SelectContent>
         </Select>
+        <Button
+          onClick={() =>
+            router.push(
+              "/form-builder/inspectable-objects/create?tab=" + activeTab || ""
+            )
+          }
+        >
+          <Plus />
+          Create
+        </Button>
       </div>
 
-      {profiles.map((profile) => {
-        const inspectableObjectProfilePropertys =
-          objects[profile.id].profileProps;
-        const inspectableObjectsWitProps = objects[profile.id].objectsWithProps;
-        return (
-          <TabsContent key={profile.id} value={profile.id}>
-            <InspectableObjectsTable
-              profile={profile}
-              profileProps={inspectableObjectProfilePropertys}
-              objectsWithProps={inspectableObjectsWitProps}
-            />
-          </TabsContent>
-        );
-      })}
+      {profiles.length === 0 ? (
+        <AlertDialog open={openAlertDialog} onOpenChange={setOpenAlertDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>No Profiles Available</AlertDialogTitle>
+              <AlertDialogDescription>
+                To get started, please create a profile. You can return here to
+                create objects once your profile is set up.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() =>
+                  router.push("/form-builder/inspectable-object-profiles")
+                }
+              >
+                Continue to Profiles
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      ) : (
+        profiles.map((profile) => {
+          const inspectableObjectProfilePropertys =
+            objects[profile.id].profileProps;
+          const inspectableObjectsWitProps =
+            objects[profile.id].objectsWithProps;
+          return (
+            <TabsContent key={profile.id} value={profile.id}>
+              <InspectableObjectsTable
+                profile={profile}
+                profileProps={inspectableObjectProfilePropertys}
+                objectsWithProps={inspectableObjectsWitProps}
+              />
+            </TabsContent>
+          );
+        })
+      )}
     </Tabs>
   );
 };

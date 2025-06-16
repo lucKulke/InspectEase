@@ -30,7 +30,7 @@ import {
   IInspectableObjectProfileObjPropertyResponse,
   IInspectableObjectProfileResponse,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
-import { redirect } from "next/navigation";
+import { redirect, useRouter, useSearchParams } from "next/navigation";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -53,6 +53,22 @@ export const CreateObjectCard = ({
   const [propertyValues, setPropertyValues] = useState<Record<string, string>>(
     {}
   );
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(tabFromUrl ?? "");
+
+  // Handle syncing with URL
+  useEffect(() => {
+    if (tabFromUrl !== activeTab) {
+      const params = new URLSearchParams(Array.from(searchParams.entries()));
+      params.set("tab", activeTab);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    } else {
+      handleSelectProfile(activeTab as UUID);
+    }
+  }, [activeTab]);
 
   if (availableProfilesError) {
     showNotification(
@@ -81,6 +97,9 @@ export const CreateObjectCard = ({
       setRerenderKey(+new Date());
     } else {
       setProfilePropertys(inspectableObjectProfilePropertys);
+      const params = new URLSearchParams(Array.from(searchParams.entries()));
+      params.set("tab", profileId as string);
+      router.replace(`?${params.toString()}`, { scroll: false });
     }
   };
 
@@ -145,6 +164,7 @@ export const CreateObjectCard = ({
       <CardContent className="space-y-5">
         <Select
           key={rerenderkey}
+          value={selectedProfileId}
           onValueChange={(profileId) => handleSelectProfile(profileId as UUID)}
         >
           <SelectTrigger className="w-[180px]">

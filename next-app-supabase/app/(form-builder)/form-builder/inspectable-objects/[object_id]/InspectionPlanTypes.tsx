@@ -10,7 +10,7 @@ import {
   IInspectableObjectProfileFormTypeWithProps,
 } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { useState } from "react";
-import { Cog } from "lucide-react";
+import { Cog, Plus } from "lucide-react";
 import Link from "next/link";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 import { randomUUID, UUID } from "crypto";
@@ -25,8 +25,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { profileIcons } from "@/lib/availableIcons";
+import { Button } from "@/components/ui/button";
 
 interface InspectionPlanTypesProps {
+  objectId: UUID;
   inspectionFormsWithProps: IInspectableObjectInspectionFormWithProps[];
   profileFormTypes: IInspectableObjectProfileFormTypeWithProps[];
 }
@@ -34,6 +36,7 @@ interface InspectionPlanTypesProps {
 export const InspectionPlanTypes = ({
   inspectionFormsWithProps,
   profileFormTypes,
+  objectId,
 }: InspectionPlanTypesProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -53,7 +56,7 @@ export const InspectionPlanTypes = ({
   return (
     <div className="">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="mb-4 ">
+        <div className="mb-4 flex justify-between">
           <Select value={activeTab} onValueChange={setActiveTab}>
             <SelectTrigger className=" max-w-sm w-52">
               <SelectValue placeholder="Select profile" />
@@ -68,6 +71,20 @@ export const InspectionPlanTypes = ({
               ))}
             </SelectContent>
           </Select>
+          <Button
+            onClick={() =>
+              router.push(
+                formBuilderLinks["inspectableObjects"].href +
+                  "/" +
+                  objectId +
+                  "/inspection-forms/create?tab=" +
+                  activeTab
+              )
+            }
+          >
+            <Plus />
+            Create
+          </Button>
         </div>
         {profileFormTypes.map((type) => {
           return (

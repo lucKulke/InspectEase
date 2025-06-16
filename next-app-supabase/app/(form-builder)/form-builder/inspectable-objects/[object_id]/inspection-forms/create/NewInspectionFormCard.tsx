@@ -40,7 +40,7 @@ import {
 import { useNotification } from "@/app/context/NotificationContext";
 import { AnnotationData, AnnotationsApiResponse } from "@/lib/globalInterfaces";
 import { Progress } from "@/components/ui/progress";
-import { redirect } from "next/navigation";
+import { redirect, useRouter, useSearchParams } from "next/navigation";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 import { Spinner } from "@/components/Spinner";
 
@@ -58,13 +58,30 @@ export const NewInspectionFormCard = ({
   const [formTypeProps, setFormTypeProps] = useState<
     IInspectableObjectProfileFormTypePropertyResponse[]
   >([]);
-  const [selectedFormTypeId, setSelectedFormTypeId] = useState<UUID>();
+
   const [resetSelectComponent, setResetSelectComponent] = useState(+new Date());
   const [formTypeValues, setFormTypeValues] = useState<Record<UUID, string>>();
   const [isFilled, setIsFilled] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
 
   const [file, setFile] = useState<File | null>(null);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(tabFromUrl ?? "");
+  const [selectedFormTypeId, setSelectedFormTypeId] = useState<UUID>(
+    tabFromUrl as UUID
+  );
+
+  // Handle syncing with URL
+  useEffect(() => {
+    if (tabFromUrl !== activeTab) {
+      const params = new URLSearchParams(Array.from(searchParams.entries()));
+      params.set("tab", activeTab);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    }
+  }, [activeTab]);
 
   const fetchFormTypeProps = async (formTypeId: UUID) => {
     const {
@@ -86,6 +103,7 @@ export const NewInspectionFormCard = ({
 
   useEffect(() => {
     if (selectedFormTypeId) {
+      setActiveTab(selectedFormTypeId);
       fetchFormTypeProps(selectedFormTypeId);
     }
   }, [selectedFormTypeId]);
@@ -209,6 +227,7 @@ export const NewInspectionFormCard = ({
       </CardHeader>
       <CardContent>
         <Select
+          value={activeTab}
           key={resetSelectComponent}
           onValueChange={(value) => setSelectedFormTypeId(value as UUID)}
         >

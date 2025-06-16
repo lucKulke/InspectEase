@@ -135,7 +135,7 @@ export const ObjectPropertyCard = ({ profileData }: ObjectPropertyCard) => {
             </div>
           </div>
           <DialogFooter>
-            {propertyName.length > 1 && propertyDescription.length > 1 ? (
+            {propertyName.length > 1 ? (
               <Button
                 onClick={() => {
                   if (!profileData) return;

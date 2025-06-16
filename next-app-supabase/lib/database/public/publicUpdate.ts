@@ -12,7 +12,7 @@ export class DatabasePublicUpdate {
   }
 
   async switchActiveTeam(
-    profileId: UUID,
+    userId: UUID,
     teamId: UUID | null
   ): Promise<{
     updatedProfile: IUserProfileResponse | null;
@@ -21,7 +21,7 @@ export class DatabasePublicUpdate {
     const { data, error } = await this.supabase
       .from("user_profile")
       .update({ active_team_id: teamId })
-      .eq("id", profileId)
+      .eq("user_id", userId)
       .select()
       .single();
 

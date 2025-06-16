@@ -193,7 +193,7 @@ export const FormConfigCard = ({
             </div>
           </div>
           <DialogFooter>
-            {formTypeName.length > 1 && formTypeDescription.length > 1 ? (
+            {formTypeName.length > 1 ? (
               <Button
                 onClick={() => {
                   handleCreateFormType({

@@ -26,6 +26,7 @@ import type {
 import { TeamSwitcher } from "./TeamSwitcher";
 import { switchActiveTeam } from "@/lib/globalActions";
 import { UUID } from "crypto";
+import { usePathname, useRouter } from "next/navigation";
 
 export function NavUser({
   user,
@@ -41,6 +42,8 @@ export function NavUser({
   teams: ITeamResponse[] | null;
 }) {
   const { isMobile } = useSidebar();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const handleTeamChange = async (team: ITeamResponse | null) => {
     // Handle team change logic here
@@ -50,6 +53,14 @@ export function NavUser({
       profile?.user_id,
       team ? (team.id as UUID) : null
     );
+    if (!updatedProfileError) {
+      if (pathname.includes("/form-filler")) {
+        router.push("/form-filler");
+      } else {
+        router.push("/form-builder");
+      }
+    }
+
     // You can add your team switching logic here
     // For example: router.push(`/team/${team.id}`) or update global state
   };
