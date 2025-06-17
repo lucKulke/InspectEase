@@ -393,6 +393,28 @@ export const CheckboxManager = ({
     return 0;
   }
 
+  const createFormCheckboxesInDB = async () => {
+    const { error, id } = await handleCreateCheckboxGroups();
+    if (error) {
+      showNotification(
+        "Checkbox-Manager",
+        `Error: ${error.message} (${error.code})`,
+        "error"
+      );
+    } else {
+      showNotification(
+        "Checkbox-Manger",
+        "Success fully created checkboxes",
+        "info"
+      );
+      refetchSubSectionsData();
+      setOpen(false);
+      if (id) {
+        scrollToSection(id as UUID);
+      }
+    }
+  };
+
   return (
     <div>
       <Tabs defaultValue="create" className="mt-4">
@@ -998,26 +1020,9 @@ export const CheckboxManager = ({
           <div className="flex justify-end">
             {atLeastOneSubSectionSelected ? (
               <Button
-                onClick={async () => {
-                  const { error, id } = await handleCreateCheckboxGroups();
-                  if (error) {
-                    showNotification(
-                      "Checkbox-Manager",
-                      `Error: ${error.message} (${error.code})`,
-                      "error"
-                    );
-                  } else {
-                    showNotification(
-                      "Checkbox-Manger",
-                      "Success fully created checkboxes",
-                      "info"
-                    );
-                    refetchSubSectionsData();
-                    setOpen(false);
-                    if (id) {
-                      scrollToSection(id as UUID);
-                    }
-                  }
+                onClick={() => {
+                  setAtLeastOneSubSectionSelected(false);
+                  createFormCheckboxesInDB();
                 }}
               >
                 Create
