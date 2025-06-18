@@ -50,7 +50,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { Plus, SquareCheck, Trash2, TriangleAlert } from "lucide-react";
+import { Plus, SquareCheck, Trash2, TriangleAlert, X } from "lucide-react";
 import { Reorder } from "framer-motion";
 import { validate as isValidUUID } from "uuid";
 
@@ -65,6 +65,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const debounce = (func: Function, delay: number) => {
   let timer: NodeJS.Timeout;
@@ -586,7 +592,7 @@ export const CheckboxGroupDialog = ({
   };
 
   const assignAnnotationToCheckbox = async (
-    annotationId: UUID,
+    annotationId: UUID | null,
     checkboxId: UUID
   ) => {
     let updateableCheckbox = null;
@@ -605,16 +611,22 @@ export const CheckboxGroupDialog = ({
 
     let copyAllreadyAssignedAnnotations = [...allreadyAssignedAnnoations];
 
-    if (
-      prevAnnotation &&
-      copyAllreadyAssignedAnnotations.includes(prevAnnotation)
-    ) {
+    if (annotationId) {
+      if (
+        prevAnnotation &&
+        copyAllreadyAssignedAnnotations.includes(prevAnnotation)
+      ) {
+        copyAllreadyAssignedAnnotations =
+          copyAllreadyAssignedAnnotations.filter(
+            (annoId) => annoId !== prevAnnotation
+          );
+      } else if (!copyAllreadyAssignedAnnotations.includes(annotationId)) {
+        copyAllreadyAssignedAnnotations.push(annotationId);
+      }
+    } else {
       copyAllreadyAssignedAnnotations = copyAllreadyAssignedAnnotations.filter(
         (annoId) => annoId !== prevAnnotation
       );
-    }
-    if (!copyAllreadyAssignedAnnotations.includes(annotationId)) {
-      copyAllreadyAssignedAnnotations.push(annotationId);
     }
     setAllreadyAssignedAnnoations(copyAllreadyAssignedAnnotations);
 
@@ -730,6 +742,40 @@ export const CheckboxGroupDialog = ({
                                           : ""}
                                       </p>
                                     </DropdownMenuTrigger>
+                                    {checkbox.annotation_id &&
+                                    annotations.filter(
+                                      (annotation) =>
+                                        annotation.id === checkbox.annotation_id
+                                    )[0].content ? (
+                                      <Button
+                                        variant="ghost"
+                                        onClick={() =>
+                                          assignAnnotationToCheckbox(
+                                            null,
+                                            checkbox.id
+                                          )
+                                        }
+                                      >
+                                        <X />
+                                      </Button>
+                                    ) : (
+                                      <div>
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger>
+                                              <TriangleAlert className="mr-3 ml-3"></TriangleAlert>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>
+                                                Please select annotation from
+                                                original document (pdf)
+                                              </p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      </div>
+                                    )}
+
                                     <DropdownMenuContent>
                                       <DropdownMenuLabel>
                                         Available IDs
@@ -760,12 +806,6 @@ export const CheckboxGroupDialog = ({
                                       </ScrollArea>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
-
-                                  <TriangleAlert
-                                    className={`${
-                                      checkbox.annotation_id && "opacity-0"
-                                    }`}
-                                  ></TriangleAlert>
                                 </div>
                                 <button
                                   onClick={() =>
@@ -1025,7 +1065,7 @@ export const TextInputFieldsDialog = ({
   };
 
   const assignAnnotationToTextInputField = async (
-    annotationId: UUID,
+    annotationId: UUID | null,
     textInputId: UUID
   ) => {
     let updateableTextInputField = null;
@@ -1044,16 +1084,23 @@ export const TextInputFieldsDialog = ({
 
     let copyAllreadyAssignedAnnotations = [...allreadyAssignedAnnoations];
 
-    if (
-      prevAnnotation &&
-      copyAllreadyAssignedAnnotations.includes(prevAnnotation)
-    ) {
+    if (!annotationId) {
       copyAllreadyAssignedAnnotations = copyAllreadyAssignedAnnotations.filter(
         (annoId) => annoId !== prevAnnotation
       );
-    }
-    if (!copyAllreadyAssignedAnnotations.includes(annotationId)) {
-      copyAllreadyAssignedAnnotations.push(annotationId);
+    } else {
+      if (
+        prevAnnotation &&
+        copyAllreadyAssignedAnnotations.includes(prevAnnotation)
+      ) {
+        copyAllreadyAssignedAnnotations =
+          copyAllreadyAssignedAnnotations.filter(
+            (annoId) => annoId !== prevAnnotation
+          );
+      }
+      if (!copyAllreadyAssignedAnnotations.includes(annotationId)) {
+        copyAllreadyAssignedAnnotations.push(annotationId);
+      }
     }
     setAllreadyAssignedAnnoations(copyAllreadyAssignedAnnotations);
 
@@ -1152,6 +1199,35 @@ export const TextInputFieldsDialog = ({
                           : ""}
                       </p>
                     </DropdownMenuTrigger>
+                    {field.annotation_id &&
+                    annotations.filter(
+                      (annotation) => annotation.id === field.annotation_id
+                    )[0].content ? (
+                      <Button
+                        variant="ghost"
+                        onClick={() =>
+                          assignAnnotationToTextInputField(null, field.id)
+                        }
+                      >
+                        <X />
+                      </Button>
+                    ) : (
+                      <div>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <TriangleAlert className="mr-3 ml-3"></TriangleAlert>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                Please select annotation from original document
+                                (pdf)
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    )}
                     <DropdownMenuContent>
                       <DropdownMenuLabel>Available IDs</DropdownMenuLabel>
                       <DropdownMenuSeparator />
@@ -1178,10 +1254,6 @@ export const TextInputFieldsDialog = ({
                       </ScrollArea>
                     </DropdownMenuContent>
                   </DropdownMenu>
-
-                  <TriangleAlert
-                    className={`${field.annotation_id && "opacity-0"}`}
-                  ></TriangleAlert>
                 </div>
                 <button onClick={() => handleDeleteTextField(field.id)}>
                   <Trash2 className="text-red-500 cursor-pointer"></Trash2>
@@ -1248,7 +1320,7 @@ const TrainingsSelector = ({
         value={selectedTraining}
         onValueChange={(value) => handleUpdateTextInputFieldTraining(value)}
       >
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-[160px]">
           <SelectValue placeholder="Select a training" />
         </SelectTrigger>
         <SelectContent>
@@ -1262,9 +1334,11 @@ const TrainingsSelector = ({
           </SelectGroup>
         </SelectContent>
       </Select>
-      <TriangleAlert
-        className={`${field.training_id && "opacity-0"}`}
-      ></TriangleAlert>
+      <div>
+        <TriangleAlert
+          className={`${field.training_id && "opacity-0"} `}
+        ></TriangleAlert>
+      </div>
     </div>
   );
 };

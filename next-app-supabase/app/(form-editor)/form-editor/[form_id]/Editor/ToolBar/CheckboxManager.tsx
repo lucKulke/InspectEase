@@ -79,6 +79,9 @@ export const CheckboxManager = ({
     Record<string, string[]>
   >({});
 
+  const [selectAllSubSections, setSelectAllSubSections] =
+    useState<boolean>(false);
+
   // groupid: [checkboxId, checkboxId]
   const [rules, setRules] = useState<Record<string, string[]>>({});
 
@@ -184,11 +187,14 @@ export const CheckboxManager = ({
 
     setGroups(
       groups.map((group) => {
-        if (
-          selectedGroupId === group.id &&
-          !group.subSectionIds.includes(subSectionId)
-        ) {
-          group.subSectionIds.push(subSectionId);
+        if (selectedGroupId === group.id) {
+          if (group.subSectionIds.includes(subSectionId)) {
+            group.subSectionIds = group.subSectionIds.filter(
+              (id) => id !== subSectionId
+            );
+          } else {
+            group.subSectionIds.push(subSectionId);
+          }
         }
         return group;
       })
@@ -203,6 +209,7 @@ export const CheckboxManager = ({
         if (copyOfAssignedSubSections[subSectionId].length === 0) {
           delete copyOfAssignedSubSections[subSectionId];
         }
+        setSelectAllSubSections(false);
       } else {
         copyOfAssignedSubSections[subSectionId].push(selectedGroupId);
       }
@@ -219,6 +226,65 @@ export const CheckboxManager = ({
     setAssignedSubSections(copyOfAssignedSubSections);
     console.log("groups", groups);
     console.log("assigned sub sections", copyOfAssignedSubSections);
+  };
+
+  const handleSelectAllSubSections = () => {
+    if (!selectedGroupId) return;
+
+    const allSubSectionIds: string[] = [];
+    sections.forEach((mainSection) => {
+      mainSection.inspectable_object_inspection_form_sub_section.forEach(
+        (subSection) => {
+          allSubSectionIds.push(subSection.id);
+        }
+      );
+    });
+
+    const copyOfAssignedSubSections = { ...assignedSubSections };
+
+    setGroups(
+      groups.map((group) => {
+        if (selectedGroupId === group.id) {
+          group.subSectionIds = [...allSubSectionIds];
+        }
+        return group;
+      })
+    );
+
+    allSubSectionIds.forEach((subSectionId) => {
+      const currentGroupIdList = copyOfAssignedSubSections[subSectionId];
+      if (currentGroupIdList) {
+        if (!currentGroupIdList.includes(selectedGroupId)) {
+          copyOfAssignedSubSections[subSectionId].push(selectedGroupId);
+        }
+      } else {
+        copyOfAssignedSubSections[subSectionId] = [selectedGroupId];
+      }
+    });
+
+    if (anySubSectionsSelected(copyOfAssignedSubSections)) {
+      setAtLeastOneSubSectionSelected(true);
+    } else {
+      setAtLeastOneSubSectionSelected(false);
+    }
+
+    setAssignedSubSections(copyOfAssignedSubSections);
+    console.log("groups", groups);
+    console.log("assigned sub sections", copyOfAssignedSubSections);
+  };
+
+  const handleDeselectAllSubSections = () => {
+    setAssignedSubSections({});
+    setGroups(
+      groups.map((group) => {
+        if (selectedGroupId === group.id) {
+          group.subSectionIds = [];
+        }
+        return group;
+      })
+    );
+
+    setAtLeastOneSubSectionSelected(false);
   };
 
   // Get checkboxes for a specific group
@@ -974,6 +1040,25 @@ export const CheckboxManager = ({
                 className="h-[460px] w-1/2 rounded-md border p-4"
                 key={selectedGroupId}
               >
+                <div
+                  key={"select-all"}
+                  className="flex items-center space-x-2 mb-2"
+                >
+                  <Checkbox
+                    checked={selectAllSubSections}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        handleSelectAllSubSections();
+                        setSelectAllSubSections(true);
+                      } else {
+                        handleDeselectAllSubSections();
+                        setSelectAllSubSections(false);
+                      }
+                    }}
+                  ></Checkbox>
+                  <p className="text-slate-500 text-sm">Select all</p>
+                </div>
+
                 {sections.map((mainSection) => (
                   <div key={mainSection.id}>
                     <p className="text-slate-500 text-sm">{mainSection.name}</p>

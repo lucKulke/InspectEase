@@ -613,24 +613,6 @@ export const FormSideBar = ({
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
-
-                              {/* <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <p
-                                    onClick={() => {
-                                      scrollToSection(subSection.id);
-                                    }}
-                                    className="text-left  text-black"
-                                  >
-                                    {subSection.name}
-                                  </p>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{subSection.description}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider> */}
                             </div>
                           </ContextMenuTrigger>
                           <ContextMenuContent>
