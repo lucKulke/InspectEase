@@ -35,6 +35,8 @@ export interface IUserProfile {
   first_name: string;
   last_name: string;
   openai_token: string;
+  deepgram_token: string;
+  email: string;
 }
 
 export interface ActiveForm {

@@ -22,26 +22,26 @@ import { User } from "@supabase/supabase-js";
 import { updateUserProfileAiTokens } from "./actions";
 import { UUID } from "crypto";
 import { useNotification } from "@/app/context/NotificationContext";
+import { AzureOpenAI } from "openai";
 
-interface LLMConfigPageProps {
+interface SpeachToTextConfigProps {
   profileData: IUserProfile;
   setProfileData: React.Dispatch<SetStateAction<IUserProfile>>;
   user: User;
 }
 
-export const LLMConfigPage = ({
+export const SpeachToTextConfig = ({
   profileData,
   user,
   setProfileData,
-}: LLMConfigPageProps) => {
+}: SpeachToTextConfigProps) => {
   const { showNotification } = useNotification();
   const { toast } = useToast();
 
   const [credentials, setCredentials] = useState({
-    openai: profileData.openai_token ?? "",
-    anthropic: "",
-    cohere: "",
-    mistral: "",
+    deepgram: profileData.deepgram_token ?? "",
+    azure: "",
+    google: "",
   });
 
   const handleChange = (provider: string, value: string) => {
@@ -55,7 +55,7 @@ export const LLMConfigPage = ({
     const newToken: Record<string, string> = {};
     switch (id) {
       case "deepgram":
-        newToken["openai_token"] = credentials.openai;
+        newToken["deepgram_token"] = credentials.deepgram;
         break;
     }
     // In a real app, you would securely store these credentials
@@ -83,67 +83,27 @@ export const LLMConfigPage = ({
   return (
     <div className="container max-w-4xl py-10">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">LLM Provider Configuration</h1>
+        <h1 className="text-3xl font-bold mb-2">
+          Speach to Text Provider Configuration
+        </h1>
         <p className="text-muted-foreground">
-          Manage your API keys for different language model providers.
+          Manage your API keys for different speach to text model providers.
         </p>
       </div>
 
-      <Tabs defaultValue="openai" className="w-full">
+      <Tabs defaultValue="deepgram" className="w-full">
         <TabsList className="grid grid-cols-4 mb-8">
-          <TabsTrigger value="openai">OpenAI</TabsTrigger>
-          <TabsTrigger value="anthropic">Anthropic</TabsTrigger>
-          <TabsTrigger value="cohere">Cohere</TabsTrigger>
-          <TabsTrigger value="mistral">Mistral</TabsTrigger>
+          <TabsTrigger value="deepgram">Deepgram</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="openai">
+        <TabsContent value="deepgram">
           <ProviderCard
-            id="openai"
-            title="OpenAI"
+            id="deepgram"
+            title="Deepgram"
             description="Configure your OpenAI API credentials"
             icon={Brain}
-            value={credentials.openai}
-            onChange={(value) => handleChange("openai", value)}
-            onSave={saveCredentials}
-          />
-        </TabsContent>
-
-        <TabsContent value="anthropic">
-          <ProviderCard
-            id="anthropic"
-            disabled={true}
-            title="Anthropic"
-            description="Configure your Anthropic API credentials"
-            icon={Brain}
-            value={credentials.anthropic}
-            onChange={(value) => handleChange("anthropic", value)}
-            onSave={saveCredentials}
-          />
-        </TabsContent>
-
-        <TabsContent value="cohere">
-          <ProviderCard
-            id="cohere"
-            disabled={true}
-            title="Cohere"
-            description="Configure your Cohere API credentials"
-            icon={Cpu}
-            value={credentials.cohere}
-            onChange={(value) => handleChange("cohere", value)}
-            onSave={saveCredentials}
-          />
-        </TabsContent>
-
-        <TabsContent value="mistral">
-          <ProviderCard
-            id="mistral"
-            disabled={true}
-            title="Mistral AI"
-            description="Configure your Mistral AI API credentials"
-            icon={Cpu}
-            value={credentials.mistral}
-            onChange={(value) => handleChange("mistral", value)}
+            value={credentials.deepgram}
+            onChange={(value) => handleChange("deepgram", value)}
             onSave={saveCredentials}
           />
         </TabsContent>

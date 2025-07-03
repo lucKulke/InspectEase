@@ -36,6 +36,7 @@ import { IUserProfile } from "@/lib/globalInterfaces";
 import { updateUserProfile } from "./actions";
 import { UUID } from "crypto";
 import { useNotification } from "@/app/context/NotificationContext";
+import { SpeachToTextConfig } from "./SeachToTextConfig";
 
 const profileFormSchema = z.object({
   first_name: z
@@ -464,6 +465,11 @@ export const ProfileForm = ({ profileData, user }: ProfileFormProps) => {
           profileData={profile}
           setProfileData={setProfile}
         ></LLMConfigPage>
+        <SpeachToTextConfig
+          user={user}
+          profileData={profile}
+          setProfileData={setProfile}
+        ></SpeachToTextConfig>
       </TabsContent>
     </Tabs>
   );

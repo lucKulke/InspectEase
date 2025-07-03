@@ -30,8 +30,8 @@ export async function updateUserProfile(
   return { updatedProfile: data, updatedProfileError: error };
 }
 
-export async function updateUserProfileOpenAiToken(
-  newToken: string,
+export async function updateUserProfileAiTokens(
+  newToken: Record<string, string>,
   userId: UUID
 ): Promise<{
   updatedProfile: IUserProfile;
@@ -41,9 +41,7 @@ export async function updateUserProfileOpenAiToken(
 
   const { data, error } = await supabase
     .from("user_profile") // Change to your actual table name
-    .update({
-      openai_token: newToken,
-    })
+    .update(newToken)
     .eq("user_id", userId)
     .select()
     .single();

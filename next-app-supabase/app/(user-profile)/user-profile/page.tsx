@@ -26,17 +26,6 @@ export default async function ProfilePage() {
       .single();
 
     let profile: IUserProfile = data;
-    if (!data) {
-      // Create a new profile if it doesn't exist
-      const { data, error: insertError } = await supabase
-        .from("user_profile")
-        .insert([{ user_id: userId }])
-        .select()
-        .single();
-      if (data) profile = data;
-
-      if (insertError) console.error(insertError);
-    }
 
     return profile;
   }
