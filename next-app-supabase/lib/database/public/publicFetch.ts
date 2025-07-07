@@ -81,4 +81,25 @@ export class DBActionsPublicFetch {
       teamMemberEmailsError: error,
     };
   }
+
+  async fetchTeamById(teamId: UUID): Promise<{
+    team: ITeamResponse | null;
+    teamError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("teams")
+      .select("*")
+      .eq("id", teamId)
+      .single();
+
+    console.log("fetch team by id in db:", data);
+    if (error) {
+      console.error("fetch team by id in db error: ", error);
+    }
+
+    return {
+      team: data,
+      teamError: error,
+    };
+  }
 }

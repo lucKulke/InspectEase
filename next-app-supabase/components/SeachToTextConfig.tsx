@@ -16,30 +16,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Brain, Cpu, Key, Save } from "lucide-react";
+import { Brain, Cpu, Key, Lock, Save } from "lucide-react";
 import { IUserProfile } from "@/lib/globalInterfaces";
-import { User } from "@supabase/supabase-js";
-import { updateUserProfileAiTokens } from "./actions";
+
 import { UUID } from "crypto";
 import { useNotification } from "@/app/context/NotificationContext";
 import { AzureOpenAI } from "openai";
+import { User } from "@supabase/supabase-js";
 
 interface SpeachToTextConfigProps {
-  profileData: IUserProfile;
-  setProfileData: React.Dispatch<SetStateAction<IUserProfile>>;
-  user: User;
+  currentCredentials: {
+    deepgram_token: string | null;
+    azure: string | null;
+    google: string | null;
+  };
+
+  updateAiTokens: (aiTokens: Record<string, string>) => Promise<void>;
 }
 
 export const SpeachToTextConfig = ({
-  profileData,
-  user,
-  setProfileData,
+  currentCredentials,
+  updateAiTokens,
 }: SpeachToTextConfigProps) => {
   const { showNotification } = useNotification();
   const { toast } = useToast();
 
   const [credentials, setCredentials] = useState({
-    deepgram: profileData.deepgram_token ?? "",
+    deepgram: currentCredentials.deepgram_token ?? "",
     azure: "",
     google: "",
   });
@@ -60,24 +63,7 @@ export const SpeachToTextConfig = ({
     }
     // In a real app, you would securely store these credentials
     // This is just a demo implementation
-
-    const { updatedProfile, updatedProfileError } =
-      await updateUserProfileAiTokens(newToken, user.id as UUID);
-    if (updatedProfileError) {
-      showNotification(
-        "Update user profile",
-        `Error: ${updatedProfileError.message} (${updatedProfileError.code})`,
-        "error"
-      );
-    } else if (updatedProfile) {
-      showNotification(
-        "Update user profile",
-        `Successfully updated user profile`,
-        "info"
-      );
-
-      setProfileData(updatedProfile);
-    }
+    await updateAiTokens(newToken);
   };
 
   return (
@@ -100,7 +86,7 @@ export const SpeachToTextConfig = ({
           <ProviderCard
             id="deepgram"
             title="Deepgram"
-            description="Configure your OpenAI API credentials"
+            description="Configure your Deepgram credentials"
             icon={Brain}
             value={credentials.deepgram}
             onChange={(value) => handleChange("deepgram", value)}

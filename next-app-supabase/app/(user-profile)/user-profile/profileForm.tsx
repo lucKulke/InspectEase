@@ -30,13 +30,14 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { LLMConfigPage } from "./LLMProviderConfig";
+import { LLMConfigPage } from "@/components/LLMProviderConfig";
 import { User as SupbaseUser } from "@supabase/supabase-js";
 import { IUserProfile } from "@/lib/globalInterfaces";
-import { updateUserProfile } from "./actions";
+import { updateUserProfile, updateUserProfileAiTokens } from "./actions";
 import { UUID } from "crypto";
 import { useNotification } from "@/app/context/NotificationContext";
-import { SpeachToTextConfig } from "./SeachToTextConfig";
+import { SpeachToTextConfig } from "@/components/SeachToTextConfig";
+import { set } from "date-fns";
 
 const profileFormSchema = z.object({
   first_name: z
@@ -115,6 +116,28 @@ export const ProfileForm = ({ profileData, user }: ProfileFormProps) => {
     mode: "onChange",
   });
 
+  const [LLMCredentials, setLLMCredentials] = useState<{
+    openai_token: string | null;
+    anthropic_token: string | null;
+    cohere_token: string | null;
+    mistral_token: string | null;
+  }>({
+    openai_token: profile.openai_token ?? null,
+    anthropic_token: null,
+    cohere_token: null,
+    mistral_token: null,
+  });
+
+  const [speachToTextCredentials, setSpeachToTextCredentials] = useState<{
+    deepgram_token: string | null;
+    azure: string | null;
+    google: string | null;
+  }>({
+    deepgram_token: profile.deepgram_token ?? null,
+    azure: null,
+    google: null,
+  });
+
   async function onProfileSubmit(data: ProfileFormValues) {
     // Check if any changes were made
     const hasChanges =
@@ -168,6 +191,52 @@ export const ProfileForm = ({ profileData, user }: ProfileFormProps) => {
     });
   }
 
+  const handleUpdateLLMAPICredentials = async (
+    apiKeys: Record<string, string>
+  ) => {
+    const { updatedProfile, updatedProfileError } =
+      await updateUserProfileAiTokens(apiKeys, user.id as UUID);
+    if (updatedProfileError) {
+      showNotification(
+        "Update users llm api keys",
+        `Error: ${updatedProfileError.message} (${updatedProfileError.code})`,
+        "error"
+      );
+    } else if (updatedProfile) {
+      showNotification(
+        "Update users llm api keys",
+        `Successfully updated users api keys`,
+        "info"
+      );
+
+      setProfile(updatedProfile);
+      setLLMCredentials((prev) => ({ ...prev, ...apiKeys }));
+    }
+  };
+
+  const handleUpdateSpeachToTextAPICredentials = async (
+    apiKeys: Record<string, string>
+  ) => {
+    const { updatedProfile, updatedProfileError } =
+      await updateUserProfileAiTokens(apiKeys, user.id as UUID);
+    if (updatedProfileError) {
+      showNotification(
+        "Update users speach to text api keys",
+        `Error: ${updatedProfileError.message} (${updatedProfileError.code})`,
+        "error"
+      );
+    } else if (updatedProfile) {
+      showNotification(
+        "Update users speach to text api keys",
+        `Successfully updated speach to text users api keys`,
+        "info"
+      );
+
+      setProfile(updatedProfile);
+      setSpeachToTextCredentials((prev) => ({ ...prev, ...apiKeys }));
+    }
+  };
+
   return (
     <Tabs
       defaultValue="personal"
@@ -175,7 +244,7 @@ export const ProfileForm = ({ profileData, user }: ProfileFormProps) => {
       onValueChange={setActiveTab}
       className="space-y-6"
     >
-      <TabsList className="grid w-full grid-cols-4 lg:w-[500px]">
+      <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
         <TabsTrigger value="personal" className="flex items-center gap-2">
           <User className="h-4 w-4" />
           <span className="hidden sm:inline">Personal</span>
@@ -461,14 +530,12 @@ export const ProfileForm = ({ profileData, user }: ProfileFormProps) => {
       </TabsContent>
       <TabsContent value="aiApi" className="space-y-6">
         <LLMConfigPage
-          user={user}
-          profileData={profile}
-          setProfileData={setProfile}
+          currentCredentials={LLMCredentials}
+          updateAiTokens={handleUpdateLLMAPICredentials}
         ></LLMConfigPage>
         <SpeachToTextConfig
-          user={user}
-          profileData={profile}
-          setProfileData={setProfile}
+          currentCredentials={speachToTextCredentials}
+          updateAiTokens={handleUpdateSpeachToTextAPICredentials}
         ></SpeachToTextConfig>
       </TabsContent>
     </Tabs>

@@ -48,6 +48,7 @@ import { NavMain } from "./NavMain";
 // This is sample data.
 const dataBuilder = {
   user: {
+    id: "1",
     name: "Unknown",
     email: "m@unknown.com",
     avatar: "/avatars/shadcn.jpg",
@@ -119,6 +120,7 @@ const dataBuilder = {
 
 const dataFiller = {
   user: {
+    id: "1",
     name: "Unknown",
     email: "m@unknown.com",
     avatar: "/avatars/shadcn.jpg",
@@ -174,6 +176,7 @@ export function AppSidebar({
   }
 
   if (user) {
+    data.user.id = user.id ?? "";
     data.user.email = user.email ?? "";
   }
 

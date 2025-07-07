@@ -19,29 +19,33 @@ import { useToast } from "@/hooks/use-toast";
 import { Brain, Cpu, Key, Save } from "lucide-react";
 import { IUserProfile } from "@/lib/globalInterfaces";
 import { User } from "@supabase/supabase-js";
-import { updateUserProfileAiTokens } from "./actions";
+
 import { UUID } from "crypto";
 import { useNotification } from "@/app/context/NotificationContext";
 
 interface LLMConfigPageProps {
-  profileData: IUserProfile;
-  setProfileData: React.Dispatch<SetStateAction<IUserProfile>>;
-  user: User;
+  currentCredentials: {
+    openai_token: string | null;
+    anthropic_token: string | null;
+    cohere_token: string | null;
+    mistral_token: string | null;
+  };
+
+  updateAiTokens: (apiKeys: Record<string, string>) => Promise<void>;
 }
 
 export const LLMConfigPage = ({
-  profileData,
-  user,
-  setProfileData,
+  currentCredentials,
+  updateAiTokens,
 }: LLMConfigPageProps) => {
   const { showNotification } = useNotification();
   const { toast } = useToast();
 
   const [credentials, setCredentials] = useState({
-    openai: profileData.openai_token ?? "",
-    anthropic: "",
-    cohere: "",
-    mistral: "",
+    openai: currentCredentials.openai_token ?? "",
+    anthropic: currentCredentials.anthropic_token ?? "",
+    cohere: currentCredentials.cohere_token ?? "",
+    mistral: currentCredentials.mistral_token ?? "",
   });
 
   const handleChange = (provider: string, value: string) => {
@@ -52,32 +56,16 @@ export const LLMConfigPage = ({
   };
 
   const saveCredentials = async (id: string) => {
-    const newToken: Record<string, string> = {};
+    const newApiKeys: Record<string, string> = {};
     switch (id) {
       case "deepgram":
-        newToken["openai_token"] = credentials.openai;
+        newApiKeys["openai_token"] = credentials.openai;
         break;
     }
     // In a real app, you would securely store these credentials
     // This is just a demo implementation
 
-    const { updatedProfile, updatedProfileError } =
-      await updateUserProfileAiTokens(newToken, user.id as UUID);
-    if (updatedProfileError) {
-      showNotification(
-        "Update user profile",
-        `Error: ${updatedProfileError.message} (${updatedProfileError.code})`,
-        "error"
-      );
-    } else if (updatedProfile) {
-      showNotification(
-        "Update user profile",
-        `Successfully updated user profile`,
-        "info"
-      );
-
-      setProfileData(updatedProfile);
-    }
+    await updateAiTokens(newApiKeys);
   };
 
   return (

@@ -34,6 +34,7 @@ export function NavUser({
   teams,
 }: {
   user: {
+    id: string;
     name: string;
     email: string;
     avatar: string;
@@ -69,6 +70,7 @@ export function NavUser({
     <div className="flex flex-col gap-2">
       {/* Team Switcher */}
       <TeamSwitcher
+        userId={user.id}
         teams={teams}
         onTeamChange={handleTeamChange}
         activeTeam={

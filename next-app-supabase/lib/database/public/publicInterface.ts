@@ -6,6 +6,9 @@ export interface ITeamResponse {
   created_by: string;
   description: string | null;
   picture_id: UUID | null;
+  owner_id: UUID;
+  openai_token: string;
+  deepgram_token: string;
 }
 
 export interface IUserProfileResponse {
@@ -16,6 +19,7 @@ export interface IUserProfileResponse {
   openai_token: string;
   role: "admin" | "normal";
   active_team_id: UUID | null;
+  deepgram_token: string;
 }
 
 export interface IUserProfileEmailResponse {
