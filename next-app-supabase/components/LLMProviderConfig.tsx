@@ -22,6 +22,7 @@ import { User } from "@supabase/supabase-js";
 
 import { UUID } from "crypto";
 import { useNotification } from "@/app/context/NotificationContext";
+import Image from "next/image";
 
 interface LLMConfigPageProps {
   type?: "team" | "user";
@@ -56,6 +57,15 @@ export const LLMConfigPage = ({
       [provider]: value,
     }));
   };
+
+  function checkIfCredentialsHaveChanged() {
+    return (
+      credentials.openai !== currentCredentials.openai_token ||
+      credentials.anthropic !== currentCredentials.anthropic_token ||
+      credentials.cohere !== currentCredentials.cohere_token ||
+      credentials.mistral !== currentCredentials.mistral_token
+    );
+  }
 
   const saveCredentials = async (id: string) => {
     const newApiKeys: Record<string, string> = {};
@@ -92,7 +102,8 @@ export const LLMConfigPage = ({
             id="openai"
             title="OpenAI"
             description={`Configure ${type} OpenAI API credentials`}
-            icon={Brain}
+            disabled={credentials.openai === currentCredentials.openai_token}
+            iconPath={"/openai.svg"}
             value={credentials.openai}
             onChange={(value) => handleChange("openai", value)}
             onSave={saveCredentials}
@@ -103,9 +114,10 @@ export const LLMConfigPage = ({
           <ProviderCard
             id="anthropic"
             disabled={true}
+            unsupported={true}
             title="Anthropic"
             description={`Configure ${type} Anthropic API credentials`}
-            icon={Brain}
+            iconPath={"/anthropic.svg"}
             value={credentials.anthropic}
             onChange={(value) => handleChange("anthropic", value)}
             onSave={saveCredentials}
@@ -116,9 +128,10 @@ export const LLMConfigPage = ({
           <ProviderCard
             id="cohere"
             disabled={true}
+            unsupported={true}
             title="Cohere"
             description={`Configure ${type} Cohere API credentials`}
-            icon={Cpu}
+            iconPath={"/cohere.png"}
             value={credentials.cohere}
             onChange={(value) => handleChange("cohere", value)}
             onSave={saveCredentials}
@@ -129,9 +142,10 @@ export const LLMConfigPage = ({
           <ProviderCard
             id="mistral"
             disabled={true}
+            unsupported={true}
             title="Mistral AI"
             description={`Configure ${type} Mistral AI API credentials`}
-            icon={Cpu}
+            iconPath={"/mistral.png"}
             value={credentials.mistral}
             onChange={(value) => handleChange("mistral", value)}
             onSave={saveCredentials}
@@ -146,8 +160,9 @@ interface ProviderCardProps {
   title: string;
   id: string;
   disabled?: boolean;
+  unsupported?: boolean;
   description: string;
-  icon: React.ElementType;
+  iconPath: string;
   value: string;
   onChange: (value: string) => void;
   onSave: (value: string) => void;
@@ -157,17 +172,18 @@ function ProviderCard({
   id,
   title,
   description,
-  icon: Icon,
+  iconPath,
   value,
   onChange,
   onSave,
   disabled = false,
+  unsupported = false,
 }: ProviderCardProps) {
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <Icon className="h-6 w-6" />
+          <Image src={iconPath} alt="logo" width={24} height={24} />
           <CardTitle>{title}</CardTitle>
         </div>
         <CardDescription>{description}</CardDescription>
@@ -200,7 +216,7 @@ function ProviderCard({
           className="w-full"
         >
           <Save className="mr-2 h-4 w-4" />
-          {disabled ? (
+          {unsupported ? (
             <p>Not supported yet...</p>
           ) : (
             <p>Save {title} Credentials</p>

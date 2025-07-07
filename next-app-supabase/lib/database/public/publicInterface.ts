@@ -23,7 +23,9 @@ export interface IUserProfileResponse {
   deepgram_token: string;
 }
 
-export interface IUserProfileEmailResponse {
+export interface IUserProfileDataResponse {
   id: UUID;
+  first_name: string;
+  last_name: string;
   email: string;
 }

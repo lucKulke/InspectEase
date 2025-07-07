@@ -3,7 +3,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { UUID } from "crypto";
 import {
   ITeamResponse,
-  IUserProfileEmailResponse,
+  IUserProfileDataResponse,
   IUserProfileResponse,
 } from "./publicInterface";
 
@@ -65,19 +65,19 @@ export class DBActionsPublicFetch {
   }
 
   async fetchTeamMemberEmails(): Promise<{
-    teamMemberEmails: IUserProfileEmailResponse[] | null;
+    teamMemberEmails: IUserProfileDataResponse[] | null;
     teamMemberEmailsError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("user_profile")
-      .select(`id, email`);
+      .select(`id,first_name, last_name, email`);
 
     if (error) {
       console.error("fetch team member emails from db error: ", error);
     }
 
     return {
-      teamMemberEmails: data as IUserProfileEmailResponse[] | null,
+      teamMemberEmails: data as IUserProfileDataResponse[] | null,
       teamMemberEmailsError: error,
     };
   }

@@ -25,6 +25,15 @@ import {
   Shield,
   Trash2,
   Plus,
+  Group,
+  UserPlus,
+  Mail,
+  MoreVertical,
+  Crown,
+  User,
+  Wrench,
+  Blocks,
+  PenLine,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { LLMConfigPage } from "@/components/LLMProviderConfig";
@@ -34,6 +43,29 @@ import { useNotification } from "@/app/context/NotificationContext";
 import { updateTeamAiTokens, updateTeamSettings } from "./actions";
 import { UUID } from "crypto";
 import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { DialogTrigger } from "@radix-ui/react-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { DropdownMenuContent } from "@/components/ui/dropdown-menu";
 
 export interface TeamSettings {
   name: string;
@@ -44,6 +76,28 @@ export interface TeamSettings {
 interface TeamFormProps {
   team: ITeamResponse;
 }
+
+interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: "owner" | "builder" | "filler";
+  avatar?: string;
+  joinedAt: string;
+  status: "active" | "pending";
+}
+
+const roleIcons = {
+  owner: Crown,
+  builder: Blocks,
+  filler: PenLine,
+};
+
+const roleColors = {
+  owner: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  builder: "bg-blue-100 text-blue-800 border-blue-200",
+  filler: "bg-green-100 text-green-800 border-green-200",
+};
 
 export const TeamForm = ({ team }: TeamFormProps) => {
   const router = useRouter();
@@ -153,12 +207,122 @@ export const TeamForm = ({ team }: TeamFormProps) => {
       setSpeachToTextCredentials((prev) => ({ ...prev, ...apiKeys }));
     }
   };
+
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
+    {
+      id: "1",
+      name: "John Doe",
+      email: "john@example.com",
+      role: "owner",
+      avatar: "/placeholder.svg?height=40&width=40",
+      joinedAt: "2024-01-15",
+      status: "active",
+    },
+    {
+      id: "2",
+      name: "Jane Smith",
+      email: "jane@example.com",
+      role: "builder",
+      avatar: "/placeholder.svg?height=40&width=40",
+      joinedAt: "2024-02-01",
+      status: "active",
+    },
+    {
+      id: "3",
+      name: "Mike Johnson",
+      email: "mike@example.com",
+      role: "filler",
+      joinedAt: "2024-02-15",
+      status: "pending",
+    },
+  ]);
+
+  const [inviteForm, setInviteForm] = useState({
+    email: "",
+    role: "member" as TeamMember["role"],
+  });
+
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+
+  const handleInviteMember = () => {
+    if (!inviteForm.email) {
+      toast({
+        title: "Error",
+        description: "Please enter an email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if member already exists
+    const existingMember = teamMembers.find(
+      (member) => member.email === inviteForm.email
+    );
+    if (existingMember) {
+      toast({
+        title: "Error",
+        description: "This user is already a team member.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newMember: TeamMember = {
+      id: Date.now().toString(),
+      name: inviteForm.email.split("@")[0],
+      email: inviteForm.email,
+      role: inviteForm.role,
+      joinedAt: new Date().toISOString().split("T")[0],
+      status: "pending",
+    };
+
+    setTeamMembers([...teamMembers, newMember]);
+    setInviteForm({ email: "", role: "filler" });
+    setIsInviteDialogOpen(false);
+
+    toast({
+      title: "Invitation sent",
+      description: `Invitation sent to ${inviteForm.email}`,
+    });
+  };
+
+  const handleRemoveMember = (memberId: string) => {
+    setTeamMembers(teamMembers.filter((member) => member.id !== memberId));
+    toast({
+      title: "Member removed",
+      description: "Team member has been removed successfully.",
+    });
+  };
+
+  const handleRoleChange = (memberId: string, newRole: TeamMember["role"]) => {
+    setTeamMembers(
+      teamMembers.map((member) =>
+        member.id === memberId ? { ...member, role: newRole } : member
+      )
+    );
+    toast({
+      title: "Role updated",
+      description: "Member role has been updated successfully.",
+    });
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+  };
   return (
     <Tabs defaultValue="general" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-3">
+      <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="general" className="flex items-center gap-2">
           <Settings className="h-4 w-4" />
           General
+        </TabsTrigger>
+        <TabsTrigger value="members" className="flex items-center gap-2">
+          <Group className="h-4 w-4"></Group>
+          Members
         </TabsTrigger>
         <TabsTrigger value="api-keys" className="flex items-center gap-2">
           <Key className="h-4 w-4" />
@@ -215,6 +379,169 @@ export const TeamForm = ({ team }: TeamFormProps) => {
               <Save className="h-4 w-4 mr-2" />
               Save Changes
             </Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      <TabsContent value="members" className="space-y-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Team Members</CardTitle>
+                <CardDescription>
+                  Manage your team members and their roles
+                </CardDescription>
+              </div>
+              <Dialog
+                open={isInviteDialogOpen}
+                onOpenChange={setIsInviteDialogOpen}
+              >
+                <DialogTrigger asChild>
+                  <Button>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Invite Member
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Invite Team Member</DialogTitle>
+                    <DialogDescription>
+                      Send an invitation to join your team
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="invite-email">Email Address</Label>
+                      <Input
+                        id="invite-email"
+                        type="email"
+                        placeholder="Enter email address"
+                        value={inviteForm.email}
+                        onChange={(e) =>
+                          setInviteForm({
+                            ...inviteForm,
+                            email: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="invite-role">Role</Label>
+                      <Select
+                        value={inviteForm.role}
+                        onValueChange={(value: TeamMember["role"]) =>
+                          setInviteForm({ ...inviteForm, role: value })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="builder">Builder</SelectItem>
+                          <SelectItem value="filler">Filler</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsInviteDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button onClick={handleInviteMember}>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Send Invitation
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {teamMembers.map((member) => {
+                const RoleIcon = roleIcons[member.role];
+                return (
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <Avatar>
+                        <AvatarImage
+                          src={member.avatar || "/placeholder.svg"}
+                          alt={member.name}
+                        />
+                        <AvatarFallback>
+                          {getInitials(member.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h4 className="font-medium">{member.name}</h4>
+                          {member.status === "pending" && (
+                            <Badge variant="outline" className="text-xs">
+                              Pending
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {member.email}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Joined{" "}
+                          {new Date(member.joinedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge className={`${roleColors[member.role]} border`}>
+                        <RoleIcon className="h-3 w-3 mr-1" />
+                        {member.role.charAt(0).toUpperCase() +
+                          member.role.slice(1)}
+                      </Badge>
+                      {member.role !== "owner" && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleRoleChange(member.id, "builder")
+                              }
+                              disabled={member.role === "builder"}
+                            >
+                              Make Builder
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleRoleChange(member.id, "filler")
+                              }
+                              disabled={member.role === "filler"}
+                            >
+                              Make Filler
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                              onClick={() => handleRemoveMember(member.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Remove
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       </TabsContent>
