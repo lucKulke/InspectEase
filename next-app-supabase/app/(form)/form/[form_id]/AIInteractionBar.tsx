@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import React, { useState } from "react";
-import { requestIntentRecognition } from "./actions";
+
 import { UUID } from "crypto";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/Spinner";

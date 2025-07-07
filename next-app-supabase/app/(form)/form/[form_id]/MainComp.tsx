@@ -43,6 +43,7 @@ import { AIInteractionBar } from "./AIInteractionBar";
 import { motion, AnimatePresence } from "framer-motion";
 import { v4 as uuid4 } from "uuid";
 import { LogStream } from "./LogStream";
+import { AIInteractionBarV2 } from "@/components/AiInteractionBar/Bar";
 //import { TextInputField } from "./TextInputField";
 
 interface MainCompProps {
@@ -85,7 +86,7 @@ export const MainComp = ({
   const [logsOpen, setLogsOpen] = useState<boolean>(false);
   const [aiConnectionStatus, setAiConnectionStatus] =
     useState<string>("not connected");
-  const [isThinking, setIsThinking] = useState<boolean>(false);
+  const [isAutoFilling, setIsAutoFilling] = useState<boolean>(false);
 
   const { showNotification } = useNotification();
   const [fillableSubCheckboxes, setFillableSubCheckboxes] =
@@ -595,7 +596,7 @@ export const MainComp = ({
   };
 
   const processAiResponse = async (userInput: string) => {
-    setIsThinking(true);
+    setIsAutoFilling(true);
     setLogsOpen(true);
 
     const id = uuid4();
@@ -690,7 +691,7 @@ export const MainComp = ({
         }
       }
     }
-    setIsThinking(false);
+    setIsAutoFilling(false);
   };
 
   function sortMainSections(a: IMainSectionResponse, b: IMainSectionResponse) {
@@ -1084,11 +1085,11 @@ export const MainComp = ({
           </li>
         ))}
       </ul>
-      <AIInteractionBar
+      <AIInteractionBarV2
         processAiResposne={processAiResponse}
         formId={formData.id}
-        isThinking={isThinking}
-      ></AIInteractionBar>
+        isAutoFilling={isAutoFilling}
+      ></AIInteractionBarV2>
     </div>
   );
 };
