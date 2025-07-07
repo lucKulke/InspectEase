@@ -2,7 +2,9 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 import { SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
-import { IUserProfileResponse } from "./publicInterface";
+import { ITeamResponse, IUserProfileResponse } from "./publicInterface";
+import { createClient } from "@/utils/supabase/server";
+import { TeamSettings } from "@/app/(team-profile)/team-profile/[team_id]/teamForm";
 
 export class DatabasePublicUpdate {
   private supabase: SupabaseClient<any, string, any>;
@@ -34,5 +36,43 @@ export class DatabasePublicUpdate {
       updatedProfile: data,
       updatedProfileError: error as SupabaseError | null,
     };
+  }
+
+  async updateTeamAiTokens(
+    newToken: Record<string, string>,
+    teamId: UUID
+  ): Promise<{
+    updatedTeam: ITeamResponse | null;
+    updatedTeamError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("teams") // Change to your actual table name
+      .update(newToken)
+      .eq("id", teamId)
+      .select()
+      .single();
+
+    console.log("updated team api keys: ", data);
+    if (error) {
+      console.error("updated team api keys error: ", error);
+    }
+
+    return { updatedTeam: data, updatedTeamError: error };
+  }
+
+  async updateTeamSettings(teamId: UUID, newSettings: TeamSettings) {
+    const { data, error } = await this.supabase
+      .from("teams") // Change to your actual table name
+      .update(newSettings)
+      .eq("id", teamId)
+      .select()
+      .single();
+
+    console.log("updated team settings: ", data);
+    if (error) {
+      console.error("updated team settings error: ", error);
+    }
+
+    return { updatedTeam: data, updatedTeamError: error };
   }
 }

@@ -4,6 +4,8 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
 import { UUID } from "crypto";
+import Link from "next/link";
+import { House } from "lucide-react";
 
 export default async function TeamProfilePage({
   params,
@@ -30,7 +32,12 @@ export default async function TeamProfilePage({
   return (
     <div className="container mx-auto py-8 px-4 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Team Settings</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold tracking-tight">Team Settings</h1>
+          <Link href="/">
+            <House></House>
+          </Link>
+        </div>
         <p className="text-muted-foreground">
           Manage your team configuration and AI API keys
         </p>

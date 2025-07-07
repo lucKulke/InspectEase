@@ -25,6 +25,7 @@ import { AzureOpenAI } from "openai";
 import { User } from "@supabase/supabase-js";
 
 interface SpeachToTextConfigProps {
+  type?: "team" | "user";
   currentCredentials: {
     deepgram_token: string | null;
     azure: string | null;
@@ -35,6 +36,7 @@ interface SpeachToTextConfigProps {
 }
 
 export const SpeachToTextConfig = ({
+  type = "user",
   currentCredentials,
   updateAiTokens,
 }: SpeachToTextConfigProps) => {
@@ -73,7 +75,7 @@ export const SpeachToTextConfig = ({
           Speach to Text Provider Configuration
         </h1>
         <p className="text-muted-foreground">
-          Manage your API keys for different speach to text model providers.
+          Manage {type} API keys for different speach to text model providers.
         </p>
       </div>
 
@@ -86,7 +88,7 @@ export const SpeachToTextConfig = ({
           <ProviderCard
             id="deepgram"
             title="Deepgram"
-            description="Configure your Deepgram credentials"
+            description={`Configure ${type} Deepgram credentials`}
             icon={Brain}
             value={credentials.deepgram}
             onChange={(value) => handleChange("deepgram", value)}

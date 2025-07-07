@@ -9,6 +9,7 @@ export interface ITeamResponse {
   owner_id: UUID;
   openai_token: string;
   deepgram_token: string;
+  require_two_factor: boolean;
 }
 
 export interface IUserProfileResponse {

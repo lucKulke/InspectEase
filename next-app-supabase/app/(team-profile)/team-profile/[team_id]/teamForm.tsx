@@ -30,14 +30,15 @@ import { toast } from "@/hooks/use-toast";
 import { LLMConfigPage } from "@/components/LLMProviderConfig";
 import { SpeachToTextConfig } from "@/components/SeachToTextConfig";
 import { ITeamResponse } from "@/lib/database/public/publicInterface";
+import { useNotification } from "@/app/context/NotificationContext";
+import { updateTeamAiTokens, updateTeamSettings } from "./actions";
+import { UUID } from "crypto";
+import { useRouter } from "next/navigation";
 
-interface TeamSettings {
+export interface TeamSettings {
   name: string;
   description: string;
-  slug: string;
-  emailDomain: string;
-  allowPublicProjects: boolean;
-  requireTwoFactor: boolean;
+  require_two_factor: boolean;
 }
 
 interface TeamFormProps {
@@ -45,13 +46,12 @@ interface TeamFormProps {
 }
 
 export const TeamForm = ({ team }: TeamFormProps) => {
+  const router = useRouter();
+  const { showNotification } = useNotification();
   const [teamSettings, setTeamSettings] = useState<TeamSettings>({
     name: team.name ?? "",
     description: team.description ?? "",
-    slug: "acme-corp",
-    emailDomain: "acme.com",
-    allowPublicProjects: true,
-    requireTwoFactor: false,
+    require_two_factor: team.require_two_factor ?? false,
   });
 
   const [LLMCredentials, setLLMCredentials] = useState<{
@@ -71,20 +71,88 @@ export const TeamForm = ({ team }: TeamFormProps) => {
     azure: string | null;
     google: string | null;
   }>({
-    deepgram_token: profile.deepgram_token ?? null,
+    deepgram_token: team.deepgram_token ?? null,
     azure: null,
     google: null,
   });
 
+  function checkIfSomeGeneralSettingsChanged() {
+    return (
+      team.name !== teamSettings.name ||
+      team.description !== teamSettings.description
+    );
+  }
+  function checkIfSomeSecuritySettingsChanged() {
+    return team.require_two_factor !== teamSettings.require_two_factor;
+  }
   const handleSaveTeamSettings = async () => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast({
-      title: "Settings saved",
-      description: "Team settings have been updated successfully.",
-    });
+    const { updatedTeam, updatedTeamError } = await updateTeamSettings(
+      teamSettings,
+      team.id as UUID
+    );
+    if (updatedTeamError) {
+      showNotification(
+        "Update teams settings",
+        `Error: ${updatedTeamError.message} (${updatedTeamError.code})`,
+        "error"
+      );
+    } else if (updatedTeam) {
+      showNotification(
+        "Update teams settings",
+        `Successfully updated teams settings`,
+        "info"
+      );
+    }
+    router.refresh();
   };
 
+  const handleUpdateLLMAPICredentials = async (
+    apiKeys: Record<string, string>
+  ) => {
+    const { updatedTeam, updatedTeamError } = await updateTeamAiTokens(
+      apiKeys,
+      team.id as UUID
+    );
+    if (updatedTeamError) {
+      showNotification(
+        "Update teams llm api keys",
+        `Error: ${updatedTeamError.message} (${updatedTeamError.code})`,
+        "error"
+      );
+    } else if (updatedTeam) {
+      showNotification(
+        "Update teams llm api keys",
+        `Successfully updated teams api keys`,
+        "info"
+      );
+
+      setLLMCredentials((prev) => ({ ...prev, ...apiKeys }));
+    }
+  };
+
+  const handleUpdateSpeachToTextAPICredentials = async (
+    apiKeys: Record<string, string>
+  ) => {
+    const { updatedTeam, updatedTeamError } = await updateTeamAiTokens(
+      apiKeys,
+      team.id as UUID
+    );
+    if (updatedTeamError) {
+      showNotification(
+        "Update teams speach to text api keys",
+        `Error: ${updatedTeamError.message} (${updatedTeamError.code})`,
+        "error"
+      );
+    } else if (updatedTeam) {
+      showNotification(
+        "Update teams speach to text api keys",
+        `Successfully updated speach to text teams api keys`,
+        "info"
+      );
+
+      setSpeachToTextCredentials((prev) => ({ ...prev, ...apiKeys }));
+    }
+  };
   return (
     <Tabs defaultValue="general" className="space-y-6">
       <TabsList className="grid w-full grid-cols-3">
@@ -121,17 +189,6 @@ export const TeamForm = ({ team }: TeamFormProps) => {
                   placeholder="Enter team name"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="team-slug">Team Slug</Label>
-                <Input
-                  id="team-slug"
-                  value={teamSettings.slug}
-                  onChange={(e) =>
-                    setTeamSettings({ ...teamSettings, slug: e.target.value })
-                  }
-                  placeholder="team-slug"
-                />
-              </div>
             </div>
 
             <div className="space-y-2">
@@ -150,27 +207,10 @@ export const TeamForm = ({ team }: TeamFormProps) => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email-domain">Email Domain</Label>
-              <Input
-                id="email-domain"
-                value={teamSettings.emailDomain}
-                onChange={(e) =>
-                  setTeamSettings({
-                    ...teamSettings,
-                    emailDomain: e.target.value,
-                  })
-                }
-                placeholder="company.com"
-              />
-              <p className="text-sm text-muted-foreground">
-                Users with this email domain can join the team automatically
-              </p>
-            </div>
-
             <Button
               onClick={handleSaveTeamSettings}
-              className="w-full md:w-auto"
+              disabled={!checkIfSomeGeneralSettingsChanged()}
+              className="w-full mt-3 md:w-auto"
             >
               <Save className="h-4 w-4 mr-2" />
               Save Changes
@@ -181,10 +221,12 @@ export const TeamForm = ({ team }: TeamFormProps) => {
 
       <TabsContent value="api-keys" className="space-y-6">
         <LLMConfigPage
+          type="team"
           currentCredentials={LLMCredentials}
           updateAiTokens={handleUpdateLLMAPICredentials}
         ></LLMConfigPage>
         <SpeachToTextConfig
+          type="team"
           currentCredentials={speachToTextCredentials}
           updateAiTokens={handleUpdateSpeachToTextAPICredentials}
         ></SpeachToTextConfig>
@@ -201,37 +243,17 @@ export const TeamForm = ({ team }: TeamFormProps) => {
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Allow Public Projects</Label>
-                <p className="text-sm text-muted-foreground">
-                  Team members can create public projects visible to everyone
-                </p>
-              </div>
-              <Switch
-                checked={teamSettings.allowPublicProjects}
-                onCheckedChange={(checked) =>
-                  setTeamSettings({
-                    ...teamSettings,
-                    allowPublicProjects: checked,
-                  })
-                }
-              />
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
                 <Label>Require Two-Factor Authentication</Label>
                 <p className="text-sm text-muted-foreground">
                   All team members must enable 2FA to access the team
                 </p>
               </div>
               <Switch
-                checked={teamSettings.requireTwoFactor}
+                checked={teamSettings.require_two_factor}
                 onCheckedChange={(checked) =>
                   setTeamSettings({
                     ...teamSettings,
-                    requireTwoFactor: checked,
+                    require_two_factor: checked,
                   })
                 }
               />
@@ -242,6 +264,7 @@ export const TeamForm = ({ team }: TeamFormProps) => {
             <Button
               onClick={handleSaveTeamSettings}
               className="w-full md:w-auto"
+              disabled={!checkIfSomeSecuritySettingsChanged()}
             >
               <Save className="h-4 w-4 mr-2" />
               Save Security Settings

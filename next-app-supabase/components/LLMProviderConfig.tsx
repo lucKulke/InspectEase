@@ -24,6 +24,7 @@ import { UUID } from "crypto";
 import { useNotification } from "@/app/context/NotificationContext";
 
 interface LLMConfigPageProps {
+  type?: "team" | "user";
   currentCredentials: {
     openai_token: string | null;
     anthropic_token: string | null;
@@ -35,6 +36,7 @@ interface LLMConfigPageProps {
 }
 
 export const LLMConfigPage = ({
+  type = "user",
   currentCredentials,
   updateAiTokens,
 }: LLMConfigPageProps) => {
@@ -58,7 +60,7 @@ export const LLMConfigPage = ({
   const saveCredentials = async (id: string) => {
     const newApiKeys: Record<string, string> = {};
     switch (id) {
-      case "deepgram":
+      case "openai":
         newApiKeys["openai_token"] = credentials.openai;
         break;
     }
@@ -73,7 +75,7 @@ export const LLMConfigPage = ({
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">LLM Provider Configuration</h1>
         <p className="text-muted-foreground">
-          Manage your API keys for different language model providers.
+          Manage {type} API keys for different language model providers.
         </p>
       </div>
 
@@ -89,7 +91,7 @@ export const LLMConfigPage = ({
           <ProviderCard
             id="openai"
             title="OpenAI"
-            description="Configure your OpenAI API credentials"
+            description={`Configure ${type} OpenAI API credentials`}
             icon={Brain}
             value={credentials.openai}
             onChange={(value) => handleChange("openai", value)}
@@ -102,7 +104,7 @@ export const LLMConfigPage = ({
             id="anthropic"
             disabled={true}
             title="Anthropic"
-            description="Configure your Anthropic API credentials"
+            description={`Configure ${type} Anthropic API credentials`}
             icon={Brain}
             value={credentials.anthropic}
             onChange={(value) => handleChange("anthropic", value)}
@@ -115,7 +117,7 @@ export const LLMConfigPage = ({
             id="cohere"
             disabled={true}
             title="Cohere"
-            description="Configure your Cohere API credentials"
+            description={`Configure ${type} Cohere API credentials`}
             icon={Cpu}
             value={credentials.cohere}
             onChange={(value) => handleChange("cohere", value)}
@@ -128,7 +130,7 @@ export const LLMConfigPage = ({
             id="mistral"
             disabled={true}
             title="Mistral AI"
-            description="Configure your Mistral AI API credentials"
+            description={`Configure ${type} Mistral AI API credentials`}
             icon={Cpu}
             value={credentials.mistral}
             onChange={(value) => handleChange("mistral", value)}
