@@ -11,7 +11,8 @@ export async function middleware(request: NextRequest) {
     pathname === "/auth/login" ||
     pathname === "/auth/confirm" ||
     pathname === "/auth/set-password" ||
-    pathname === "/auth/forgot-password"
+    pathname === "/auth/forgot-password" ||
+    pathname === "/auth/team-invite"
   ) {
     return NextResponse.next();
   }

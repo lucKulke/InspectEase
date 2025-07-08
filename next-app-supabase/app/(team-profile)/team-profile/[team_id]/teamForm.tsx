@@ -44,7 +44,12 @@ import {
   IUserProfileResponse,
 } from "@/lib/database/public/publicInterface";
 import { useNotification } from "@/app/context/NotificationContext";
-import { updateTeamAiTokens, updateTeamSettings } from "./actions";
+import {
+  sendTeamInviteMail,
+  updateMemberRoles,
+  updateTeamAiTokens,
+  updateTeamSettings,
+} from "./actions";
 import { UUID } from "crypto";
 import { useRouter } from "next/navigation";
 import {
@@ -71,6 +76,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DropdownMenuContent } from "@/components/ui/dropdown-menu";
 import { RoleType } from "@/lib/globalInterfaces";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export interface TeamSettings {
   name: string;
@@ -251,12 +257,13 @@ export const TeamForm = ({
 
   const [inviteForm, setInviteForm] = useState({
     email: "",
-    role: "filler" as RoleType,
+    roles: ["filler"],
   });
 
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
   const handleInviteMember = () => {
+    sendTeamInviteMail(team.name, inviteForm.email, inviteForm.roles, team.id);
     // if (!inviteForm.email) {
     //   toast({
     //     title: "Error",
@@ -302,24 +309,36 @@ export const TeamForm = ({
     });
   };
 
-  const handleRoleChange = (memberId: string, roleToToggle: RoleType) => {
-    setTeamMembers((prevMembers) =>
-      prevMembers.map((member) => {
-        if (member.id !== memberId) return member;
+  const handleRoleChange = async (memberId: string, roleToToggle: RoleType) => {
+    console.log("handleRoleChange", memberId, roleToToggle);
+    let newRoles: RoleType[] = [];
+    const newMembers = teamMembers.map((member) => {
+      if (member.id !== memberId) return member;
 
-        const hasRole = member.role.includes(roleToToggle);
-        const updatedRoles = hasRole
-          ? member.role.filter((r) => r !== roleToToggle)
-          : [...member.role, roleToToggle];
-
-        return { ...member, role: updatedRoles };
-      })
-    );
-
-    toast({
-      title: "Roles updated",
-      description: `Member roles have been updated.`,
+      const hasRole = member.role.includes(roleToToggle);
+      const updatedRoles = hasRole
+        ? member.role.filter((r) => r !== roleToToggle)
+        : [...member.role, roleToToggle];
+      newRoles = updatedRoles;
+      return { ...member, role: updatedRoles };
     });
+
+    const { updatedMembership, updatedMembershipError } =
+      await updateMemberRoles(memberId, newRoles);
+    if (updatedMembershipError) {
+      showNotification(
+        "Update member roles",
+        `Error: ${updatedMembershipError.message} (${updatedMembershipError.code})`,
+        "error"
+      );
+    } else if (updatedMembership) {
+      showNotification(
+        "Update member roles",
+        `Successfully updated member roles`,
+        "info"
+      );
+      setTeamMembers(newMembers);
+    }
   };
 
   const getInitials = (name: string) => {
@@ -446,16 +465,14 @@ export const TeamForm = ({
                       <div className="flex flex-wrap gap-2">
                         {(["builder", "filler"] as RoleType[]).map((role) => (
                           <div key={role} className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={inviteForm.role.includes(role)}
-                              onChange={(e) => {
-                                const checked = e.target.checked;
+                            <Checkbox
+                              checked={inviteForm.roles.includes(role)}
+                              onCheckedChange={(e) => {
                                 setInviteForm((prev) => ({
                                   ...prev,
-                                  role: checked
-                                    ? [...prev.role, role]
-                                    : prev.role.filter((r) => r !== role),
+                                  role: e
+                                    ? [...prev.roles, role]
+                                    : prev.roles.filter((r) => r !== role),
                                 }));
                               }}
                             />
@@ -486,7 +503,6 @@ export const TeamForm = ({
           <CardContent>
             <div className="space-y-4">
               {teamMembers.map((member) => {
-                const RoleIcon = member.role;
                 return (
                   <div
                     key={member.id}
@@ -537,7 +553,7 @@ export const TeamForm = ({
                           );
                         })}
                       </div>
-                      {member.role.includes("owner")! && (
+                      {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">
@@ -570,7 +586,7 @@ export const TeamForm = ({
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      )}
+                      }
                     </div>
                   </div>
                 );

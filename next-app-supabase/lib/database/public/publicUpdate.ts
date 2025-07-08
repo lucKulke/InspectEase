@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 
-import { SupabaseError } from "../../globalInterfaces";
+import { RoleType, SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
 import { ITeamResponse, IUserProfileResponse } from "./publicInterface";
 import { createClient } from "@/utils/supabase/server";
@@ -74,5 +74,26 @@ export class DatabasePublicUpdate {
     }
 
     return { updatedTeam: data, updatedTeamError: error };
+  }
+  async updateMemberRoles(
+    memberId: string,
+    newRoles: RoleType[]
+  ): Promise<{
+    updatedMembership: ITeamResponse | null;
+    updatedMembershipError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("team_memberships") // Change to your actual table name
+      .update({ role: newRoles })
+      .eq("user_id", memberId)
+      .select()
+      .single();
+
+    console.log("updated member roles in db: ", data);
+    if (error) {
+      console.error("updated member roles in db error: ", error);
+    }
+
+    return { updatedMembership: data, updatedMembershipError: error };
   }
 }

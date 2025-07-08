@@ -1,12 +1,15 @@
 "use server";
-import { createClient } from "@/utils/supabase/server";
-import { revalidatePath } from "next/cache";
-import { type NextRequest, NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
+import { createClient } from "@/utils/supabase/server";
+import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
+
+export async function GET(req: Request) {
   const supabase = await createClient();
 
-  // Check if a user's logged in
+  const { searchParams } = new URL(req.url);
+  const redirectUrl = searchParams.get("redirect") || "/";
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -16,10 +19,9 @@ export async function POST(req: NextRequest) {
   }
 
   revalidatePath("/", "layout");
+
   return NextResponse.redirect(
-    `${process.env.NEXT_PUBLIC_WEBAPP_BASE_URL}/auth/login`,
-    {
-      status: 302,
-    }
+    `${process.env.NEXT_PUBLIC_WEBAPP_BASE_URL}${redirectUrl}`,
+    { status: 302 }
   );
 }
