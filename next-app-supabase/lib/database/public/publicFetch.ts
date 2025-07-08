@@ -2,8 +2,9 @@ import { IUserProfile, SupabaseError } from "@/lib/globalInterfaces";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { UUID } from "crypto";
 import {
+  ITeamMembershipsResponse,
   ITeamResponse,
-  IUserProfileDataResponse,
+  IUserApiKeysResponse,
   IUserProfileResponse,
 } from "./publicInterface";
 
@@ -32,6 +33,27 @@ export class DBActionsPublicFetch {
     return {
       userProfile: data,
       userProfileError: error as SupabaseError,
+    };
+  }
+
+  async fetchUserApiKeys(userId: UUID): Promise<{
+    userApiKeys: IUserApiKeysResponse | null;
+    userApiKeysError: SupabaseError;
+  }> {
+    let { data, error } = await this.supabase
+      .from("user_api_keys")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+
+    if (error) {
+      console.error("fetch user api keys from db error: ", error);
+    }
+    console.log("fetch user api keys from db:", data);
+
+    return {
+      userApiKeys: data,
+      userApiKeysError: error as SupabaseError,
     };
   }
   async fetchAllTeams(user_id: UUID): Promise<{
@@ -64,21 +86,40 @@ export class DBActionsPublicFetch {
     };
   }
 
-  async fetchTeamMemberEmails(): Promise<{
-    teamMemberEmails: IUserProfileDataResponse[] | null;
-    teamMemberEmailsError: SupabaseError | null;
+  async fetchTeamMembers(): Promise<{
+    teamMembers: IUserProfileResponse[] | null;
+    teamMembersError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("user_profile")
-      .select(`id,first_name, last_name, email`);
+      .select(`user_id, first_name, last_name, email`);
 
     if (error) {
-      console.error("fetch team member emails from db error: ", error);
+      console.error("fetch team members from db error: ", error);
     }
 
     return {
-      teamMemberEmails: data as IUserProfileDataResponse[] | null,
-      teamMemberEmailsError: error,
+      teamMembers: data as IUserProfileResponse[] | null,
+      teamMembersError: error,
+    };
+  }
+
+  async fetchTeamMemberships(teamId: UUID): Promise<{
+    teamMemberships: ITeamMembershipsResponse[] | null;
+    teamMembershipsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("team_memberships")
+      .select()
+      .eq("team_id", teamId);
+
+    if (error) {
+      console.error("fetch team memberships from db error: ", error);
+    }
+
+    return {
+      teamMemberships: data,
+      teamMembershipsError: error,
     };
   }
 

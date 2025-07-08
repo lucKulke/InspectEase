@@ -38,6 +38,10 @@ import { UUID } from "crypto";
 import { useNotification } from "@/app/context/NotificationContext";
 import { SpeachToTextConfig } from "@/components/SeachToTextConfig";
 import { set } from "date-fns";
+import {
+  IUserApiKeysResponse,
+  IUserProfileResponse,
+} from "@/lib/database/public/publicInterface";
 
 const profileFormSchema = z.object({
   first_name: z
@@ -85,14 +89,19 @@ type SecurityFormValues = z.infer<typeof securityFormSchema>;
 // This can come from your database or API.
 
 interface ProfileFormProps {
-  profileData: IUserProfile;
+  profileData: IUserProfileResponse;
   user: SupbaseUser;
+  userApiKeys: IUserApiKeysResponse;
 }
 
-export const ProfileForm = ({ profileData, user }: ProfileFormProps) => {
+export const ProfileForm = ({
+  profileData,
+  user,
+  userApiKeys,
+}: ProfileFormProps) => {
   const { showNotification } = useNotification();
   const [activeTab, setActiveTab] = useState("personal");
-  const [profile, setProfile] = useState<IUserProfile>(profileData);
+  const [profile, setProfile] = useState<IUserProfileResponse>(profileData);
 
   const [values, setValues] = useState<ProfileFormValues>({
     first_name: profile.first_name ?? "",
@@ -122,7 +131,7 @@ export const ProfileForm = ({ profileData, user }: ProfileFormProps) => {
     cohere_token: string | null;
     mistral_token: string | null;
   }>({
-    openai_token: profile.openai_token ?? null,
+    openai_token: userApiKeys.openai_token ?? null,
     anthropic_token: null,
     cohere_token: null,
     mistral_token: null,
@@ -133,7 +142,7 @@ export const ProfileForm = ({ profileData, user }: ProfileFormProps) => {
     azure: string | null;
     google: string | null;
   }>({
-    deepgram_token: profile.deepgram_token ?? null,
+    deepgram_token: userApiKeys.deepgram_token ?? null,
     azure: null,
     google: null,
   });
@@ -209,7 +218,6 @@ export const ProfileForm = ({ profileData, user }: ProfileFormProps) => {
         "info"
       );
 
-      setProfile(updatedProfile);
       setLLMCredentials((prev) => ({ ...prev, ...apiKeys }));
     }
   };
@@ -232,7 +240,6 @@ export const ProfileForm = ({ profileData, user }: ProfileFormProps) => {
         "info"
       );
 
-      setProfile(updatedProfile);
       setSpeachToTextCredentials((prev) => ({ ...prev, ...apiKeys }));
     }
   };

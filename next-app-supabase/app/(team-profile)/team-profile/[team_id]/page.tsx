@@ -28,6 +28,15 @@ export default async function TeamProfilePage({
     console.error("fetch team by id in db error: ", teamError);
     redirect("/error");
   }
+  const { teamMemberships, teamMembershipsError } =
+    await publicFetch.fetchTeamMemberships(teamId);
+
+  console.log("teamMemberships", teamMemberships);
+
+  const { teamMembers, teamMembersError } =
+    await publicFetch.fetchTeamMembers();
+
+  console.log("teamMembers", teamMembers);
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-4xl">
@@ -42,7 +51,11 @@ export default async function TeamProfilePage({
           Manage your team configuration and AI API keys
         </p>
       </div>
-      <TeamForm team={team}></TeamForm>
+      <TeamForm
+        currentTeamMembers={teamMembers}
+        currentTeamMemberships={teamMemberships}
+        team={team}
+      ></TeamForm>
     </div>
   );
 }

@@ -38,7 +38,11 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { LLMConfigPage } from "@/components/LLMProviderConfig";
 import { SpeachToTextConfig } from "@/components/SeachToTextConfig";
-import { ITeamResponse } from "@/lib/database/public/publicInterface";
+import {
+  ITeamMembershipsResponse,
+  ITeamResponse,
+  IUserProfileResponse,
+} from "@/lib/database/public/publicInterface";
 import { useNotification } from "@/app/context/NotificationContext";
 import { updateTeamAiTokens, updateTeamSettings } from "./actions";
 import { UUID } from "crypto";
@@ -66,6 +70,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DropdownMenuContent } from "@/components/ui/dropdown-menu";
+import { RoleType } from "@/lib/globalInterfaces";
 
 export interface TeamSettings {
   name: string;
@@ -75,13 +80,15 @@ export interface TeamSettings {
 
 interface TeamFormProps {
   team: ITeamResponse;
+  currentTeamMembers: IUserProfileResponse[] | null;
+  currentTeamMemberships: ITeamMembershipsResponse[] | null;
 }
 
 interface TeamMember {
   id: string;
   name: string;
   email: string;
-  role: "owner" | "builder" | "filler";
+  role: RoleType[];
   avatar?: string;
   joinedAt: string;
   status: "active" | "pending";
@@ -99,7 +106,11 @@ const roleColors = {
   filler: "bg-green-100 text-green-800 border-green-200",
 };
 
-export const TeamForm = ({ team }: TeamFormProps) => {
+export const TeamForm = ({
+  team,
+  currentTeamMembers,
+  currentTeamMemberships,
+}: TeamFormProps) => {
   const router = useRouter();
   const { showNotification } = useNotification();
   const [teamSettings, setTeamSettings] = useState<TeamSettings>({
@@ -208,82 +219,79 @@ export const TeamForm = ({ team }: TeamFormProps) => {
     }
   };
 
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    {
-      id: "1",
-      name: "John Doe",
-      email: "john@example.com",
-      role: "owner",
-      avatar: "/placeholder.svg?height=40&width=40",
-      joinedAt: "2024-01-15",
-      status: "active",
-    },
-    {
-      id: "2",
-      name: "Jane Smith",
-      email: "jane@example.com",
-      role: "builder",
-      avatar: "/placeholder.svg?height=40&width=40",
-      joinedAt: "2024-02-01",
-      status: "active",
-    },
-    {
-      id: "3",
-      name: "Mike Johnson",
-      email: "mike@example.com",
-      role: "filler",
-      joinedAt: "2024-02-15",
-      status: "pending",
-    },
-  ]);
+  const members: TeamMember[] =
+    currentTeamMembers?.map((member) => {
+      const membership = currentTeamMemberships?.find(
+        (membership) => membership.user_id === member.user_id
+      );
+
+      let role: RoleType[] = team.owner_id === member.user_id ? ["owner"] : [];
+      if (membership) {
+        role.push(...((membership.role as RoleType[]) ?? ([] as RoleType[])));
+      }
+      const joinedAt = membership?.created_at;
+      let name = "";
+      if (member.first_name && member.last_name) {
+        name = member.first_name + " " + member.last_name;
+      } else {
+        name = member.email.split("@")[0];
+      }
+
+      return {
+        id: member.user_id,
+        name: name,
+        email: member.email,
+        role: role ?? ([] as RoleType[]),
+        joinedAt: joinedAt as string,
+        status: membership?.accepted ? "active" : "pending",
+      };
+    }) ?? [];
+
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(members);
 
   const [inviteForm, setInviteForm] = useState({
     email: "",
-    role: "member" as TeamMember["role"],
+    role: "filler" as RoleType,
   });
 
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
   const handleInviteMember = () => {
-    if (!inviteForm.email) {
-      toast({
-        title: "Error",
-        description: "Please enter an email address.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if member already exists
-    const existingMember = teamMembers.find(
-      (member) => member.email === inviteForm.email
-    );
-    if (existingMember) {
-      toast({
-        title: "Error",
-        description: "This user is already a team member.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newMember: TeamMember = {
-      id: Date.now().toString(),
-      name: inviteForm.email.split("@")[0],
-      email: inviteForm.email,
-      role: inviteForm.role,
-      joinedAt: new Date().toISOString().split("T")[0],
-      status: "pending",
-    };
-
-    setTeamMembers([...teamMembers, newMember]);
-    setInviteForm({ email: "", role: "filler" });
-    setIsInviteDialogOpen(false);
-
-    toast({
-      title: "Invitation sent",
-      description: `Invitation sent to ${inviteForm.email}`,
-    });
+    // if (!inviteForm.email) {
+    //   toast({
+    //     title: "Error",
+    //     description: "Please enter an email address.",
+    //     variant: "destructive",
+    //   });
+    //   return;
+    // }
+    // // Check if member already exists
+    // const existingMember = teamMembers.find(
+    //   (member) => member.email === inviteForm.email
+    // );
+    // if (existingMember) {
+    //   toast({
+    //     title: "Error",
+    //     description: "This user is already a team member.",
+    //     variant: "destructive",
+    //   });
+    //   return;
+    // }
+    // const newMember: TeamMember = {
+    //   id: Date.now().toString(),
+    //   name: inviteForm.email.split("@")[0],
+    //   email: inviteForm.email,
+    //   role: inviteForm.role,
+    //   joinedAt: new Date().toISOString().split("T")[0],
+    //   status: "pending",
+    // };
+    // setTeamMembers([...teamMembers, newMember]);
+    // setInviteForm({ email: "", role: "filler" });
+    // setIsInviteDialogOpen(false);
+    // toast({
+    //   title: "Invitation sent",
+    //   description: `Invitation sent to ${inviteForm.email}`,
+    // });
   };
 
   const handleRemoveMember = (memberId: string) => {
@@ -294,15 +302,23 @@ export const TeamForm = ({ team }: TeamFormProps) => {
     });
   };
 
-  const handleRoleChange = (memberId: string, newRole: TeamMember["role"]) => {
-    setTeamMembers(
-      teamMembers.map((member) =>
-        member.id === memberId ? { ...member, role: newRole } : member
-      )
+  const handleRoleChange = (memberId: string, roleToToggle: RoleType) => {
+    setTeamMembers((prevMembers) =>
+      prevMembers.map((member) => {
+        if (member.id !== memberId) return member;
+
+        const hasRole = member.role.includes(roleToToggle);
+        const updatedRoles = hasRole
+          ? member.role.filter((r) => r !== roleToToggle)
+          : [...member.role, roleToToggle];
+
+        return { ...member, role: updatedRoles };
+      })
     );
+
     toast({
-      title: "Role updated",
-      description: "Member role has been updated successfully.",
+      title: "Roles updated",
+      description: `Member roles have been updated.`,
     });
   };
 
@@ -426,21 +442,29 @@ export const TeamForm = ({ team }: TeamFormProps) => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="invite-role">Role</Label>
-                      <Select
-                        value={inviteForm.role}
-                        onValueChange={(value: TeamMember["role"]) =>
-                          setInviteForm({ ...inviteForm, role: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="builder">Builder</SelectItem>
-                          <SelectItem value="filler">Filler</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="invite-role">Roles</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {(["builder", "filler"] as RoleType[]).map((role) => (
+                          <div key={role} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={inviteForm.role.includes(role)}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setInviteForm((prev) => ({
+                                  ...prev,
+                                  role: checked
+                                    ? [...prev.role, role]
+                                    : prev.role.filter((r) => r !== role),
+                                }));
+                              }}
+                            />
+                            <span>
+                              {role.charAt(0).toUpperCase() + role.slice(1)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                   <DialogFooter>
@@ -462,7 +486,7 @@ export const TeamForm = ({ team }: TeamFormProps) => {
           <CardContent>
             <div className="space-y-4">
               {teamMembers.map((member) => {
-                const RoleIcon = roleIcons[member.role];
+                const RoleIcon = member.role;
                 return (
                   <div
                     key={member.id}
@@ -497,12 +521,23 @@ export const TeamForm = ({ team }: TeamFormProps) => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Badge className={`${roleColors[member.role]} border`}>
-                        <RoleIcon className="h-3 w-3 mr-1" />
-                        {member.role.charAt(0).toUpperCase() +
-                          member.role.slice(1)}
-                      </Badge>
-                      {member.role !== "owner" && (
+                      <div className="flex flex-wrap gap-1">
+                        {member.role.map((role) => {
+                          const Icon = roleIcons[role] || User;
+                          return (
+                            <Badge
+                              key={role}
+                              className={`${
+                                roleColors[role] ?? ""
+                              } border flex items-center gap-1`}
+                            >
+                              <Icon className="h-3 w-3" />
+                              {role.charAt(0).toUpperCase() + role.slice(1)}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                      {member.role.includes("owner")! && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">
@@ -510,23 +545,22 @@ export const TeamForm = ({ team }: TeamFormProps) => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleRoleChange(member.id, "builder")
-                              }
-                              disabled={member.role === "builder"}
-                            >
-                              Make Builder
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleRoleChange(member.id, "filler")
-                              }
-                              disabled={member.role === "filler"}
-                            >
-                              Make Filler
-                            </DropdownMenuItem>
-
+                            {(["builder", "filler"] as RoleType[]).map(
+                              (roleOption) => (
+                                <DropdownMenuItem
+                                  key={roleOption}
+                                  onClick={() =>
+                                    handleRoleChange(member.id, roleOption)
+                                  }
+                                >
+                                  {member.role.includes(roleOption)
+                                    ? "Remove"
+                                    : "Add"}{" "}
+                                  {roleOption.charAt(0).toUpperCase() +
+                                    roleOption.slice(1)}
+                                </DropdownMenuItem>
+                              )
+                            )}
                             <DropdownMenuItem
                               onClick={() => handleRemoveMember(member.id)}
                               className="text-red-600"

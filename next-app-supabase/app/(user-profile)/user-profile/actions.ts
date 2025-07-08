@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { UUID } from "crypto";
 import { ProfileFormValues } from "./profileForm";
 import { IUserProfile, SupabaseError } from "@/lib/globalInterfaces";
+import { IUserApiKeysResponse } from "@/lib/database/public/publicInterface";
 
 export async function updateUserProfile(
   profileData: ProfileFormValues,
@@ -34,13 +35,13 @@ export async function updateUserProfileAiTokens(
   newToken: Record<string, string>,
   userId: UUID
 ): Promise<{
-  updatedProfile: IUserProfile;
+  updatedProfile: IUserApiKeysResponse | null;
   updatedProfileError: SupabaseError | null;
 }> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from("user_profile") // Change to your actual table name
+    .from("user_api_keys") // Change to your actual table name
     .update(newToken)
     .eq("user_id", userId)
     .select()

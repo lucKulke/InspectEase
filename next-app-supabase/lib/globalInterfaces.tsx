@@ -1,5 +1,6 @@
 import { UUID } from "crypto";
 
+export type RoleType = "owner" | "builder" | "filler";
 export interface SupabaseError {
   code: string;
   details: string | null;
@@ -34,8 +35,6 @@ export interface IUserProfile {
   user_id: UUID;
   first_name: string;
   last_name: string;
-  openai_token: string;
-  deepgram_token: string;
   email: string;
 }
 

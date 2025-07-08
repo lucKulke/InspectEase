@@ -5,6 +5,8 @@ import { createClient } from "@/utils/supabase/server";
 import { IUserProfile } from "@/lib/globalInterfaces";
 import { House } from "lucide-react";
 import Link from "next/link";
+import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Profile | Account Settings",
@@ -20,19 +22,25 @@ export default async function ProfilePage() {
 
   if (!user) return <p>No user logged in</p>;
 
-  async function getOrCreateProfile(userId: string) {
-    const { data, error } = await supabase
-      .from("user_profile")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
+  const publicFetch = new DBActionsPublicFetch(supabase);
+  const { userProfile, userProfileError } = await publicFetch.fetchUserProfile(
+    user.id as UUID
+  );
+  const { userApiKeys, userApiKeysError } = await publicFetch.fetchUserApiKeys(
+    user.id as UUID
+  );
 
-    let profile: IUserProfile = data;
-
-    return profile;
+  if (!userProfile || !userApiKeys) {
+    redirect("/error");
   }
 
-  const profileData = await getOrCreateProfile(user.id);
+  if (userProfileError || userApiKeysError) {
+    console.error("fetch user profile in db error: ", userProfileError.message);
+    console.error(
+      "fetch user api keys from db error: ",
+      userApiKeysError.message
+    );
+  }
 
   return (
     <div className="container mx-auto py-10">
@@ -48,7 +56,11 @@ export default async function ProfilePage() {
             Manage your account settings and preferences.
           </p>
         </div>
-        <ProfileForm profileData={profileData} user={user} />
+        <ProfileForm
+          userApiKeys={userApiKeys}
+          profileData={userProfile}
+          user={user}
+        />
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { RoleType } from "@/lib/globalInterfaces";
 import { UUID } from "crypto";
 
 export interface ITeamResponse {
@@ -17,15 +18,21 @@ export interface IUserProfileResponse {
   user_id: UUID;
   first_name: string;
   last_name: string;
-  openai_token: string;
-  role: "admin" | "normal";
+  email: string;
   active_team_id: UUID | null;
-  deepgram_token: string;
 }
 
-export interface IUserProfileDataResponse {
-  id: UUID;
-  first_name: string;
-  last_name: string;
-  email: string;
+export interface ITeamMembershipsResponse {
+  user_id: UUID;
+  team_id: UUID;
+  created_at: Date | string;
+  accepted: boolean;
+  disabled: boolean;
+  role: RoleType[];
+}
+
+export interface IUserApiKeysResponse {
+  openai_token: string | null;
+  anthropic_token: string | null;
+  deepgram_token: string | null;
 }
