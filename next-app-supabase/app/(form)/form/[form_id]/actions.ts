@@ -301,19 +301,21 @@ async function apiCall(
   processId: string
 ): Promise<ApiResponse | false> {
   const supabase = await createClient();
-  const { data: user } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const dbActions = new DBActionsPublicFetch(supabase);
-  if (!user.user) return false;
+  if (!user) return false;
 
-  const { userProfile, userProfileError } = await dbActions.fetchUserProfile(
-    user.user.id as UUID
+  const { userApiKeys, userApiKeysError } = await dbActions.fetchUserApiKeys(
+    user.id as UUID
   );
 
   const payload: APICall = {
     userSentence: userInput,
     llm: {
       model: "gpt-4o-mini",
-      token: userProfile?.openai_token ?? "",
+      token: userApiKeys?.openai_token ?? "",
       temp: 0,
     },
     form: data,

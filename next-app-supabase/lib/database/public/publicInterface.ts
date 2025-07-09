@@ -36,3 +36,12 @@ export interface IUserApiKeysResponse {
   anthropic_token: string | null;
   deepgram_token: string | null;
 }
+
+export interface IMemberRequestInsert {
+  team_id: UUID;
+  user_id: UUID;
+}
+
+export interface IMemberRequestResponse extends IMemberRequestInsert {
+  created_at: Date | string;
+}

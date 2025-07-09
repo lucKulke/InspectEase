@@ -263,7 +263,7 @@ export const TeamForm = ({
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
   const handleInviteMember = () => {
-    sendTeamInviteMail(team.name, inviteForm.email, inviteForm.roles, team.id);
+    sendTeamInviteMail(team.name, inviteForm.email, team.id);
     // if (!inviteForm.email) {
     //   toast({
     //     title: "Error",

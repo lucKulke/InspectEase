@@ -4,11 +4,11 @@ import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 
-export async function GET(req: Request) {
+export async function POST(req: Request) {
   const supabase = await createClient();
 
   const { searchParams } = new URL(req.url);
-  const redirectUrl = searchParams.get("redirect") || "/";
+  const redirectUrl = searchParams.get("redirect") || "/auth/login";
 
   const {
     data: { user },

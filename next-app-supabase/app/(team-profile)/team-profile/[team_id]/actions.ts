@@ -42,7 +42,7 @@ const INVITE_SECRET = process.env.INVITE_SECRET as string;
 export async function sendTeamInviteMail(
   teamName: string,
   email: string,
-  roles: string[],
+
   teamId: string
 ) {
   try {
@@ -50,7 +50,7 @@ export async function sendTeamInviteMail(
     const payload = {
       email,
       teamId,
-      roles,
+
       exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // Expires in 24 hours
     };
 
