@@ -2,6 +2,7 @@ import { IUserProfile, SupabaseError } from "@/lib/globalInterfaces";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { UUID } from "crypto";
 import {
+  IMemberRequestResponse,
   ITeamMembershipsResponse,
   ITeamResponse,
   IUserApiKeysResponse,
@@ -141,6 +142,25 @@ export class DBActionsPublicFetch {
     return {
       team: data,
       teamError: error,
+    };
+  }
+
+  async fetchMemberRequests(teamId: UUID): Promise<{
+    memberRequests: IMemberRequestResponse[] | null;
+    memberRequestsError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("member_requests")
+      .select()
+      .eq("team_id", teamId);
+
+    if (error) {
+      console.error("fetch member requests from db error: ", error);
+    }
+
+    return {
+      memberRequests: data,
+      memberRequestsError: error,
     };
   }
 }

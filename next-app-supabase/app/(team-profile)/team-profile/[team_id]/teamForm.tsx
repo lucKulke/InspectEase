@@ -34,24 +34,30 @@ import {
   Wrench,
   Blocks,
   PenLine,
+  CircleCheck,
+  CircleX,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { LLMConfigPage } from "@/components/LLMProviderConfig";
 import { SpeachToTextConfig } from "@/components/SeachToTextConfig";
 import {
+  IMemberRequestResponse,
   ITeamMembershipsResponse,
   ITeamResponse,
   IUserProfileResponse,
 } from "@/lib/database/public/publicInterface";
 import { useNotification } from "@/app/context/NotificationContext";
 import {
+  addToTeam,
+  refetchTeamMembers,
+  removeTeamMember,
   sendTeamInviteMail,
   updateMemberRoles,
   updateTeamAiTokens,
   updateTeamSettings,
 } from "./actions";
 import { UUID } from "crypto";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -76,7 +82,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DropdownMenuContent } from "@/components/ui/dropdown-menu";
 import { RoleType } from "@/lib/globalInterfaces";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export interface TeamSettings {
   name: string;
@@ -88,6 +104,7 @@ interface TeamFormProps {
   team: ITeamResponse;
   currentTeamMembers: IUserProfileResponse[] | null;
   currentTeamMemberships: ITeamMembershipsResponse[] | null;
+  currentMemberRequests: IMemberRequestResponse[] | null;
 }
 
 interface TeamMember {
@@ -97,7 +114,7 @@ interface TeamMember {
   role: RoleType[];
   avatar?: string;
   joinedAt: string;
-  status: "active" | "pending";
+  status: "disabled" | "active";
 }
 
 const roleIcons = {
@@ -116,9 +133,15 @@ export const TeamForm = ({
   team,
   currentTeamMembers,
   currentTeamMemberships,
+  currentMemberRequests,
 }: TeamFormProps) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showNotification } = useNotification();
+
+  const initialTab = searchParams.get("tab") || "general";
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
+
   const [teamSettings, setTeamSettings] = useState<TeamSettings>({
     name: team.name ?? "",
     description: team.description ?? "",
@@ -146,6 +169,14 @@ export const TeamForm = ({
     azure: null,
     google: null,
   });
+
+  const handleTabChange = (tabValue: string) => {
+    setActiveTab(tabValue);
+    const current = new URLSearchParams(Array.from(searchParams.entries())); // clone current params
+    current.set("tab", tabValue); // update tab param
+    const query = current.toString();
+    router.push(`?${query}`); // update URL without full page reload
+  };
 
   function checkIfSomeGeneralSettingsChanged() {
     return (
@@ -225,88 +256,83 @@ export const TeamForm = ({
     }
   };
 
-  const members: TeamMember[] =
-    currentTeamMembers?.map((member) => {
-      const membership = currentTeamMemberships?.find(
-        (membership) => membership.user_id === member.user_id
-      );
+  function mapTeamMembers(members: IUserProfileResponse[] | null) {
+    const memberList: TeamMember[] =
+      members?.map((member) => {
+        const membership = currentTeamMemberships?.find(
+          (membership) => membership.user_id === member.user_id
+        );
 
-      let role: RoleType[] = team.owner_id === member.user_id ? ["owner"] : [];
-      if (membership) {
-        role.push(...((membership.role as RoleType[]) ?? ([] as RoleType[])));
-      }
-      const joinedAt = membership?.created_at;
-      let name = "";
-      if (member.first_name && member.last_name) {
-        name = member.first_name + " " + member.last_name;
-      } else {
-        name = member.email.split("@")[0];
-      }
+        let role: RoleType[] =
+          team.owner_id === member.user_id ? ["owner"] : [];
+        if (membership) {
+          role.push(...((membership.role as RoleType[]) ?? ([] as RoleType[])));
+        }
+        const joinedAt = membership?.created_at;
+        let name = "";
+        if (member.first_name && member.last_name) {
+          name = member.first_name + " " + member.last_name;
+        } else {
+          name = member.email.split("@")[0];
+        }
 
-      return {
-        id: member.user_id,
-        name: name,
-        email: member.email,
-        role: role ?? ([] as RoleType[]),
-        joinedAt: joinedAt as string,
-        status: membership?.accepted ? "active" : "pending",
-      };
-    }) ?? [];
+        return {
+          id: member.user_id,
+          name: name,
+          email: member.email,
+          role: role ?? ([] as RoleType[]),
+          joinedAt: joinedAt as string,
+          status: membership?.disabled ? "disabled" : "active",
+        };
+      }) ?? [];
 
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(members);
+    return memberList;
+  }
+
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(
+    mapTeamMembers(currentTeamMembers)
+  );
+  const [memberRequests, setMemberRequests] = useState<
+    IMemberRequestResponse[]
+  >(currentMemberRequests ?? []); //memberRequests
 
   const [inviteForm, setInviteForm] = useState({
     email: "",
-    roles: ["filler"],
   });
 
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
-  const handleInviteMember = () => {
-    sendTeamInviteMail(team.name, inviteForm.email, team.id);
-    // if (!inviteForm.email) {
-    //   toast({
-    //     title: "Error",
-    //     description: "Please enter an email address.",
-    //     variant: "destructive",
-    //   });
-    //   return;
-    // }
-    // // Check if member already exists
-    // const existingMember = teamMembers.find(
-    //   (member) => member.email === inviteForm.email
-    // );
-    // if (existingMember) {
-    //   toast({
-    //     title: "Error",
-    //     description: "This user is already a team member.",
-    //     variant: "destructive",
-    //   });
-    //   return;
-    // }
-    // const newMember: TeamMember = {
-    //   id: Date.now().toString(),
-    //   name: inviteForm.email.split("@")[0],
-    //   email: inviteForm.email,
-    //   role: inviteForm.role,
-    //   joinedAt: new Date().toISOString().split("T")[0],
-    //   status: "pending",
-    // };
-    // setTeamMembers([...teamMembers, newMember]);
-    // setInviteForm({ email: "", role: "filler" });
-    // setIsInviteDialogOpen(false);
-    // toast({
-    //   title: "Invitation sent",
-    //   description: `Invitation sent to ${inviteForm.email}`,
-    // });
+  const handleInviteMember = async () => {
+    const statusCode = await sendTeamInviteMail(
+      team.name,
+      inviteForm.email,
+      team.id
+    );
+
+    if (statusCode === 200) {
+      setIsInviteDialogOpen(false);
+      showNotification("Invite member", "Successfully send invite", "info");
+    } else {
+      showNotification("Invite member", `Error: ${statusCode}`, "error");
+    }
   };
 
-  const handleRemoveMember = (memberId: string) => {
-    setTeamMembers(teamMembers.filter((member) => member.id !== memberId));
-    toast({
-      title: "Member removed",
-      description: "Team member has been removed successfully.",
-    });
+  const handleRemoveMember = async (memberId: string) => {
+    const { deletedTeamMembership, deletedTeamMembershipError } =
+      await removeTeamMember(memberId, team.id as UUID);
+
+    console.log("deletedTeamMembership", deletedTeamMembership);
+
+    if (deletedTeamMembershipError) {
+      showNotification(
+        "Remove member",
+        `Error: ${deletedTeamMembershipError.message} (${deletedTeamMembershipError.code})`,
+        "error"
+      );
+    } else if (deletedTeamMembership) {
+      showNotification("Remove member", `Successfully removed member`, "info");
+      setTeamMembers(teamMembers.filter((member) => member.id !== memberId));
+    }
   };
 
   const handleRoleChange = async (memberId: string, roleToToggle: RoleType) => {
@@ -348,15 +374,51 @@ export const TeamForm = ({
       .join("")
       .toUpperCase();
   };
+
+  const handleAddToTeam = async (userId: string) => {
+    const { teamMembership, teamMembershipError } = await addToTeam(
+      team.id,
+      userId
+    );
+    if (teamMembershipError) {
+      showNotification(
+        "Add member to team",
+        `Error: ${teamMembershipError.message} (${teamMembershipError.code})`,
+        "error"
+      );
+    } else if (teamMembership) {
+      showNotification(
+        "Add member to team",
+        `Successfully added member to team`,
+        "info"
+      );
+      console.log("teamMembership", teamMembership);
+      const { teamMembers: newTeamMembers, teamMembersError } =
+        await refetchTeamMembers();
+      if (newTeamMembers) {
+        setTeamMembers(mapTeamMembers(newTeamMembers));
+        setMemberRequests(
+          memberRequests.filter(
+            (memberRequest) => memberRequest.user_id !== userId
+          )
+        );
+      }
+    }
+  };
+
   return (
-    <Tabs defaultValue="general" className="space-y-6">
+    <Tabs
+      value={activeTab}
+      onValueChange={handleTabChange}
+      className="space-y-6"
+    >
       <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="general" className="flex items-center gap-2">
           <Settings className="h-4 w-4" />
           General
         </TabsTrigger>
         <TabsTrigger value="members" className="flex items-center gap-2">
-          <Group className="h-4 w-4"></Group>
+          <Group className="h-4 w-4" />
           Members
         </TabsTrigger>
         <TabsTrigger value="api-keys" className="flex items-center gap-2">
@@ -423,7 +485,7 @@ export const TeamForm = ({
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Team Members</CardTitle>
-                <CardDescription>
+                <CardDescription className="mt-2">
                   Manage your team members and their roles
                 </CardDescription>
               </div>
@@ -444,46 +506,23 @@ export const TeamForm = ({
                       Send an invitation to join your team
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="invite-email">Email Address</Label>
-                      <Input
-                        id="invite-email"
-                        type="email"
-                        placeholder="Enter email address"
-                        value={inviteForm.email}
-                        onChange={(e) =>
-                          setInviteForm({
-                            ...inviteForm,
-                            email: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="invite-role">Roles</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {(["builder", "filler"] as RoleType[]).map((role) => (
-                          <div key={role} className="flex items-center gap-2">
-                            <Checkbox
-                              checked={inviteForm.roles.includes(role)}
-                              onCheckedChange={(e) => {
-                                setInviteForm((prev) => ({
-                                  ...prev,
-                                  role: e
-                                    ? [...prev.roles, role]
-                                    : prev.roles.filter((r) => r !== role),
-                                }));
-                              }}
-                            />
-                            <span>
-                              {role.charAt(0).toUpperCase() + role.slice(1)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="invite-email">Email Address</Label>
+                    <Input
+                      id="invite-email"
+                      type="email"
+                      placeholder="Enter email address"
+                      value={inviteForm.email}
+                      onChange={(e) =>
+                        setInviteForm({
+                          ...inviteForm,
+                          email: e.target.value,
+                        })
+                      }
+                    />
                   </div>
+
                   <DialogFooter>
                     <Button
                       variant="outline"
@@ -521,9 +560,9 @@ export const TeamForm = ({
                       <div>
                         <div className="flex items-center space-x-2">
                           <h4 className="font-medium">{member.name}</h4>
-                          {member.status === "pending" && (
+                          {member.status === "disabled" && (
                             <Badge variant="outline" className="text-xs">
-                              Pending
+                              Disabled
                             </Badge>
                           )}
                         </div>
@@ -587,6 +626,93 @@ export const TeamForm = ({
                           </DropdownMenuContent>
                         </DropdownMenu>
                       }
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Member Requests</CardTitle>
+            <CardDescription>
+              member requests that can be accepted
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Dialog></Dialog>
+            <div className="space-y-4">
+              {memberRequests?.map((request) => {
+                return (
+                  <div
+                    key={request.team_id + request.user_id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <Avatar>
+                        <AvatarFallback>
+                          {getInitials(request.email.split("@")[0])}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h4 className="font-medium">
+                          {request.email.split("@")[0]}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          {request.email}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <AlertDialog>
+                        <AlertDialogTrigger>
+                          <div className="transform transition-transform duration-200 hover:scale-110 active:scale-95">
+                            <CircleCheck className="text-green-500" />
+                          </div>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Are you absolutely sure?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Do you realy want to add {request.email} to your
+                              Team?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleAddToTeam(request.user_id)}
+                            >
+                              Add
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                      <AlertDialog>
+                        <AlertDialogTrigger>
+                          <div className="transform transition-transform duration-200 hover:scale-110 active:scale-95">
+                            <CircleX className="text-red-500" />
+                          </div>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Are you absolutely sure?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Do you realy want to decline the request from{" "}
+                              {request.email} ?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction>Reject</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 );

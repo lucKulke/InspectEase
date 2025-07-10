@@ -7,6 +7,9 @@ import { TeamSettings } from "./teamForm";
 import { RoleType } from "@/lib/globalInterfaces";
 import nodemailer from "nodemailer";
 import jwt from "jsonwebtoken";
+import { DatabasePublicCreate } from "@/lib/database/public/publicCreate";
+import { DatabasePublicDelete } from "@/lib/database/public/publicDelete";
+import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
 
 export async function updateTeamAiTokens(
   newToken: Record<string, string>,
@@ -42,7 +45,6 @@ const INVITE_SECRET = process.env.INVITE_SECRET as string;
 export async function sendTeamInviteMail(
   teamName: string,
   email: string,
-
   teamId: string
 ) {
   try {
@@ -50,7 +52,7 @@ export async function sendTeamInviteMail(
     const payload = {
       email,
       teamId,
-
+      teamName,
       exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // Expires in 24 hours
     };
 
@@ -93,4 +95,26 @@ export async function sendTeamInviteMail(
     console.error("Email sending failed:", error);
     return 500;
   }
+}
+
+export async function addToTeam(teamId: string, userId: string) {
+  const supabase = await createClient();
+  const publicUpdate = new DatabasePublicCreate(supabase);
+  const publicDelete = new DatabasePublicDelete(supabase);
+  console.log("addToTeam", teamId, userId);
+  const { memberReqeust, memberReqeustError } =
+    await publicDelete.deleteMemberRequest(userId);
+  return await publicUpdate.createTeamMembership(teamId, userId);
+}
+
+export async function removeTeamMember(userId: string, teamId: string) {
+  const supabase = await createClient();
+  const publicDelete = new DatabasePublicDelete(supabase);
+  return await publicDelete.delteTeamMembership(userId, teamId);
+}
+
+export async function refetchTeamMembers() {
+  const supabase = await createClient();
+  const publicUpdate = new DBActionsPublicFetch(supabase);
+  return await publicUpdate.fetchTeamMembers();
 }

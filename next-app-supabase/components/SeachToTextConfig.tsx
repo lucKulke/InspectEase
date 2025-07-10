@@ -70,38 +70,37 @@ export const SpeachToTextConfig = ({
   };
 
   return (
-    <div className="container max-w-4xl py-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">
-          Speach to Text Provider Configuration
-        </h1>
-        <p className="text-muted-foreground">
+    <Card>
+      <CardHeader>
+        <CardTitle>Speach to Text Provider Configuration</CardTitle>
+        <CardDescription>
           Manage {type} API keys for different speach to text model providers.
-        </p>
-      </div>
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="deepgram" className="w-full">
+          <TabsList className="grid grid-cols-4 mb-8">
+            <TabsTrigger value="deepgram">Deepgram</TabsTrigger>
+          </TabsList>
 
-      <Tabs defaultValue="deepgram" className="w-full">
-        <TabsList className="grid grid-cols-4 mb-8">
-          <TabsTrigger value="deepgram">Deepgram</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="deepgram">
-          <ProviderCard
-            id="deepgram"
-            title="Deepgram"
-            disabled={
-              credentials.deepgram === currentCredentials.deepgram_token
-            }
-            unsupported={false}
-            description={`Configure ${type} Deepgram credentials`}
-            iconPath={"/deepgram.svg"}
-            value={credentials.deepgram}
-            onChange={(value) => handleChange("deepgram", value)}
-            onSave={saveCredentials}
-          />
-        </TabsContent>
-      </Tabs>
-    </div>
+          <TabsContent value="deepgram">
+            <ProviderCard
+              id="deepgram"
+              title="Deepgram"
+              disabled={
+                credentials.deepgram === currentCredentials.deepgram_token
+              }
+              unsupported={false}
+              description={`Configure ${type} Deepgram credentials`}
+              iconPath={"/deepgram.svg"}
+              value={credentials.deepgram}
+              onChange={(value) => handleChange("deepgram", value)}
+              onSave={saveCredentials}
+            />
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
 

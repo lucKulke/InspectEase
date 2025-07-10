@@ -40,33 +40,48 @@ export async function createMemberRequest(
 }
 
 function decodeInviteToken(token: string) {
-  const decoded = jwt.verify(token, INVITE_SECRET) as {
-    email: string;
-    teamId: string;
-    exp: number;
-  };
+  try {
+    const decoded = jwt.verify(token, INVITE_SECRET) as {
+      email: string;
+      teamName: string;
+      teamId: string;
+      exp: number;
+    };
 
-  const { teamId, exp, email: invitedEmail } = decoded;
-  return { teamId, exp, email: invitedEmail };
+    const { teamId, teamName, exp, email: invitedEmail } = decoded;
+
+    console.log("exp:", exp, "current:", Math.floor(Date.now() / 1000));
+
+    return { teamId, teamName, exp, email: invitedEmail };
+  } catch (error: Error | any) {
+    if (error.name === "TokenExpiredError") {
+      console.error("Token has expired.");
+    } else {
+      console.error("Invalid token:", error.message);
+    }
+    throw error; // Rethrow if you want upstream code to handle it
+  }
 }
 
-export async function processInvitation(token: string) {
+export async function processInvitation(
+  token: string
+): Promise<{ teamName: string; code: number }> {
   const supabase = await createClient();
   try {
-    const { teamId, exp, email } = decodeInviteToken(token); // decode locally without async
+    const { teamId, teamName, exp, email } = decodeInviteToken(token); // decode locally without async
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) return 401;
+    if (!user) return { teamName: teamName, code: 401 };
     console.log("email check", user.email, email);
-    if (user.email !== email) return 402;
+    if (user.email !== email) return { teamName: teamName, code: 402 };
 
     const code = await createMemberRequest(teamId, user.id, email);
-    return code;
+    return { teamName: teamName, code: code };
   } catch (error) {
     console.error("Invitation failed:", error);
-    return 400;
+    return { teamName: "", code: 400 };
   }
 }

@@ -22,11 +22,13 @@ export interface IUserProfileResponse {
   active_team_id: UUID | null;
 }
 
-export interface ITeamMembershipsResponse {
-  user_id: UUID;
+export interface ITeamMembershipsInsert {
   team_id: UUID;
+  user_id: UUID;
+}
+export interface ITeamMembershipsResponse extends ITeamMembershipsInsert {
   created_at: Date | string;
-  accepted: boolean;
+
   disabled: boolean;
   role: RoleType[];
 }
@@ -40,6 +42,7 @@ export interface IUserApiKeysResponse {
 export interface IMemberRequestInsert {
   team_id: UUID;
   user_id: UUID;
+  email: string;
 }
 
 export interface IMemberRequestResponse extends IMemberRequestInsert {

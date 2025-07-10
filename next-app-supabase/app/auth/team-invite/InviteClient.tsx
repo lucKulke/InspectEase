@@ -15,6 +15,7 @@ export const InviteClient = () => {
   const token = searchParams.get("token") ?? "";
 
   const [status, setStatus] = useState<Status | null>(null);
+  const [teamName, setTeamName] = useState<string>("");
   const [countdown, setCountdown] = useState(5);
 
   // Call the server action on mount
@@ -24,7 +25,8 @@ export const InviteClient = () => {
     const runInvite = async () => {
       // Optional: pass session if needed
       const result = await processInvitation(token);
-      setStatus(result as Status);
+      setTeamName(result.teamName);
+      setStatus(result.code as Status);
     };
 
     runInvite();
@@ -83,14 +85,15 @@ export const InviteClient = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center">
-      test
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
         className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full"
       >
-        <h1 className="text-2xl font-semibold mb-4">Team Invitation</h1>
+        <h1 className="text-2xl font-semibold mb-4">
+          Team Invitation from {teamName}
+        </h1>
         <p className="text-lg mb-6">{statusMessage()}</p>
 
         <>

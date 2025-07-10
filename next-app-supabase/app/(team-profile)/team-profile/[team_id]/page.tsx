@@ -31,31 +31,35 @@ export default async function TeamProfilePage({
   const { teamMemberships, teamMembershipsError } =
     await publicFetch.fetchTeamMemberships(teamId);
 
-  console.log("teamMemberships", teamMemberships);
-
   const { teamMembers, teamMembersError } =
     await publicFetch.fetchTeamMembers();
 
-  console.log("teamMembers", teamMembers);
+  const { memberRequests, memberRequestsError } =
+    await publicFetch.fetchMemberRequests(teamId);
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
-      <div className="mb-8">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold tracking-tight">Team Settings</h1>
-          <Link href="/">
-            <House></House>
-          </Link>
+    <div className="container mx-auto py-10">
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-8">
+          <div className=" flex justify-between items-center">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Team {team.name}
+            </h1>
+            <Link href="/">
+              <House></House>
+            </Link>
+          </div>
+          <p className="text-muted-foreground">
+            Manage your team configuration and AI API keys
+          </p>
         </div>
-        <p className="text-muted-foreground">
-          Manage your team configuration and AI API keys
-        </p>
+        <TeamForm
+          currentTeamMembers={teamMembers}
+          currentTeamMemberships={teamMemberships}
+          team={team}
+          currentMemberRequests={memberRequests}
+        ></TeamForm>
       </div>
-      <TeamForm
-        currentTeamMembers={teamMembers}
-        currentTeamMemberships={teamMemberships}
-        team={team}
-      ></TeamForm>
     </div>
   );
 }

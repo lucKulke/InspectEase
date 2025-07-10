@@ -4,7 +4,7 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Bell, Brain, Lock, User } from "lucide-react";
+import { Bell, Brain, Lock, Shield, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -251,13 +251,13 @@ export const ProfileForm = ({
       onValueChange={setActiveTab}
       className="space-y-6"
     >
-      <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
+      <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="personal" className="flex items-center gap-2">
           <User className="h-4 w-4" />
           <span className="hidden sm:inline">Personal</span>
         </TabsTrigger>
         <TabsTrigger value="security" className="flex items-center gap-2">
-          <Lock className="h-4 w-4" />
+          <Shield className="h-4 w-4" />
           <span className="hidden sm:inline">Security</span>
         </TabsTrigger>
         <TabsTrigger value="notifications" className="flex items-center gap-2">

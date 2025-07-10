@@ -81,78 +81,79 @@ export const LLMConfigPage = ({
   };
 
   return (
-    <div className="container max-w-4xl py-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">LLM Provider Configuration</h1>
-        <p className="text-muted-foreground">
+    <Card>
+      <CardHeader>
+        <CardTitle>LLM Provider Configuration</CardTitle>
+        <CardDescription>
           Manage {type} API keys for different language model providers.
-        </p>
-      </div>
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="openai" className="w-full">
+          <TabsList className="grid grid-cols-4 mb-8">
+            <TabsTrigger value="openai">OpenAI</TabsTrigger>
+            <TabsTrigger value="anthropic">Anthropic</TabsTrigger>
+            <TabsTrigger value="cohere">Cohere</TabsTrigger>
+            <TabsTrigger value="mistral">Mistral</TabsTrigger>
+          </TabsList>
 
-      <Tabs defaultValue="openai" className="w-full">
-        <TabsList className="grid grid-cols-4 mb-8">
-          <TabsTrigger value="openai">OpenAI</TabsTrigger>
-          <TabsTrigger value="anthropic">Anthropic</TabsTrigger>
-          <TabsTrigger value="cohere">Cohere</TabsTrigger>
-          <TabsTrigger value="mistral">Mistral</TabsTrigger>
-        </TabsList>
+          <TabsContent value="openai">
+            <ProviderCard
+              id="openai"
+              title="OpenAI"
+              description={`Configure ${type} OpenAI API credentials`}
+              disabled={credentials.openai === currentCredentials.openai_token}
+              iconPath={"/openai.svg"}
+              value={credentials.openai}
+              onChange={(value) => handleChange("openai", value)}
+              onSave={saveCredentials}
+            />
+          </TabsContent>
 
-        <TabsContent value="openai">
-          <ProviderCard
-            id="openai"
-            title="OpenAI"
-            description={`Configure ${type} OpenAI API credentials`}
-            disabled={credentials.openai === currentCredentials.openai_token}
-            iconPath={"/openai.svg"}
-            value={credentials.openai}
-            onChange={(value) => handleChange("openai", value)}
-            onSave={saveCredentials}
-          />
-        </TabsContent>
+          <TabsContent value="anthropic">
+            <ProviderCard
+              id="anthropic"
+              disabled={true}
+              unsupported={true}
+              title="Anthropic"
+              description={`Configure ${type} Anthropic API credentials`}
+              iconPath={"/anthropic.svg"}
+              value={credentials.anthropic}
+              onChange={(value) => handleChange("anthropic", value)}
+              onSave={saveCredentials}
+            />
+          </TabsContent>
 
-        <TabsContent value="anthropic">
-          <ProviderCard
-            id="anthropic"
-            disabled={true}
-            unsupported={true}
-            title="Anthropic"
-            description={`Configure ${type} Anthropic API credentials`}
-            iconPath={"/anthropic.svg"}
-            value={credentials.anthropic}
-            onChange={(value) => handleChange("anthropic", value)}
-            onSave={saveCredentials}
-          />
-        </TabsContent>
+          <TabsContent value="cohere">
+            <ProviderCard
+              id="cohere"
+              disabled={true}
+              unsupported={true}
+              title="Cohere"
+              description={`Configure ${type} Cohere API credentials`}
+              iconPath={"/cohere.png"}
+              value={credentials.cohere}
+              onChange={(value) => handleChange("cohere", value)}
+              onSave={saveCredentials}
+            />
+          </TabsContent>
 
-        <TabsContent value="cohere">
-          <ProviderCard
-            id="cohere"
-            disabled={true}
-            unsupported={true}
-            title="Cohere"
-            description={`Configure ${type} Cohere API credentials`}
-            iconPath={"/cohere.png"}
-            value={credentials.cohere}
-            onChange={(value) => handleChange("cohere", value)}
-            onSave={saveCredentials}
-          />
-        </TabsContent>
-
-        <TabsContent value="mistral">
-          <ProviderCard
-            id="mistral"
-            disabled={true}
-            unsupported={true}
-            title="Mistral AI"
-            description={`Configure ${type} Mistral AI API credentials`}
-            iconPath={"/mistral.png"}
-            value={credentials.mistral}
-            onChange={(value) => handleChange("mistral", value)}
-            onSave={saveCredentials}
-          />
-        </TabsContent>
-      </Tabs>
-    </div>
+          <TabsContent value="mistral">
+            <ProviderCard
+              id="mistral"
+              disabled={true}
+              unsupported={true}
+              title="Mistral AI"
+              description={`Configure ${type} Mistral AI API credentials`}
+              iconPath={"/mistral.png"}
+              value={credentials.mistral}
+              onChange={(value) => handleChange("mistral", value)}
+              onSave={saveCredentials}
+            />
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
 
