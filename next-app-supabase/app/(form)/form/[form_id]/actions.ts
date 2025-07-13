@@ -14,24 +14,13 @@ import { createClient } from "@/utils/supabase/server";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { UUID } from "crypto";
 
-export async function updateFormUpdateAt(
-  formId: UUID,
-  supabase: SupabaseClient<any, string, any>
-) {
-  const dbActions = new DBActionsFormFillerUpdate(supabase);
-
-  dbActions.updateFormUpdatedAt(formId);
-}
-
 export async function updateMainCheckboxValue(
   formId: UUID,
   checkboxId: UUID,
   value: boolean
 ) {
   const supabase = await createClient("form_filler");
-
   const dbActions = new DBActionsFormFillerUpdate(supabase);
-  updateFormUpdateAt(formId, supabase);
   return await dbActions.updateMainCheckboxValue(checkboxId, value);
 }
 
@@ -43,7 +32,7 @@ export async function updateSubCheckboxValue(
   const supabase = await createClient("form_filler");
 
   const dbActions = new DBActionsFormFillerUpdate(supabase);
-  updateFormUpdateAt(formId, supabase);
+
   return await dbActions.updateSubCheckboxValue(checkboxId, value);
 }
 
@@ -75,7 +64,7 @@ export async function updateTextInputFieldValue(
   const supabase = await createClient("form_filler");
 
   const dbActions = new DBActionsFormFillerUpdate(supabase);
-  updateFormUpdateAt(formId, supabase);
+
   return await dbActions.updateTextInputField(textInputFieldId, value);
 }
 
@@ -154,7 +143,7 @@ interface CheckboxItem {
   label: string;
   checked: boolean;
 }
-export interface ApiResponse {
+export interface IIntentRecognitionResponse {
   textInputFields: TextInputField[];
   checkboxes: CheckboxItem[];
 }
@@ -295,11 +284,11 @@ async function getFormData(
   return { formData: form, error: null };
 }
 
-async function apiCall(
+async function intentRecognitionAPICall(
   data: RootData,
   userInput: string,
   processId: string
-): Promise<ApiResponse | false> {
+): Promise<IIntentRecognitionResponse | false> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -343,7 +332,7 @@ async function apiCall(
   }
 }
 
-function parseApiResponse(raw: any): ApiResponse {
+function parseApiResponse(raw: any): IIntentRecognitionResponse {
   console.log("raw", raw);
   return {
     textInputFields: raw.textInputFields,
@@ -357,11 +346,15 @@ export async function requestIntentRecognition(
   formId: UUID,
   userInput: string,
   processId: string
-): Promise<ApiResponse | false> {
+): Promise<IIntentRecognitionResponse | false> {
   const { formData, error } = await getFormData(formId);
 
   if (formData) {
-    const response = await apiCall(formData, userInput, processId);
+    const response = await intentRecognitionAPICall(
+      formData,
+      userInput,
+      processId
+    );
     return parseApiResponse(response);
   } else {
     return false;
@@ -370,10 +363,6 @@ export async function requestIntentRecognition(
 
 export async function getIntentRecognitionDomain() {
   return process.env.INTENT_RECOGNITION_DOMAIN!;
-}
-
-export async function getLiveTranscriptionDomain() {
-  return process.env.LIVE_TRANSCIPTION_DOMAIN!;
 }
 
 export interface TranscribeResponse {

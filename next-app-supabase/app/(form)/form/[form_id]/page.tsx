@@ -11,8 +11,8 @@ import {
   ISubCheckboxResponse,
   ITextInputResponse,
 } from "@/lib/database/form-filler/formFillerInterfaces";
-import { MicrophoneContextProvider } from "@/app/context/MicrophoneContextProvider";
-import { DeepgramContextProvider } from "@/app/context/DeepgramContextProvider";
+import { FormComp } from "./Form";
+import { redirect } from "next/navigation";
 
 export default async function FormPage({
   params,
@@ -20,6 +20,14 @@ export default async function FormPage({
   params: Promise<{ form_id: UUID }>;
 }) {
   const formId = (await params).form_id;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/auth/login");
+  }
 
   const formBuilderSupabase = await createClient("form_builder");
   const formFillerSupabase = await createClient("form_filler");
@@ -81,17 +89,15 @@ export default async function FormPage({
         <div className="flex justify-center">
           <h1 className="font-bold underline">{formData.identifier_string}</h1>
         </div>
-        <MicrophoneContextProvider>
-          <DeepgramContextProvider>
-            <MainComp
-              sessionAwarenessFeatureUrl={`https://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/api/form-activity`}
-              formData={formData}
-              subCheckboxes={subCheckboxes}
-              mainCheckboxes={mainCheckboxes}
-              textInputFields={textInputFields}
-            ></MainComp>
-          </DeepgramContextProvider>
-        </MicrophoneContextProvider>
+
+        <FormComp
+          userId={user.id}
+          sessionAwarenessFeatureUrl={`https://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/api/form-activity`}
+          formData={formData}
+          subCheckboxes={subCheckboxes}
+          mainCheckboxes={mainCheckboxes}
+          textInputFields={textInputFields}
+        ></FormComp>
       </div>
     </div>
   );
