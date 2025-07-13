@@ -154,7 +154,7 @@ interface CheckboxItem {
   label: string;
   checked: boolean;
 }
-interface ApiResponse {
+export interface ApiResponse {
   textInputFields: TextInputField[];
   checkboxes: CheckboxItem[];
 }
@@ -376,25 +376,95 @@ export async function getLiveTranscriptionDomain() {
   return process.env.LIVE_TRANSCIPTION_DOMAIN!;
 }
 
-export async function getDeepgramKey() {
-  return process.env.LIVE_TRANSCIPTION_DOMAIN!;
+export interface TranscribeResponse {
+  text: string;
+  statusCode: 0 | 1 | 2 | 3;
 }
 
 export async function transcribeAudio(
-  audioString: string
-): Promise<WhisperResponse> {
-  const url = `${process.env.WHISPER_ENDPOINT_URL!}/transcribe`;
+  apiProvider: "deepgram" | "whisper",
+  audioBlob: Blob
+): Promise<TranscribeResponse> {
+  console.log("audioBlob", audioBlob);
+  const supabase = await createClient();
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      audio_base64: audioString,
-    }),
-  });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  console.log(res.json());
-  return await res.json();
+  const dbActions = new DBActionsPublicFetch(supabase);
+  const { userApiKeys, userApiKeysError } = await dbActions.fetchUserApiKeys(
+    user?.id as UUID
+  );
+
+  if (!userApiKeys)
+    return {
+      text: "",
+      statusCode: 1,
+    };
+
+  switch (apiProvider) {
+    case "deepgram":
+      return await transcribeAudioDeepgram(
+        audioBlob,
+        userApiKeys.deepgram_token
+      );
+    case "whisper":
+      return await transcribeAudioWhisper(audioBlob, userApiKeys.openai_token);
+  }
+}
+
+async function transcribeAudioDeepgram(
+  audioBlob: Blob,
+  deepgramToken: string | null
+): Promise<TranscribeResponse> {
+  if (!deepgramToken) {
+    return {
+      text: "",
+      statusCode: 1,
+    };
+  }
+
+  const res = await fetch(
+    "https://api.deepgram.com/v1/listen?model=nova-2&language=de",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Token ${deepgramToken}`,
+        "Content-Type": "audio/webm",
+      },
+      body: audioBlob, // Your audio Blob
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error(`Deepgram error: ${res.status}`);
+  }
+
+  const data = await res.json();
+  console.log("data", data);
+  console.log("data", data.results?.channels?.[0]);
+  const transcript = data.results?.channels?.[0]?.alternatives?.[0]?.transcript;
+
+  return {
+    text: transcript,
+    statusCode: 0,
+  };
+}
+
+async function transcribeAudioWhisper(
+  audioBlob: Blob,
+  whisperToken: string | null
+): Promise<TranscribeResponse> {
+  if (!whisperToken) {
+    return {
+      text: "",
+      statusCode: 1,
+    };
+  }
+  const url = `${process.env.LIVE_TRANSCIPTION_DOMAIN!}/transcribe`;
+  return {
+    text: "",
+    statusCode: 1,
+  };
 }

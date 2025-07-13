@@ -33,18 +33,19 @@ import {
   upsertMainCheckboxesValues,
   requestIntentRecognition,
   getIntentRecognitionDomain,
+  ApiResponse,
 } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { Separator } from "@/components/ui/separator";
 import { constructNow } from "date-fns";
 import { IFormCheckboxResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { useFormActivity } from "@/hooks/useFormActivity";
-import { AIInteractionBar } from "./AIInteractionBar";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { v4 as uuid4 } from "uuid";
 import { LogStream } from "./LogStream";
-import { AIInteractionBarV2 } from "@/components/AiInteractionBar/Bar";
-//import { TextInputField } from "./TextInputField";
+
+import Bar, { useQueueProcessor, QueueLog, RecordingItem } from "./Bar";
 
 interface MainCompProps {
   formData: IFormData;
@@ -595,7 +596,8 @@ export const MainComp = ({
     return subSectionId;
   };
 
-  const processAiResponse = async (userInput: string) => {
+  const proccessTranscript = async (userInput: string) => {
+    let result: boolean | ApiResponse = false;
     setIsAutoFilling(true);
     setLogsOpen(true);
 
@@ -605,6 +607,7 @@ export const MainComp = ({
     console.log("response", response);
 
     if (response) {
+      result = response;
       if (response.checkboxes.length > 0) {
         for (let index = 0; index < response.checkboxes.length; index++) {
           const checkbox = response.checkboxes[index];
@@ -692,6 +695,7 @@ export const MainComp = ({
       }
     }
     setIsAutoFilling(false);
+    return result;
   };
 
   function sortMainSections(a: IMainSectionResponse, b: IMainSectionResponse) {
@@ -771,15 +775,11 @@ export const MainComp = ({
     return ws;
   };
 
+  const [queue, setQueue] = useState<RecordingItem[]>([]);
+  useQueueProcessor(queue, setQueue, proccessTranscript);
+
   return (
     <div className="mb-36">
-      <LogStream
-        logs={aiLogs}
-        setLogs={setAiLogs}
-        connectionStatus={aiConnectionStatus}
-        isOpen={logsOpen}
-        setIsOpen={setLogsOpen}
-      ></LogStream>
       <ul className="space-y-2">
         {formData.main_section.sort(sortMainSections).map((mainSection) => (
           <li key={mainSection.id}>
@@ -1085,11 +1085,8 @@ export const MainComp = ({
           </li>
         ))}
       </ul>
-      <AIInteractionBarV2
-        processAiResposne={processAiResponse}
-        formId={formData.id}
-        isAutoFilling={isAutoFilling}
-      ></AIInteractionBarV2>
+      <QueueLog queue={queue} />
+      <Bar queue={queue} setQueue={setQueue} />
     </div>
   );
 };
