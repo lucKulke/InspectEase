@@ -44,7 +44,7 @@ export function TeamSwitcher({
   const [selectedTeam, setSelectedTeam] = useState<ITeamResponse | null>(
     activeTeam
   );
-  const [svgUrl, setSvgUrl] = useState<Record<string, string>>({});
+  const [svgUrl, setSvgUrl] = useState<Record<string, string | undefined>>({});
 
   const handleTeamSelect = (team: ITeamResponse | null) => {
     setSelectedTeam(team);
@@ -58,10 +58,12 @@ export function TeamSwitcher({
   const fetchTeamSvg = async (team: ITeamResponse) => {
     if (!team.picture_id) return;
 
-    const { publicUrl } = await getTeamsSvgUrl(team.picture_id);
+    const { bucketResponse, bucketError } = await getTeamsSvgUrl(
+      team.picture_id
+    );
     setSvgUrl((prev) => ({
       ...prev,
-      [team.id]: publicUrl ?? "/team.svg",
+      [team.id]: bucketResponse?.signedUrl,
     }));
   };
 

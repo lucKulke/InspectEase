@@ -12,6 +12,7 @@ import { DatabasePublicDelete } from "@/lib/database/public/publicDelete";
 import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
 import { AuthError } from "@supabase/supabase-js";
 import { ITeamResponse } from "@/lib/database/public/publicInterface";
+import { DBActionsBucket } from "@/lib/database/bucket";
 
 export async function updateTeamAiTokens(
   newToken: Record<string, string>,
@@ -128,4 +129,37 @@ export async function deleteTeam(teamId: string) {
   const supabase = await createClient();
   const publicDelete = new DatabasePublicDelete(supabase);
   return await publicDelete.deleteTeamById(teamId);
+}
+
+export async function uploadTeamAvatar(
+  file: File,
+  fileName: string,
+  userId: UUID
+) {
+  if (!file) return { error: "No file uploaded" };
+  const supabase = await createClient();
+  const bucket = new DBActionsBucket(supabase);
+  const publicUpdate = new DatabasePublicUpdate(supabase);
+
+  const { bucketResponse: urlData, bucketError: bucketUploadError } =
+    await bucket.uploadProfilePicture(fileName, file);
+
+  const { bucketResponse: signedUrl, bucketError: bucketDownloadError } =
+    await bucket.downloadProfilePicutreViaSignedUrl(fileName);
+
+  const { updatedProfile, updatedProfileError } =
+    await publicUpdate.updateTeamPicture(userId, fileName);
+
+  if (bucketDownloadError || bucketUploadError || updatedProfileError) {
+    return {
+      success: false,
+      imageUrl: null,
+      path: null,
+    };
+  }
+  return {
+    success: true,
+    imageUrl: signedUrl,
+    path: urlData?.path,
+  };
 }

@@ -157,12 +157,14 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: User;
   profile: IUserProfileResponse | null;
   teams: ITeamResponse[] | null;
+  profilePicture: string | undefined;
 }
 
 export function AppSidebar({
   user,
   profile,
   teams,
+  profilePicture,
   ...props
 }: AppSidebarProps) {
   const pathname = usePathname() ?? "";
@@ -190,7 +192,12 @@ export function AppSidebar({
         {/* <NavSections sections={sections}></NavSections> */}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} profile={profile} teams={teams} />
+        <NavUser
+          user={data.user}
+          profile={profile}
+          teams={teams}
+          profilePicture={profilePicture}
+        />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

@@ -32,6 +32,7 @@ export function NavUser({
   user,
   profile,
   teams,
+  profilePicture,
 }: {
   user: {
     id: string;
@@ -39,6 +40,7 @@ export function NavUser({
     email: string;
     avatar: string;
   };
+  profilePicture: string | undefined;
   profile: IUserProfileResponse | null;
   teams: ITeamResponse[] | null;
 }) {
@@ -87,10 +89,7 @@ export function NavUser({
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage
-                    src={user.avatar || "/placeholder.svg"}
-                    alt={user.name}
-                  />
+                  <AvatarImage src={profilePicture} alt={user.name} />
                   <AvatarFallback className="rounded-lg">
                     {(user.email[0] + user.email[2]).toUpperCase()}
                   </AvatarFallback>

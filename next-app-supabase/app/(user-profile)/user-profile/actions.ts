@@ -13,6 +13,8 @@ import { DatabasePublicCreate } from "@/lib/database/public/publicCreate";
 import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
 import { DatabasePublicUpdate } from "@/lib/database/public/publicUpdate";
 import { DatabasePublicDelete } from "@/lib/database/public/publicDelete";
+import { randomUUID } from "crypto";
+import { DBActionsBucket } from "@/lib/database/bucket";
 
 export async function updateUserProfile(
   profileData: ProfileFormValues,
@@ -91,4 +93,33 @@ export async function leaveTeam(teamId: string) {
     };
   const publicUpdate = new DatabasePublicDelete(supabase);
   return await publicUpdate.delteTeamMembership(user.id, teamId);
+}
+
+export async function uploadAvatar(file: File, fileName: string, userId: UUID) {
+  if (!file) return { error: "No file uploaded" };
+  const supabase = await createClient();
+  const bucket = new DBActionsBucket(supabase);
+  const publicUpdate = new DatabasePublicUpdate(supabase);
+
+  const { bucketResponse: urlData, bucketError: bucketUploadError } =
+    await bucket.uploadProfilePicture(fileName, file);
+
+  const { bucketResponse: signedUrl, bucketError: bucketDownloadError } =
+    await bucket.downloadProfilePicutreViaSignedUrl(fileName);
+
+  const { updatedProfile, updatedProfileError } =
+    await publicUpdate.updateProfilePicture(userId, fileName);
+
+  if (bucketDownloadError || bucketUploadError || updatedProfileError) {
+    return {
+      success: false,
+      imageUrl: null,
+      path: null,
+    };
+  }
+  return {
+    success: true,
+    imageUrl: signedUrl,
+    path: urlData?.path,
+  };
 }

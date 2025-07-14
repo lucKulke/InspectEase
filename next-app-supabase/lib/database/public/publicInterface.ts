@@ -9,7 +9,7 @@ export interface ITeamInsert {
 export interface ITeamResponse extends ITeamInsert {
   id: string;
   created_at: string;
-  picture_id: UUID | null;
+  picture_id: string | null;
   openai_token: string;
   deepgram_token: string;
   require_two_factor: boolean;
@@ -22,6 +22,7 @@ export interface IUserProfileResponse {
   last_name: string;
   email: string;
   active_team_id: UUID | null;
+  picture_id: string | null;
 }
 
 export interface ITeamMembershipsInsert {

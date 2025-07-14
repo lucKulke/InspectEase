@@ -33,7 +33,11 @@ import { Separator } from "@/components/ui/separator";
 import { LLMConfigPage } from "@/components/LLMProviderConfig";
 import { User as SupbaseUser } from "@supabase/supabase-js";
 import { IUserProfile } from "@/lib/globalInterfaces";
-import { updateUserProfile, updateUserProfileAiTokens } from "./actions";
+import {
+  updateUserProfile,
+  updateUserProfileAiTokens,
+  uploadAvatar,
+} from "./actions";
 import { UUID } from "crypto";
 import { useNotification } from "@/app/context/NotificationContext";
 import { SpeachToTextConfig } from "@/components/SeachToTextConfig";
@@ -45,6 +49,9 @@ import {
   IUserProfileResponse,
 } from "@/lib/database/public/publicInterface";
 import TeamCard from "./TeamCard";
+import { createClient } from "@/utils/supabase/client";
+import { v4 as uuidv4 } from "uuid";
+import { DBActionsBucket } from "@/lib/database/bucket";
 
 const profileFormSchema = z.object({
   first_name: z
@@ -96,7 +103,8 @@ interface ProfileFormProps {
   user: SupbaseUser;
   userApiKeys: IUserApiKeysResponse;
   teamsWithMembers: ITeamAndTeamMembers[] | null;
-  teamSvgs: Map<string, string | null>;
+  teamPictureUrls: Map<string, string | undefined>;
+  pictureUrl: string | undefined;
 }
 
 export const ProfileForm = ({
@@ -104,8 +112,10 @@ export const ProfileForm = ({
   user,
   userApiKeys,
   teamsWithMembers,
-  teamSvgs,
+  teamPictureUrls,
+  pictureUrl,
 }: ProfileFormProps) => {
+  const supabase = createClient();
   const { showNotification } = useNotification();
   const [activeTab, setActiveTab] = useState("personal");
   const [profile, setProfile] = useState<IUserProfileResponse>(profileData);
@@ -250,6 +260,25 @@ export const ProfileForm = ({
       setSpeachToTextCredentials((prev) => ({ ...prev, ...apiKeys }));
     }
   };
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(pictureUrl ?? null);
+  const [uploading, setUploading] = useState(false);
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      alert("File too large (max 3MB).");
+      return;
+    }
+    const fileExt = file.name.split(".").pop();
+    const newFileName = uuidv4() + "." + fileExt;
+    const { imageUrl, path } = await uploadAvatar(
+      file,
+      newFileName,
+      user.id as UUID
+    );
+    setAvatarUrl(imageUrl?.signedUrl ?? null);
+    setUploading(false);
+  };
 
   return (
     <Tabs
@@ -285,14 +314,22 @@ export const ProfileForm = ({
         <div className="flex items-center gap-6">
           <Avatar className="h-20 w-20">
             <AvatarImage
-              src="/placeholder.svg?height=80&width=80"
+              src={avatarUrl || "/placeholder.svg?height=80&width=80"}
               alt="Profile"
             />
             <AvatarFallback>JD</AvatarFallback>
           </Avatar>
           <div>
-            <Button variant="outline" size="sm">
-              Change avatar
+            <Button variant="outline" size="sm" disabled={uploading}>
+              <label className="cursor-pointer">
+                {uploading ? "Uploading..." : "Change avatar"}
+                <input
+                  type="file"
+                  accept="image/png, image/jpeg, image/gif"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </label>
             </Button>
             <p className="mt-2 text-xs text-muted-foreground">
               JPG, GIF or PNG. Max size of 3MB.
@@ -560,7 +597,7 @@ export const ProfileForm = ({
         <TeamCard
           profileData={profileData}
           teamsWithMembers={teamsWithMembers}
-          teamSvgs={teamSvgs}
+          teamPictureUrls={teamPictureUrls}
         ></TeamCard>
       </TabsContent>
     </Tabs>

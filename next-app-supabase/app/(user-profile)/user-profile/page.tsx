@@ -46,16 +46,25 @@ export default async function ProfilePage() {
     );
   }
 
-  const teamSvgs = new Map<string, string | null>();
+  const teamPictureUrls = new Map<string, string | undefined>();
   if (teamsWithMembers) {
     const bucket = new DBActionsBucket(supabase);
     for (let i = 0; i < teamsWithMembers.length; i++) {
       const team = teamsWithMembers[i];
-      const { publicUrl: svgPath } = await bucket.getTeamsSvgUrl(
-        team.picture_id
-      );
-      teamSvgs.set(team.id, svgPath);
+      if (team.picture_id) {
+        const { bucketResponse, bucketError } =
+          await bucket.downloadProfilePicutreViaSignedUrl(team.picture_id);
+        teamPictureUrls.set(team.id, bucketResponse?.signedUrl);
+      }
     }
+  }
+
+  let pictureUrl: string | undefined = undefined;
+  if (userProfile.picture_id) {
+    const bucket = new DBActionsBucket(supabase);
+    const { bucketResponse, bucketError } =
+      await bucket.downloadProfilePicutreViaSignedUrl(userProfile.picture_id);
+    pictureUrl = bucketResponse?.signedUrl;
   }
 
   return (
@@ -77,7 +86,8 @@ export default async function ProfilePage() {
           profileData={userProfile}
           user={user}
           teamsWithMembers={teamsWithMembers}
-          teamSvgs={teamSvgs}
+          teamPictureUrls={teamPictureUrls}
+          pictureUrl={pictureUrl}
         />
       </div>
     </div>

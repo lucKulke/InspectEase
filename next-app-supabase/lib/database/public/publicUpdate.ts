@@ -96,4 +96,48 @@ export class DatabasePublicUpdate {
 
     return { updatedMembership: data, updatedMembershipError: error };
   }
+
+  async updateProfilePicture(
+    userId: UUID,
+    profilePicture: string
+  ): Promise<{
+    updatedProfile: IUserProfileResponse | null;
+    updatedProfileError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("user_profile")
+      .update({ picture_id: profilePicture })
+      .eq("user_id", userId)
+      .select()
+      .single();
+
+    console.log("updated profile picture in db: ", data);
+    if (error) {
+      console.error("updated profile picture in db error: ", error);
+    }
+
+    return { updatedProfile: data, updatedProfileError: error };
+  }
+
+  async updateTeamPicture(
+    teamId: UUID,
+    profilePicture: string
+  ): Promise<{
+    updatedProfile: IUserProfileResponse | null;
+    updatedProfileError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("teams")
+      .update({ picture_id: profilePicture })
+      .eq("id", teamId)
+      .select()
+      .single();
+
+    console.log("updated team profile picture in db: ", data);
+    if (error) {
+      console.error("updated team profile picture in db error: ", error);
+    }
+
+    return { updatedProfile: data, updatedProfileError: error };
+  }
 }

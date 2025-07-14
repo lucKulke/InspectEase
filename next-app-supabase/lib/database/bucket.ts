@@ -25,6 +25,22 @@ export class DBActionsBucket {
     return { bucketResponse: data, bucketError: error };
   }
 
+  async uploadProfilePicture(fileName: string, file: File) {
+    const { data, error } = await this.supabase.storage
+      .from("pictures")
+      .upload("private/" + fileName, await file.arrayBuffer(), {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
+
+    console.log("storage upload profile picture", data);
+    if (error) {
+      console.error("error during profile picture upload to bucket", error);
+    }
+
+    return { bucketResponse: data, bucketError: error };
+  }
+
   async downloadDocumentViaSignedUrl(docId: UUID) {
     const { data, error } = await this.supabase.storage
       .from("documents")
@@ -35,15 +51,14 @@ export class DBActionsBucket {
     return { bucketResponse: data, bucketError: error };
   }
 
-  async getTeamsSvgUrl(
-    fileName: string | null
-  ): Promise<{ publicUrl: string | null }> {
-    if (!fileName) return { publicUrl: null };
+  async downloadProfilePicutreViaSignedUrl(fileName: string) {
+    const { data, error } = await this.supabase.storage
+      .from("pictures")
+      .createSignedUrl("private/" + fileName, 86400);
 
-    const { data: url } = this.supabase.storage
-      .from("teams_svgs")
-      .getPublicUrl(`${fileName}.svg`);
+    console.log("storage download document", data?.signedUrl);
+    console.log("error: ", error);
 
-    return { publicUrl: url.publicUrl };
+    return { bucketResponse: data, bucketError: error };
   }
 }

@@ -6,6 +6,7 @@ import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
 import { UUID } from "crypto";
 import Link from "next/link";
 import { House } from "lucide-react";
+import { DBActionsBucket } from "@/lib/database/bucket";
 
 export default async function TeamProfilePage({
   params,
@@ -46,6 +47,27 @@ export default async function TeamProfilePage({
     redirect("/error");
   }
 
+  const profilePictures: Record<UUID, string | undefined> = {};
+
+  const bucket = new DBActionsBucket(supabase);
+  for (const member of teamAndMembers.team_memberships.map(
+    (m) => m.user_profile
+  )) {
+    if (member.picture_id) {
+      const { bucketResponse, bucketError } =
+        await bucket.downloadProfilePicutreViaSignedUrl(member.picture_id);
+      profilePictures[member.user_id] = bucketResponse?.signedUrl || undefined;
+    }
+  }
+
+  let pictureUrl: string | undefined = undefined;
+  if (team.picture_id) {
+    const bucket = new DBActionsBucket(supabase);
+    const { bucketResponse, bucketError } =
+      await bucket.downloadProfilePicutreViaSignedUrl(team.picture_id);
+    pictureUrl = bucketResponse?.signedUrl;
+  }
+
   return (
     <div className="container mx-auto py-10">
       <div className="max-w-5xl mx-auto">
@@ -65,6 +87,8 @@ export default async function TeamProfilePage({
         <TeamForm
           currentMemberRequests={memberRequests}
           teamAndMembers={teamAndMembers}
+          profilePictures={profilePictures}
+          pictureUrl={pictureUrl}
         ></TeamForm>
       </div>
     </div>

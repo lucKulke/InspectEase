@@ -50,13 +50,13 @@ interface Team {
 interface TeamCardProps {
   profileData: IUserProfileResponse;
   teamsWithMembers: ITeamAndTeamMembers[] | null;
-  teamSvgs: Map<string, string | null>;
+  teamPictureUrls: Map<string, string | undefined>;
 }
 
 export default function TeamCard({
   profileData,
   teamsWithMembers,
-  teamSvgs,
+  teamPictureUrls,
 }: TeamCardProps) {
   const router = useRouter();
   const { showNotification } = useNotification();
@@ -196,7 +196,7 @@ export default function TeamCard({
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
                       <AvatarImage
-                        src={teamSvgs.get(team.id) || "/placeholder.svg"}
+                        src={teamPictureUrls.get(team.id) || "/placeholder.svg"}
                         alt={team.name}
                       />
                       <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
@@ -244,7 +244,9 @@ export default function TeamCard({
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
                           <AvatarImage
-                            src={teamSvgs.get(team.id) || "/placeholder.svg"}
+                            src={
+                              teamPictureUrls.get(team.id) || "/placeholder.svg"
+                            }
                             alt={team.name}
                           />
                           <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>

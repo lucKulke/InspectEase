@@ -59,6 +59,7 @@ import {
   updateMemberRoles,
   updateTeamAiTokens,
   updateTeamSettings,
+  uploadTeamAvatar,
 } from "./actions";
 import { UUID } from "crypto";
 import { redirect, useRouter, useSearchParams } from "next/navigation";
@@ -99,6 +100,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { passwordCheck } from "@/lib/globalActions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { v4 as uuidv4 } from "uuid";
 
 export interface TeamSettings {
   name: string;
@@ -109,6 +111,8 @@ export interface TeamSettings {
 interface TeamFormProps {
   currentMemberRequests: IMemberRequestResponse[] | null;
   teamAndMembers: ITeamAndTeamMembers;
+  profilePictures: Record<UUID, string | undefined>;
+  pictureUrl: string | undefined;
 }
 
 interface TeamMember {
@@ -136,6 +140,8 @@ const roleColors = {
 export const TeamForm = ({
   currentMemberRequests,
   teamAndMembers,
+  profilePictures,
+  pictureUrl,
 }: TeamFormProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -276,6 +282,7 @@ export const TeamForm = ({
           role: membership.role as RoleType[],
           joinedAt: membership.created_at as string,
           status: membership.disabled ? "disabled" : "active",
+          avatar: profilePictures[membership.user_profile.user_id],
         };
         currentTeamMembers.push(teamMember);
       }
@@ -445,6 +452,27 @@ export const TeamForm = ({
     }
     return 0;
   };
+
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(pictureUrl ?? null);
+  const [uploading, setUploading] = useState(false);
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      alert("File too large (max 3MB).");
+      return;
+    }
+    const fileExt = file.name.split(".").pop();
+    const newFileName = uuidv4() + "." + fileExt;
+    const { imageUrl, path } = await uploadTeamAvatar(
+      file,
+      newFileName,
+      teamAndMembers.id as UUID
+    );
+    setAvatarUrl(imageUrl?.signedUrl ?? null);
+    setUploading(false);
+  };
+
   return (
     <Tabs
       value={activeTab}
@@ -471,6 +499,31 @@ export const TeamForm = ({
       </TabsList>
 
       <TabsContent value="general" className="space-y-6">
+        <div className="flex items-center gap-6">
+          <Avatar className="h-20 w-20">
+            <AvatarImage
+              src={avatarUrl || "/placeholder.svg?height=80&width=80"}
+              alt="Profile"
+            />
+            <AvatarFallback>JD</AvatarFallback>
+          </Avatar>
+          <div>
+            <Button variant="outline" size="sm" disabled={uploading}>
+              <label className="cursor-pointer">
+                {uploading ? "Uploading..." : "Change avatar"}
+                <input
+                  type="file"
+                  accept="image/png, image/jpeg, image/gif"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </label>
+            </Button>
+            <p className="mt-2 text-xs text-muted-foreground">
+              JPG, GIF or PNG. Max size of 3MB.
+            </p>
+          </div>
+        </div>
         <Card>
           <CardHeader>
             <CardTitle>Team Information</CardTitle>
@@ -674,7 +727,11 @@ export const TeamForm = ({
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Joined{" "}
-                          {new Date(member.joinedAt).toLocaleDateString()}
+                          {
+                            new Date(member.joinedAt)
+                              .toISOString()
+                              .split("T")[0]
+                          }
                         </p>
                       </div>
                     </div>
