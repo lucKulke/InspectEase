@@ -3,7 +3,9 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { UUID } from "crypto";
 import {
   IMemberRequestResponse,
+  ITeamAndTeamMembers,
   ITeamMembershipsResponse,
+  ITeamMembershipsWithUser,
   ITeamResponse,
   IUserApiKeysResponse,
   IUserProfileResponse,
@@ -61,10 +63,7 @@ export class DBActionsPublicFetch {
     teams: ITeamResponse[] | null;
     teamsError: SupabaseError | null;
   }> {
-    const { data, error } = await this.supabase
-      .from("team_memberships")
-      .select(`teams(*)`)
-      .eq("user_id", user_id);
+    const { data, error } = await this.supabase.from("teams").select("*");
 
     if (error) {
       console.error("fetch all teams from user in db error: ", error);
@@ -77,13 +76,56 @@ export class DBActionsPublicFetch {
     console.log("raw teams data", data);
 
     // Flatten the result to remove the 'teams' wrapper
-    const teams = (data?.map((entry) => entry.teams) ?? []) as any[];
+    //const teams = (data?.map((entry) => entry.teams) ?? []) as any[];
 
-    console.log("flattened team list:", teams);
+    //console.log("flattened team list:", teams);
 
     return {
-      teams: teams as ITeamResponse[],
+      teams: data as ITeamResponse[],
       teamsError: null,
+    };
+  }
+
+  async fetchAllTeamsAndMembers(): Promise<{
+    teamsWithMembers: ITeamAndTeamMembers[] | null;
+    teamsWithMembersError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("teams")
+      .select(`*, team_memberships(*, user_profile(*))`);
+    console.log("raw teams data", data);
+    if (error) {
+      console.error("fetch all teams from user in db error: ", error);
+    }
+
+    // Flatten the result to remove the 'teams' wrapper
+
+    return {
+      teamsWithMembers: data,
+      teamsWithMembersError: error as SupabaseError | null,
+    };
+  }
+
+  async fetchTeamAndMembers(teamId: UUID): Promise<{
+    teamAndMembers: ITeamAndTeamMembers | null;
+    teamAndMembersError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("teams")
+      .select(`*, team_memberships(*, user_profile(*))`)
+      .eq("id", teamId)
+      .single();
+
+    console.log("raw team data", data);
+    if (error) {
+      console.error("fetch team by id in db error: ", error);
+    }
+
+    // Flatten the result to remove the 'teams' wrapper
+
+    return {
+      teamAndMembers: data,
+      teamAndMembersError: error as SupabaseError | null,
     };
   }
 
@@ -102,6 +144,30 @@ export class DBActionsPublicFetch {
     return {
       teamMembers: data as IUserProfileResponse[] | null,
       teamMembersError: error,
+    };
+  }
+
+  async fetchTeamMembershipWithUserProfiles(
+    teamId: string,
+    userId: string
+  ): Promise<{
+    teamMembership: ITeamMembershipsWithUser | null;
+    teamMembershipError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("team_memberships")
+      .select(`*, user_profile(*)`)
+      .eq("team_id", teamId)
+      .eq("user_id", userId)
+      .single();
+
+    if (error) {
+      console.error("fetch team memberships from db error: ", error);
+    }
+
+    return {
+      teamMembership: data,
+      teamMembershipError: error,
     };
   }
 
@@ -124,13 +190,13 @@ export class DBActionsPublicFetch {
     };
   }
 
-  async fetchTeamById(teamId: UUID): Promise<{
-    team: ITeamResponse | null;
+  async fetchTeamById(teamId: string): Promise<{
+    team: ITeamAndTeamMembers | null;
     teamError: SupabaseError | null;
   }> {
     const { data, error } = await this.supabase
       .from("teams")
-      .select("*")
+      .select("*, team_memberships(*, user_profile(*))")
       .eq("id", teamId)
       .single();
 

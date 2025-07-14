@@ -36,12 +36,15 @@ import {
   PenLine,
   CircleCheck,
   CircleX,
+  AlertTriangle,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { LLMConfigPage } from "@/components/LLMProviderConfig";
 import { SpeachToTextConfig } from "@/components/SeachToTextConfig";
 import {
   IMemberRequestResponse,
+  ITeamAndTeamMembers,
   ITeamMembershipsResponse,
   ITeamResponse,
   IUserProfileResponse,
@@ -49,6 +52,7 @@ import {
 import { useNotification } from "@/app/context/NotificationContext";
 import {
   addToTeam,
+  deleteTeam,
   refetchTeamMembers,
   removeTeamMember,
   sendTeamInviteMail,
@@ -57,7 +61,7 @@ import {
   updateTeamSettings,
 } from "./actions";
 import { UUID } from "crypto";
-import { useRouter, useSearchParams } from "next/navigation";
+import { redirect, useRouter, useSearchParams } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -93,6 +97,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { passwordCheck } from "@/lib/globalActions";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export interface TeamSettings {
   name: string;
@@ -101,10 +107,8 @@ export interface TeamSettings {
 }
 
 interface TeamFormProps {
-  team: ITeamResponse;
-  currentTeamMembers: IUserProfileResponse[] | null;
-  currentTeamMemberships: ITeamMembershipsResponse[] | null;
   currentMemberRequests: IMemberRequestResponse[] | null;
+  teamAndMembers: ITeamAndTeamMembers;
 }
 
 interface TeamMember {
@@ -130,10 +134,8 @@ const roleColors = {
 };
 
 export const TeamForm = ({
-  team,
-  currentTeamMembers,
-  currentTeamMemberships,
   currentMemberRequests,
+  teamAndMembers,
 }: TeamFormProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -141,11 +143,12 @@ export const TeamForm = ({
 
   const initialTab = searchParams.get("tab") || "general";
   const [activeTab, setActiveTab] = useState<string>(initialTab);
+  const [userPassword, setUserPassword] = useState<string>("");
 
   const [teamSettings, setTeamSettings] = useState<TeamSettings>({
-    name: team.name ?? "",
-    description: team.description ?? "",
-    require_two_factor: team.require_two_factor ?? false,
+    name: teamAndMembers.name ?? "",
+    description: teamAndMembers.description ?? "",
+    require_two_factor: teamAndMembers.require_two_factor ?? false,
   });
 
   const [LLMCredentials, setLLMCredentials] = useState<{
@@ -154,7 +157,7 @@ export const TeamForm = ({
     cohere_token: string | null;
     mistral_token: string | null;
   }>({
-    openai_token: team.openai_token ?? null,
+    openai_token: teamAndMembers.openai_token ?? null,
     anthropic_token: null,
     cohere_token: null,
     mistral_token: null,
@@ -165,7 +168,7 @@ export const TeamForm = ({
     azure: string | null;
     google: string | null;
   }>({
-    deepgram_token: team.deepgram_token ?? null,
+    deepgram_token: teamAndMembers.deepgram_token ?? null,
     azure: null,
     google: null,
   });
@@ -180,17 +183,19 @@ export const TeamForm = ({
 
   function checkIfSomeGeneralSettingsChanged() {
     return (
-      team.name !== teamSettings.name ||
-      team.description !== teamSettings.description
+      teamAndMembers.name !== teamSettings.name ||
+      teamAndMembers.description !== teamSettings.description
     );
   }
   function checkIfSomeSecuritySettingsChanged() {
-    return team.require_two_factor !== teamSettings.require_two_factor;
+    return (
+      teamAndMembers.require_two_factor !== teamSettings.require_two_factor
+    );
   }
   const handleSaveTeamSettings = async () => {
     const { updatedTeam, updatedTeamError } = await updateTeamSettings(
       teamSettings,
-      team.id as UUID
+      teamAndMembers.id as UUID
     );
     if (updatedTeamError) {
       showNotification(
@@ -213,7 +218,7 @@ export const TeamForm = ({
   ) => {
     const { updatedTeam, updatedTeamError } = await updateTeamAiTokens(
       apiKeys,
-      team.id as UUID
+      teamAndMembers.id as UUID
     );
     if (updatedTeamError) {
       showNotification(
@@ -237,7 +242,7 @@ export const TeamForm = ({
   ) => {
     const { updatedTeam, updatedTeamError } = await updateTeamAiTokens(
       apiKeys,
-      team.id as UUID
+      teamAndMembers.id as UUID
     );
     if (updatedTeamError) {
       showNotification(
@@ -256,42 +261,29 @@ export const TeamForm = ({
     }
   };
 
-  function mapTeamMembers(members: IUserProfileResponse[] | null) {
-    const memberList: TeamMember[] =
-      members?.map((member) => {
-        const membership = currentTeamMemberships?.find(
-          (membership) => membership.user_id === member.user_id
-        );
-
-        let role: RoleType[] =
-          team.owner_id === member.user_id ? ["owner"] : [];
-        if (membership) {
-          role.push(...((membership.role as RoleType[]) ?? ([] as RoleType[])));
-        }
-        const joinedAt = membership?.created_at;
-        let name = "";
-        if (member.first_name && member.last_name) {
-          name = member.first_name + " " + member.last_name;
-        } else {
-          name = member.email.split("@")[0];
-        }
-
-        return {
-          id: member.user_id,
-          name: name,
-          email: member.email,
-          role: role ?? ([] as RoleType[]),
-          joinedAt: joinedAt as string,
-          status: membership?.disabled ? "disabled" : "active",
+  const currentTeamMembers: TeamMember[] = [];
+  if (teamAndMembers.team_memberships) {
+    teamAndMembers.team_memberships.forEach((membership) => {
+      if (membership.user_profile) {
+        const teamMember: TeamMember = {
+          id: membership.user_profile.user_id,
+          name: membership.user_profile.first_name
+            ? membership.user_profile.first_name +
+              " " +
+              membership.user_profile.last_name
+            : membership.user_profile.email.split("@")[0],
+          email: membership.user_profile.email,
+          role: membership.role as RoleType[],
+          joinedAt: membership.created_at as string,
+          status: membership.disabled ? "disabled" : "active",
         };
-      }) ?? [];
-
-    return memberList;
+        currentTeamMembers.push(teamMember);
+      }
+    });
   }
 
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(
-    mapTeamMembers(currentTeamMembers)
-  );
+  const [teamMembers, setTeamMembers] =
+    useState<TeamMember[]>(currentTeamMembers);
   const [memberRequests, setMemberRequests] = useState<
     IMemberRequestResponse[]
   >(currentMemberRequests ?? []); //memberRequests
@@ -304,9 +296,9 @@ export const TeamForm = ({
 
   const handleInviteMember = async () => {
     const statusCode = await sendTeamInviteMail(
-      team.name,
+      teamAndMembers.name,
       inviteForm.email,
-      team.id
+      teamAndMembers.id
     );
 
     if (statusCode === 200) {
@@ -319,7 +311,7 @@ export const TeamForm = ({
 
   const handleRemoveMember = async (memberId: string) => {
     const { deletedTeamMembership, deletedTeamMembershipError } =
-      await removeTeamMember(memberId, team.id as UUID);
+      await removeTeamMember(memberId, teamAndMembers.id as UUID);
 
     console.log("deletedTeamMembership", deletedTeamMembership);
 
@@ -377,7 +369,7 @@ export const TeamForm = ({
 
   const handleAddToTeam = async (userId: string) => {
     const { teamMembership, teamMembershipError } = await addToTeam(
-      team.id,
+      teamAndMembers.id,
       userId
     );
     if (teamMembershipError) {
@@ -393,19 +385,66 @@ export const TeamForm = ({
         "info"
       );
       console.log("teamMembership", teamMembership);
-      const { teamMembers: newTeamMembers, teamMembersError } =
-        await refetchTeamMembers();
-      if (newTeamMembers) {
-        setTeamMembers(mapTeamMembers(newTeamMembers));
-        setMemberRequests(
-          memberRequests.filter(
-            (memberRequest) => memberRequest.user_id !== userId
-          )
-        );
-      }
+      const teamMember: TeamMember = {
+        id: teamMembership.user_profile.user_id,
+        name: teamMembership.user_profile.first_name
+          ? teamMembership.user_profile.first_name +
+            " " +
+            teamMembership.user_profile.last_name
+          : teamMembership.user_profile.email.split("@")[0],
+        email: teamMembership.user_profile.email,
+        role: teamMembership.role as RoleType[],
+        joinedAt: teamMembership.created_at as string,
+        status: teamMembership.disabled ? "disabled" : "active",
+      };
+
+      setTeamMembers([...teamMembers, teamMember]);
+
+      setMemberRequests(
+        memberRequests.filter(
+          (memberRequest) => memberRequest.user_id !== userId
+        )
+      );
     }
   };
 
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [openAlertDialg, setOpenAlertDialg] = useState(false);
+  const [invalidPassword, setInvalidPassword] = useState(false);
+
+  const handleDeleteTeam = async () => {
+    setIsDeleting(true);
+
+    const passwordOk = await passwordCheck(userPassword);
+    if (!passwordOk) {
+      setIsDeleting(false);
+      setInvalidPassword(true);
+      return;
+    }
+    const { deletedTeam, deletedTeamError } = await deleteTeam(
+      teamAndMembers.id
+    );
+    if (deletedTeamError) {
+      showNotification(
+        "Delete team",
+        `Error: ${deletedTeamError.message} (${deletedTeamError.code})`,
+        "error"
+      );
+    } else if (deletedTeam) {
+      showNotification("Delete team", `Successfully deleted team`, "info");
+      redirect("/user-profile/");
+    }
+  };
+
+  const sortTeamMembers = (a: TeamMember, b: TeamMember) => {
+    if (a.joinedAt < b.joinedAt) {
+      return -1;
+    }
+    if (a.joinedAt > b.joinedAt) {
+      return 1;
+    }
+    return 0;
+  };
   return (
     <Tabs
       value={activeTab}
@@ -478,6 +517,70 @@ export const TeamForm = ({
             </Button>
           </CardContent>
         </Card>
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <CardTitle className="text-destructive">Danger Zone</CardTitle>
+            </div>
+            <CardDescription>
+              Permanently delete this team and all of its data. This action
+              cannot be undone.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Dialog open={openAlertDialg} onOpenChange={setOpenAlertDialg}>
+              <DialogTrigger asChild>
+                <Button variant="destructive" className="gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  Delete Team
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                    Are you absolutely sure?
+                  </DialogTitle>
+                  <DialogDescription className="space-y-2">
+                    This action cannot be undone. This will permanently delete
+                    your team and remove all associated data from our servers.
+                  </DialogDescription>
+                </DialogHeader>
+                <Label htmlFor="password">Password (required)</Label>
+
+                {invalidPassword && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>Invalid credentails</AlertDescription>
+                  </Alert>
+                )}
+                <Input
+                  id="password"
+                  type="password"
+                  value={userPassword}
+                  onChange={(e) => setUserPassword(e.target.value)}
+                />
+
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setOpenAlertDialg(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleDeleteTeam}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isDeleting ? <p>Deleting...</p> : <p>Delete Team</p>}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
       </TabsContent>
       <TabsContent value="members" className="space-y-6">
         <Card>
@@ -541,7 +644,7 @@ export const TeamForm = ({
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {teamMembers.map((member) => {
+              {teamMembers.sort(sortTeamMembers).map((member) => {
                 return (
                   <div
                     key={member.id}
@@ -577,7 +680,17 @@ export const TeamForm = ({
                     </div>
                     <div className="flex items-center space-x-2">
                       <div className="flex flex-wrap gap-1">
-                        {member.role.map((role) => {
+                        {member.id === teamAndMembers.owner_id && (
+                          <Badge
+                            className={`${
+                              roleColors["owner"] ?? ""
+                            } border flex items-center gap-1`}
+                          >
+                            <Crown className="h-3 w-3" />
+                            Owner
+                          </Badge>
+                        )}
+                        {member.role?.map((role) => {
                           const Icon = roleIcons[role] || User;
                           return (
                             <Badge
@@ -608,7 +721,7 @@ export const TeamForm = ({
                                     handleRoleChange(member.id, roleOption)
                                   }
                                 >
-                                  {member.role.includes(roleOption)
+                                  {member.role?.includes(roleOption)
                                     ? "Remove"
                                     : "Add"}{" "}
                                   {roleOption.charAt(0).toUpperCase() +

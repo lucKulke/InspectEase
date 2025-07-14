@@ -1,13 +1,15 @@
 import { RoleType } from "@/lib/globalInterfaces";
 import { UUID } from "crypto";
 
-export interface ITeamResponse {
-  id: string;
+export interface ITeamInsert {
   name: string;
-  created_by: string;
   description: string | null;
-  picture_id: UUID | null;
   owner_id: UUID;
+}
+export interface ITeamResponse extends ITeamInsert {
+  id: string;
+  created_at: string;
+  picture_id: UUID | null;
   openai_token: string;
   deepgram_token: string;
   require_two_factor: boolean;
@@ -47,4 +49,12 @@ export interface IMemberRequestInsert {
 
 export interface IMemberRequestResponse extends IMemberRequestInsert {
   created_at: Date | string;
+}
+
+export interface ITeamMembershipsWithUser extends ITeamMembershipsResponse {
+  user_profile: IUserProfileResponse;
+}
+
+export interface ITeamAndTeamMembers extends ITeamResponse {
+  team_memberships: ITeamMembershipsWithUser[];
 }

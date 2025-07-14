@@ -4,12 +4,14 @@ import { DatabasePublicUpdate } from "@/lib/database/public/publicUpdate";
 import { createClient } from "@/utils/supabase/server";
 import { UUID } from "crypto";
 import { TeamSettings } from "./teamForm";
-import { RoleType } from "@/lib/globalInterfaces";
+import { RoleType, SupabaseError } from "@/lib/globalInterfaces";
 import nodemailer from "nodemailer";
 import jwt from "jsonwebtoken";
 import { DatabasePublicCreate } from "@/lib/database/public/publicCreate";
 import { DatabasePublicDelete } from "@/lib/database/public/publicDelete";
 import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
+import { AuthError } from "@supabase/supabase-js";
+import { ITeamResponse } from "@/lib/database/public/publicInterface";
 
 export async function updateTeamAiTokens(
   newToken: Record<string, string>,
@@ -104,7 +106,10 @@ export async function addToTeam(teamId: string, userId: string) {
   console.log("addToTeam", teamId, userId);
   const { memberReqeust, memberReqeustError } =
     await publicDelete.deleteMemberRequest(userId);
-  return await publicUpdate.createTeamMembership(teamId, userId);
+  await publicUpdate.createTeamMembership(teamId, userId);
+  return await new DBActionsPublicFetch(
+    supabase
+  ).fetchTeamMembershipWithUserProfiles(teamId, userId); // update team members from DBActionsPublicFetch
 }
 
 export async function removeTeamMember(userId: string, teamId: string) {
@@ -117,4 +122,10 @@ export async function refetchTeamMembers() {
   const supabase = await createClient();
   const publicUpdate = new DBActionsPublicFetch(supabase);
   return await publicUpdate.fetchTeamMembers();
+}
+
+export async function deleteTeam(teamId: string) {
+  const supabase = await createClient();
+  const publicDelete = new DatabasePublicDelete(supabase);
+  return await publicDelete.deleteTeamById(teamId);
 }

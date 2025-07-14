@@ -3,6 +3,7 @@ import {
   IMemberRequestInsert,
   IMemberRequestResponse,
   ITeamMembershipsResponse,
+  ITeamResponse,
 } from "./publicInterface";
 import { SupabaseError } from "@/lib/globalInterfaces";
 
@@ -56,6 +57,26 @@ export class DatabasePublicDelete {
     return {
       deletedTeamMembership: data,
       deletedTeamMembershipError: error as SupabaseError | null,
+    };
+  }
+
+  async deleteTeamById(teamId: string): Promise<{
+    deletedTeam: ITeamResponse | null;
+    deletedTeamError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("teams")
+      .delete()
+      .eq("id", teamId)
+      .select()
+      .single();
+    console.log("delete team in db:", data);
+    if (error) {
+      console.error("delete team in db error: ", error);
+    }
+    return {
+      deletedTeam: data,
+      deletedTeamError: error as SupabaseError | null,
     };
   }
 }

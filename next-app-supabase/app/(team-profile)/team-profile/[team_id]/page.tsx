@@ -15,8 +15,10 @@ export default async function TeamProfilePage({
   const teamId = (await params).team_id;
 
   const supabase = await createClient();
-  const user = await supabase.auth.getUser();
-  if (!user.data.user) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
     redirect("/auth/login");
   }
 
@@ -28,14 +30,21 @@ export default async function TeamProfilePage({
     console.error("fetch team by id in db error: ", teamError);
     redirect("/error");
   }
-  const { teamMemberships, teamMembershipsError } =
-    await publicFetch.fetchTeamMemberships(teamId);
 
-  const { teamMembers, teamMembersError } =
-    await publicFetch.fetchTeamMembers();
+  if (team.owner_id !== user.id) {
+    redirect("/error");
+  }
 
   const { memberRequests, memberRequestsError } =
     await publicFetch.fetchMemberRequests(teamId);
+
+  const { teamAndMembers, teamAndMembersError } =
+    await publicFetch.fetchTeamAndMembers(team.id as UUID);
+
+  if (teamAndMembersError || !teamAndMembers) {
+    console.error("fetch team by id in db error: ", teamAndMembersError);
+    redirect("/error");
+  }
 
   return (
     <div className="container mx-auto py-10">
@@ -45,7 +54,7 @@ export default async function TeamProfilePage({
             <h1 className="text-3xl font-bold tracking-tight">
               Team {team.name}
             </h1>
-            <Link href="/">
+            <Link href="/user-profile">
               <House></House>
             </Link>
           </div>
@@ -54,10 +63,8 @@ export default async function TeamProfilePage({
           </p>
         </div>
         <TeamForm
-          currentTeamMembers={teamMembers}
-          currentTeamMemberships={teamMemberships}
-          team={team}
           currentMemberRequests={memberRequests}
+          teamAndMembers={teamAndMembers}
         ></TeamForm>
       </div>
     </div>

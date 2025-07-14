@@ -2,7 +2,10 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { SupabaseError } from "../../globalInterfaces";
 import {
   IMemberRequestInsert,
+  ITeamInsert,
   ITeamMembershipsResponse,
+  ITeamMembershipsWithUser,
+  ITeamResponse,
   IUserProfileResponse,
 } from "./publicInterface";
 
@@ -48,7 +51,7 @@ export class DatabasePublicCreate {
     const { data, error } = await this.supabase
       .from("team_memberships")
       .insert({ team_id: teamId, user_id: userId })
-      .select()
+      .select("*")
       .single();
     console.log("create new team membership in db:", data);
     if (error) {
@@ -57,6 +60,25 @@ export class DatabasePublicCreate {
     return {
       teamMembership: data,
       teamMembershipError: error as SupabaseError | null,
+    };
+  }
+
+  async createNewTeam(newTeam: ITeamInsert): Promise<{
+    newTeam: ITeamResponse | null;
+    newTeamError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("teams")
+      .insert(newTeam)
+      .select()
+      .single();
+    console.log("create new team in db:", data);
+    if (error) {
+      console.error("create new team in db error: ", error);
+    }
+    return {
+      newTeam: data,
+      newTeamError: error as SupabaseError | null,
     };
   }
 }

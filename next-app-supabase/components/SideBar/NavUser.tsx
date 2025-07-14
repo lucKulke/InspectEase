@@ -26,7 +26,7 @@ import type {
 import { TeamSwitcher } from "./TeamSwitcher";
 import { switchActiveTeam } from "@/lib/globalActions";
 import { UUID } from "crypto";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 export function NavUser({
   user,
@@ -43,27 +43,26 @@ export function NavUser({
   teams: ITeamResponse[] | null;
 }) {
   const { isMobile } = useSidebar();
-  const router = useRouter();
+
   const pathname = usePathname();
 
   const handleTeamChange = async (team: ITeamResponse | null) => {
-    // Handle team change logic here
     console.log("Selected team:", team);
     if (!profile) return;
+
     const { updatedProfile, updatedProfileError } = await switchActiveTeam(
       profile?.user_id,
       team ? (team.id as UUID) : null
     );
-    if (!updatedProfileError) {
+
+    if (updatedProfile) {
+      // Trigger a full page reload
       if (pathname.includes("/form-filler")) {
-        router.push("/form-filler");
+        window.location.href = "/form-filler"; // full reload
       } else {
-        router.push("/form-builder");
+        window.location.href = "/form-builder"; // full reload
       }
     }
-
-    // You can add your team switching logic here
-    // For example: router.push(`/team/${team.id}`) or update global state
   };
 
   return (
@@ -74,7 +73,7 @@ export function NavUser({
         teams={teams}
         onTeamChange={handleTeamChange}
         activeTeam={
-          teams?.find((team) => team.id === profile?.active_team_id) ?? null
+          teams?.find((team) => team?.id === profile?.active_team_id) ?? null
         }
       />
 

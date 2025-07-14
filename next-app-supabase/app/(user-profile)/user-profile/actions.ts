@@ -5,7 +5,14 @@ import { createClient } from "@/utils/supabase/server";
 import { UUID } from "crypto";
 import { ProfileFormValues } from "./profileForm";
 import { IUserProfile, SupabaseError } from "@/lib/globalInterfaces";
-import { IUserApiKeysResponse } from "@/lib/database/public/publicInterface";
+import {
+  ITeamInsert,
+  IUserApiKeysResponse,
+} from "@/lib/database/public/publicInterface";
+import { DatabasePublicCreate } from "@/lib/database/public/publicCreate";
+import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
+import { DatabasePublicUpdate } from "@/lib/database/public/publicUpdate";
+import { DatabasePublicDelete } from "@/lib/database/public/publicDelete";
 
 export async function updateUserProfile(
   profileData: ProfileFormValues,
@@ -50,4 +57,38 @@ export async function updateUserProfileAiTokens(
   console.log(error);
 
   return { updatedProfile: data, updatedProfileError: error };
+}
+
+export async function createNewTeam(team: ITeamInsert) {
+  const supabase = await createClient();
+  const publicCreate = new DatabasePublicCreate(supabase);
+  const { newTeam, newTeamError } = await publicCreate.createNewTeam(team);
+  if (newTeamError) {
+    return { newTeam: null, newTeamError };
+  } else if (newTeam) {
+    const { teamMembership, teamMembershipError } =
+      await publicCreate.createTeamMembership(newTeam.id, team.owner_id);
+    if (teamMembershipError) {
+      return { newTeam: null, newTeamError: teamMembershipError };
+    } else if (teamMembership) {
+      const publicFetch = new DBActionsPublicFetch(supabase);
+      const { team, teamError } = await publicFetch.fetchTeamById(newTeam.id);
+      return { newTeam: team, newTeamError: teamError };
+    }
+  }
+  return { newTeam: null, newTeamError };
+}
+
+export async function leaveTeam(teamId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return {
+      deletedTeamMembership: null,
+      deletedTeamMembershipError: null,
+    };
+  const publicUpdate = new DatabasePublicDelete(supabase);
+  return await publicUpdate.delteTeamMembership(user.id, teamId);
 }

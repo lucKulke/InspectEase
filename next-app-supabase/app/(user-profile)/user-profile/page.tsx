@@ -7,6 +7,7 @@ import { House } from "lucide-react";
 import Link from "next/link";
 import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
 import { redirect } from "next/navigation";
+import { DBActionsBucket } from "@/lib/database/bucket";
 
 export const metadata: Metadata = {
   title: "Profile | Account Settings",
@@ -30,6 +31,9 @@ export default async function ProfilePage() {
     user.id as UUID
   );
 
+  const { teamsWithMembers, teamsWithMembersError } =
+    await publicFetch.fetchAllTeamsAndMembers();
+
   if (!userProfile || !userApiKeys) {
     redirect("/error");
   }
@@ -40,6 +44,18 @@ export default async function ProfilePage() {
       "fetch user api keys from db error: ",
       userApiKeysError.message
     );
+  }
+
+  const teamSvgs = new Map<string, string | null>();
+  if (teamsWithMembers) {
+    const bucket = new DBActionsBucket(supabase);
+    for (let i = 0; i < teamsWithMembers.length; i++) {
+      const team = teamsWithMembers[i];
+      const { publicUrl: svgPath } = await bucket.getTeamsSvgUrl(
+        team.picture_id
+      );
+      teamSvgs.set(team.id, svgPath);
+    }
   }
 
   return (
@@ -60,6 +76,8 @@ export default async function ProfilePage() {
           userApiKeys={userApiKeys}
           profileData={userProfile}
           user={user}
+          teamsWithMembers={teamsWithMembers}
+          teamSvgs={teamSvgs}
         />
       </div>
     </div>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Bell, Brain, Lock, Shield, User } from "lucide-react";
+import { Bell, Brain, Group, Lock, Shield, User, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -39,9 +39,12 @@ import { useNotification } from "@/app/context/NotificationContext";
 import { SpeachToTextConfig } from "@/components/SeachToTextConfig";
 import { set } from "date-fns";
 import {
+  ITeamAndTeamMembers,
+  ITeamResponse,
   IUserApiKeysResponse,
   IUserProfileResponse,
 } from "@/lib/database/public/publicInterface";
+import TeamCard from "./TeamCard";
 
 const profileFormSchema = z.object({
   first_name: z
@@ -92,12 +95,16 @@ interface ProfileFormProps {
   profileData: IUserProfileResponse;
   user: SupbaseUser;
   userApiKeys: IUserApiKeysResponse;
+  teamsWithMembers: ITeamAndTeamMembers[] | null;
+  teamSvgs: Map<string, string | null>;
 }
 
 export const ProfileForm = ({
   profileData,
   user,
   userApiKeys,
+  teamsWithMembers,
+  teamSvgs,
 }: ProfileFormProps) => {
   const { showNotification } = useNotification();
   const [activeTab, setActiveTab] = useState("personal");
@@ -251,7 +258,7 @@ export const ProfileForm = ({
       onValueChange={setActiveTab}
       className="space-y-6"
     >
-      <TabsList className="grid w-full grid-cols-4">
+      <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="personal" className="flex items-center gap-2">
           <User className="h-4 w-4" />
           <span className="hidden sm:inline">Personal</span>
@@ -267,6 +274,10 @@ export const ProfileForm = ({
         <TabsTrigger value="aiApi" className="flex items-center gap-2">
           <Brain className="h-4 w-4" />
           <span className="hidden sm:inline">AI API</span>
+        </TabsTrigger>
+        <TabsTrigger value="teams" className="flex items-center gap-2">
+          <Users className="h-4 w-4" />
+          <span className="hidden sm:inline">Teams</span>
         </TabsTrigger>
       </TabsList>
 
@@ -544,6 +555,13 @@ export const ProfileForm = ({
           currentCredentials={speachToTextCredentials}
           updateAiTokens={handleUpdateSpeachToTextAPICredentials}
         ></SpeachToTextConfig>
+      </TabsContent>
+      <TabsContent value="teams" className="space-y-6">
+        <TeamCard
+          profileData={profileData}
+          teamsWithMembers={teamsWithMembers}
+          teamSvgs={teamSvgs}
+        ></TeamCard>
       </TabsContent>
     </Tabs>
   );

@@ -44,7 +44,7 @@ export function TeamSwitcher({
   const [selectedTeam, setSelectedTeam] = useState<ITeamResponse | null>(
     activeTeam
   );
-  const [svgUrl, setSvgUrl] = useState<string | null>(null);
+  const [svgUrl, setSvgUrl] = useState<Record<string, string>>({});
 
   const handleTeamSelect = (team: ITeamResponse | null) => {
     setSelectedTeam(team);
@@ -55,22 +55,25 @@ export function TeamSwitcher({
     return null;
   }
 
-  const fetchTeamSvg = async () => {
-    if (!selectedTeam?.picture_id) {
-      setSvgUrl(null);
-      return;
-    }
-    const { publicUrl } = await getTeamsSvgUrl(selectedTeam.picture_id);
+  const fetchTeamSvg = async (team: ITeamResponse) => {
+    if (!team.picture_id) return;
 
-    setSvgUrl(publicUrl);
+    const { publicUrl } = await getTeamsSvgUrl(team.picture_id);
+    setSvgUrl((prev) => ({
+      ...prev,
+      [team.id]: publicUrl ?? "/team.svg",
+    }));
   };
 
   useEffect(() => {
-    fetchTeamSvg();
+    for (const team of teams) {
+      fetchTeamSvg(team);
+    }
   }, []);
 
   useEffect(() => {
-    fetchTeamSvg();
+    if (!selectedTeam) return;
+    fetchTeamSvg(selectedTeam);
   }, [selectedTeam]);
 
   const visitTeamSettings = (team: ITeamResponse) => {
@@ -88,9 +91,9 @@ export function TeamSwitcher({
             >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg  text-sidebar-primary-foreground">
                 <Avatar className="h-6 w-6">
-                  {svgUrl ? (
+                  {activeTeam ? (
                     <AvatarImage
-                      src={svgUrl}
+                      src={svgUrl[activeTeam.id] || "/team.svg"}
                       alt={selectedTeam?.name || "Team"}
                     />
                   ) : (
@@ -138,7 +141,7 @@ export function TeamSwitcher({
                     <div className="flex size-6 items-center justify-center rounded-sm border">
                       <Avatar className="h-4 w-4">
                         <AvatarImage
-                          src={team.picture_id || undefined}
+                          src={svgUrl[team?.id ?? ""] || "/team.svg"}
                           alt={team.name}
                         />
                         <AvatarFallback className="text-xs">
