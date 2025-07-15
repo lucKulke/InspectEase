@@ -125,7 +125,7 @@ export function NavUser({
 
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <Link href={"/user-profile"}>
+                <Link href={"/settings/user-profile"}>
                   <DropdownMenuItem>
                     <UserPen />
                     Profile
