@@ -24,6 +24,11 @@ import {
   Car,
   Blocks,
   Mic,
+  User as UserIcon,
+  GroupIcon,
+  Key,
+  Bell,
+  Shield,
 } from "lucide-react";
 
 import { NavUser } from "@/components/SideBar/NavUser";
@@ -63,6 +68,11 @@ const dataBuilder = {
       name: "Builder",
       logo: Blocks,
       path: "/form-builder",
+    },
+    {
+      name: "Settings",
+      logo: Settings2,
+      path: "/settings",
     },
   ],
   navMain: [
@@ -136,6 +146,11 @@ const dataFiller = {
       logo: Mic,
       path: "/form-filler",
     },
+    {
+      name: "Settings",
+      logo: Settings2,
+      path: "/settings",
+    },
   ],
   navMain: [
     {
@@ -147,6 +162,66 @@ const dataFiller = {
         {
           title: "select",
           url: "/form-filler/select-form",
+        },
+      ],
+    },
+  ],
+};
+
+const dataSettings = {
+  user: {
+    id: "1",
+    name: "Unknown",
+    email: "m@unknown.com",
+    avatar: "/avatars/shadcn.jpg",
+  },
+  apps: [
+    {
+      name: "Builder",
+      logo: Blocks,
+      path: "/form-builder",
+    },
+    {
+      name: "Filler",
+      logo: Mic,
+      path: "/form-filler",
+    },
+    {
+      name: "Settings",
+      logo: Settings2,
+      path: "/settings",
+    },
+  ],
+  navMain: [
+    {
+      title: "User Profile",
+      icon: UserIcon,
+      isActive: false,
+      items: [
+        {
+          icon: UserIcon,
+          title: "Personal",
+          url: "/settings/user-profile/personal",
+        },
+        {
+          icon: Shield,
+          title: "Security",
+          url: "/settings/user-profile/security",
+        },
+        {
+          icon: Bell,
+          title: "Notifications",
+          url: "/settings/user-profile/notifications",
+        },
+        {
+          icon: Key,
+          title: "AI API",
+          url: "/settings/user-profile/ai-api",
+        },
+        {
+          icon: GroupIcon,
+          title: "Teams",
+          url: "/settings/user-profile/teams",
         },
       ],
     },
@@ -173,10 +248,15 @@ export function AppSidebar({
 
   if (pathname.startsWith("/form-filler")) {
     data = dataFiller;
-  } else {
+  } else if (pathname.startsWith("/form-builder")) {
     data = dataBuilder;
+  } else if (pathname.startsWith("/settings")) {
+    data = dataSettings;
   }
 
+  if (!data) {
+    return null;
+  }
   if (user) {
     data.user.id = user.id ?? "";
     data.user.email = user.email ?? "";
