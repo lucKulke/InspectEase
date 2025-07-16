@@ -15,6 +15,12 @@ export interface ITeamResponse extends ITeamInsert {
   require_two_factor: boolean;
 }
 
+export interface ITeamSettings {
+  name: string;
+  description: string;
+  require_two_factor: boolean;
+}
+
 export interface IUserProfileResponse {
   created_at: Date | string;
   user_id: UUID;

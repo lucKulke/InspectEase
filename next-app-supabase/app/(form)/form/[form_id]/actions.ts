@@ -9,6 +9,7 @@ import {
 } from "@/lib/database/form-filler/formFillerInterfaces";
 import { DBActionsFormFillerUpdate } from "@/lib/database/form-filler/formFillerUpdate";
 import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
+import { FormEngine } from "@/lib/form-engine/formEngine";
 import { SupabaseError, WhisperResponse } from "@/lib/globalInterfaces";
 import { createClient } from "@/utils/supabase/server";
 import { SupabaseClient } from "@supabase/supabase-js";
@@ -29,11 +30,9 @@ export async function updateSubCheckboxValue(
   checkboxId: UUID,
   value: boolean
 ) {
-  const supabase = await createClient("form_filler");
-
-  const dbActions = new DBActionsFormFillerUpdate(supabase);
-
-  return await dbActions.updateSubCheckboxValue(checkboxId, value);
+  const supabase = await createClient();
+  const formEngine = new FormEngine(supabase);
+  formEngine.updateSubCheckbox(formId, checkboxId, value);
 }
 
 export async function upsertSubCheckboxesValues(

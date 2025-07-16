@@ -2,9 +2,12 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 import { RoleType, SupabaseError } from "../../globalInterfaces";
 import { UUID } from "crypto";
-import { ITeamResponse, IUserProfileResponse } from "./publicInterface";
+import {
+  ITeamResponse,
+  ITeamSettings,
+  IUserProfileResponse,
+} from "./publicInterface";
 import { createClient } from "@/utils/supabase/server";
-import { TeamSettings } from "@/app/(team-profile)/team-profile/[team_id]/teamForm";
 
 export class DatabasePublicUpdate {
   private supabase: SupabaseClient<any, string, any>;
@@ -60,7 +63,7 @@ export class DatabasePublicUpdate {
     return { updatedTeam: data, updatedTeamError: error };
   }
 
-  async updateTeamSettings(teamId: UUID, newSettings: TeamSettings) {
+  async updateTeamSettings(teamId: UUID, newSettings: ITeamSettings) {
     const { data, error } = await this.supabase
       .from("teams") // Change to your actual table name
       .update(newSettings)

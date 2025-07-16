@@ -25,7 +25,11 @@ import { UUID } from "crypto";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { TextInputField } from "./TextInputField";
-import { updateMainCheckboxValue, updateTextInputFieldValue } from "./actions";
+import {
+  updateMainCheckboxValue,
+  updateSubCheckboxValue,
+  updateTextInputFieldValue,
+} from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { Separator } from "@/components/ui/separator";
 import { useFormActivity } from "@/hooks/useFormActivity";
@@ -270,14 +274,13 @@ export const FormComp = ({
       );
       return;
     }
-    // const copy = { ...fillableSubCheckboxes };
-    // copy[mainCheckboxId] = copy[mainCheckboxId].map((subCheckbox) => {
-    //   if (subCheckbox.id === mainCheckboxId) {
-    //     subCheckbox.checked = checked;
-    //   }
-    //   return subCheckbox;
-    // });
-    // setFillableSubCheckboxes(copy);
+  };
+
+  const handleManualUpdateSubCheckbox = async (
+    subCheckboxId: UUID,
+    checked: boolean
+  ) => {
+    await updateSubCheckboxValue(formData.id, subCheckboxId, checked);
   };
 
   function sleep(ms: number) {
@@ -519,7 +522,12 @@ export const FormComp = ({
                                                                                 checked={
                                                                                   currentCheckbox.checked
                                                                                 }
-                                                                                onClick={() => {}}
+                                                                                onClick={() =>
+                                                                                  handleManualUpdateSubCheckbox(
+                                                                                    currentCheckbox.id,
+                                                                                    !currentCheckbox.checked
+                                                                                  )
+                                                                                }
                                                                               ></Checkbox>
                                                                             </TableCell>
                                                                           );

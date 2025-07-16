@@ -1,68 +1,109 @@
+import dotenv
+dotenv.load_dotenv()
+
 from fastapi import FastAPI, Request, HTTPException, Depends
 from pydantic import BaseModel
-from jose import jwt, JWTError
-from supabase import create_client, Client
 import os
+from lib.auth import get_authenticated_client, get_current_user, Session
+from lib.models import CheckboxUpdatePayload, ResponseItem, SubCheckbox, List, MainCheckbox
 
-# Environment variables (use dotenv or actual env vars in prod)
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
-SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 app = FastAPI()
 
-# Request body schema
-class CheckboxUpdatePayload(BaseModel):
-    form_id: str
-    checkbox_id: str
-    new_value: bool
 
-# Authentication
-async def get_current_user(request: Request):
-    auth = request.headers.get("Authorization")
-    if not auth or not auth.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid token")
-    token = auth.split(" ")[1]
-    try:
-        payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"])
-        return payload  # user data
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
 
-# Endpoint
-@app.post("/update-main-checkbox")
-async def update_checkbox(payload: CheckboxUpdatePayload, user=Depends(get_current_user)):
-    user_id = user["sub"]
+def validate_sub_checkbox_selection(selected_id: str,new_value: bool, db_item: ResponseItem) -> List[SubCheckbox]:
+    # Extract data
+    result: List[SubCheckbox] = []
+    
+    all_main = db_item["main_checkbox"]["checkbox_group"]["main_checkbox"]
+    print()
+    print(all_main, flush=True)
+    
+    main_selectable_together = set(db_item["main_checkbox"]["checkbox_group"]["checkboxes_selected_together"])
+    print()
+    print(main_selectable_together, flush=True)
+
+    all_sub: List[SubCheckbox] = db_item["group"]["sub_checkbox"]
+    print()
+    print(all_sub, flush=True)
+
+    has_allready_checked_subcheckbox = any(sub_checkbox.get("checked") for sub_checkbox in all_sub)
+    
+    if not has_allready_checked_subcheckbox or new_value == False: 
+        updateable_checkbox = next((x for x in all_sub if x["id"] == selected_id), None)
+        updateable_checkbox["checked"] = new_value
+        result.append(updateable_checkbox)
+        return result
+    
+
+
+
+    
+
+    return
+
+    # Find the selected main checkbox
+    selected_main = next((m for m in all_main if m.id == selected_id), None)
+    if not selected_main:
+        raise ValueError("Selected checkbox not found in main group.")
+    
+    updates = []
+
+    # If user is checking this checkbox
+    if not selected_main.checked:
+        for m in all_main:
+            if m.id == selected_main.id:
+                m.checked = True
+                updates.append({"id": m.id, "checked": True})
+            else:
+                if m.id not in together and m.prio_number > selected_main.prio_number:
+                    m.checked = False
+                    updates.append({"id": m.id, "checked": False})
+    else:
+        # If user unchecks the selected checkbox
+        selected_main.checked = False
+        updates.append({"id": selected_main.id, "checked": False})
+
+    return updates
+@app.post("/update-sub-checkbox")
+async def update_checkbox(payload: CheckboxUpdatePayload, user: Session = Depends(get_current_user)):
+    user_id = user.user_id
     form_id = payload.form_id
     checkbox_id = payload.checkbox_id
     new_value = payload.new_value
+    
+    try:
+        # Create client with user's JWT token for RLS authentication
+        client = get_authenticated_client(user.token)
+        
+        # Insert with authenticated client
+        db_fetch_response = (
+            client.schema("form_filler").table("sub_checkbox")
+            .select("group:task(sub_checkbox(*)),main_checkbox(checkbox_group(checkboxes_selected_together, main_checkbox(*)))")
+            .eq("id", checkbox_id).eq("form_id", form_id).single()
+            .execute()
+        )
+              
+        group: ResponseItem = db_fetch_response.data
+        # print(group, flush=True)
+        update = validate_sub_checkbox_selection(checkbox_id,new_value, group)
+        # print(update, flush=True)
+        print()
+        print(update, flush=True)
+        print()
+        db_update_response = client.schema("form_filler").table("sub_checkbox").upsert(update).execute()
+        print(db_update_response, flush=True)
 
-    # Fetch the main_checkbox
-    res = supabase.table("main_checkbox").select("id, checkbox_group_id, form_id").eq("id", checkbox_id).single().execute()
-    if res.error or not res.data:
-        raise HTTPException(status_code=404, detail="Checkbox not found")
-    checkbox = res.data
-    if checkbox["form_id"] != form_id:
-        raise HTTPException(status_code=403, detail="Form mismatch")
-
-    group_id = checkbox["checkbox_group_id"]
-
-    # Fetch all checkboxes in the same group
-    group_res = supabase.table("main_checkbox").select("id").eq("checkbox_group_id", group_id).execute()
-    if group_res.error:
-        raise HTTPException(status_code=500, detail="Failed to load group")
-
-    checkboxes = group_res.data
-
-    # Apply "only one selected" rule
-    for cb in checkboxes:
-        checked = cb["id"] == checkbox_id and new_value
-        update_res = supabase.table("main_checkbox").update({
-            "value": checked,
-            "updated_by": user_id
-        }).eq("id", cb["id"]).execute()
-        if update_res.error:
-            raise HTTPException(status_code=500, detail=f"Update failed for checkbox {cb['id']}")
+        if group:
+            return {"status": "success", "updated_checkbox": checkbox_id, "data": group}
+        else:
+            raise HTTPException(status_code=400, detail="Failed to insert data")
+            
+    except Exception as e:
+        print(f"Database error: {e}", flush=True)
+        raise HTTPException(status_code=500, detail=f"Database operation failed: {str(e)}")
 
     return {"status": "success", "updated_checkbox": checkbox_id}
+
+
