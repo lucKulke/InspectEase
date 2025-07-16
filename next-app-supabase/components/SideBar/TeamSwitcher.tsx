@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, ChevronsUpDown, Plus, Settings, X } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, Router, Settings, X } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -27,7 +27,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export function TeamSwitcher({
   userId,
@@ -40,6 +40,7 @@ export function TeamSwitcher({
   activeTeam: ITeamResponse | null;
   onTeamChange: (team: ITeamResponse | null) => void;
 }) {
+  const router = useRouter();
   const { isMobile } = useSidebar();
   const [selectedTeam, setSelectedTeam] = useState<ITeamResponse | null>(
     activeTeam
@@ -79,7 +80,7 @@ export function TeamSwitcher({
   }, [selectedTeam]);
 
   const visitTeamSettings = (team: ITeamResponse) => {
-    redirect(`/team-profile/${team.id}`);
+    router.push(`/settings/team-profile/${team.id}`);
   };
 
   return (

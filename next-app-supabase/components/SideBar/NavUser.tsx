@@ -45,6 +45,7 @@ export function NavUser({
   teams: ITeamResponse[] | null;
 }) {
   const { isMobile } = useSidebar();
+  if (!profile) return;
 
   const pathname = usePathname();
 
@@ -53,7 +54,7 @@ export function NavUser({
     if (!profile) return;
 
     const { updatedProfile, updatedProfileError } = await switchActiveTeam(
-      profile?.user_id,
+      profile.user_id,
       team ? (team.id as UUID) : null
     );
 
@@ -66,6 +67,12 @@ export function NavUser({
       }
     }
   };
+
+  const hasFirstAndLastName =
+    profile.first_name &&
+    profile.first_name.length >= 0 &&
+    profile.last_name &&
+    profile.last_name.length >= 0;
 
   return (
     <div className="flex flex-col gap-2">
@@ -94,9 +101,21 @@ export function NavUser({
                     {(user.email[0] + user.email[2]).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{user.email}</span>
-                </div>
+                {hasFirstAndLastName ? (
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">
+                      {profile.first_name} {profile.last_name}
+                    </span>
+                    <span className="truncate text-xs text-sidebar-foreground/70">
+                      {profile.email}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">{user.email}</span>
+                  </div>
+                )}
+
                 <ChevronsUpDown className="ml-auto size-4" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
@@ -109,17 +128,27 @@ export function NavUser({
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage
-                      src={user.avatar || "/placeholder.svg"}
-                      alt={user.name}
-                    />
+                    <AvatarImage src={profilePicture} alt={user.name} />
                     <AvatarFallback className="rounded-lg">
                       {(user.email[0] + user.email[2]).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{user.email}</span>
-                  </div>
+                  {hasFirstAndLastName ? (
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                      <span className="truncate font-semibold">
+                        {profile.first_name} {profile.last_name}
+                      </span>
+                      <span className="truncate text-xs text-sidebar-foreground/70">
+                        {profile.email}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                      <span className="truncate font-semibold">
+                        {user.email}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </DropdownMenuLabel>
 
