@@ -264,16 +264,7 @@ export const FormComp = ({
     mainCheckboxId: UUID,
     checked: boolean
   ) => {
-    const { updatedMainCheckbox, updatedMainCheckboxError } =
-      await updateMainCheckboxValue(formData.id, mainCheckboxId, checked);
-    if (updatedMainCheckboxError) {
-      showNotification(
-        "Update main checkbox",
-        `Error: ${updatedMainCheckboxError.message} (${updatedMainCheckboxError.code})`,
-        "error"
-      );
-      return;
-    }
+    await updateMainCheckboxValue(formData.id, mainCheckboxId, checked);
   };
 
   const handleManualUpdateSubCheckbox = async (
@@ -565,7 +556,12 @@ export const FormComp = ({
                                                                         checked={
                                                                           mainCheckbox.checked
                                                                         }
-                                                                        onClick={() => {}}
+                                                                        onClick={() => {
+                                                                          handleManualUpdateMainCheckbox(
+                                                                            mainCheckbox.id,
+                                                                            !mainCheckbox.checked
+                                                                          );
+                                                                        }}
                                                                       ></Checkbox>
                                                                       <p>
                                                                         {

@@ -1,53 +1,53 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import List
+from uuid import UUID
 class CheckboxUpdatePayload(BaseModel):
     form_id: str
     checkbox_id: str
     new_value: bool
 
-
-
-
 # SubCheckbox Model
 class SubCheckbox(BaseModel):
-    id: str
+    id: UUID
     checked: bool
-    form_id: str
-    task_id: str
-    team_id: str
-    user_id: str
+    form_id: UUID
+    task_id: UUID
+    team_id: UUID
+    user_id: UUID
     created_at: datetime
-    main_checkbox_id: str
-
+    main_checkbox_id: UUID
 
 class MainCheckbox(BaseModel):
-    id: str
-    checked: bool
-    form_id: str
-    prio_number: int
-    user_id: str
-    created_at: datetime
-    team_id: str
-    group_id: str
-    order_number: int
+    id: UUID
     label: str
-    annotation_id: str
+    checked: bool
+    form_id: UUID
+    team_id: UUID
+    user_id: UUID
+    group_id: UUID
+    created_at: datetime
+    prio_number: int
+    order_number: int
+    sub_checkbox: List[SubCheckbox]
+    annotation_id: UUID
 
+class Task(BaseModel):
+    id: UUID
+    team_id: UUID
+    user_id: UUID
+    group_id: UUID
+    created_at: datetime
+    description: str
+    order_number: int
 
 class CheckboxGroup(BaseModel):
+    task: List[Task]
     main_checkbox: List[MainCheckbox]
-    checkboxes_selected_together: List[str]
-
-
-class MainCheckboxWrapper(BaseModel):
-    checkbox_group: CheckboxGroup
-
+    checkboxes_selected_together: List[UUID]
 
 class Group(BaseModel):
-    sub_checkbox: List[SubCheckbox]
+    checkbox_group: CheckboxGroup
 
-
-class ResponseItem(BaseModel):
+class DBGroupModel(BaseModel):
     group: Group
-    main_checkbox: MainCheckboxWrapper

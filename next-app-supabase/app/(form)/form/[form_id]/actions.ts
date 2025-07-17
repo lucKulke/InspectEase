@@ -20,9 +20,9 @@ export async function updateMainCheckboxValue(
   checkboxId: UUID,
   value: boolean
 ) {
-  const supabase = await createClient("form_filler");
-  const dbActions = new DBActionsFormFillerUpdate(supabase);
-  return await dbActions.updateMainCheckboxValue(checkboxId, value);
+  const supabase = await createClient();
+  const formEngine = new FormEngine(supabase);
+  formEngine.updateMainCheckbox(formId, checkboxId, value);
 }
 
 export async function updateSubCheckboxValue(
@@ -33,26 +33,6 @@ export async function updateSubCheckboxValue(
   const supabase = await createClient();
   const formEngine = new FormEngine(supabase);
   formEngine.updateSubCheckbox(formId, checkboxId, value);
-}
-
-export async function upsertSubCheckboxesValues(
-  checkboxes: ISubCheckboxResponse[]
-) {
-  const supabase = await createClient("form_filler");
-
-  const dbActions = new DBActionsFormFillerUpdate(supabase);
-  //updateFormUpdateAt(formId, supabase);
-  return await dbActions.upsertSubCheckboxesValues(checkboxes);
-}
-
-export async function upsertMainCheckboxesValues(
-  checkboxes: IMainCheckboxResponse[]
-) {
-  const supabase = await createClient("form_filler");
-
-  const dbActions = new DBActionsFormFillerUpdate(supabase);
-  //updateFormUpdateAt(formId, supabase);
-  return await dbActions.upsertMainCheckboxesValues(checkboxes);
 }
 
 export async function updateTextInputFieldValue(

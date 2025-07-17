@@ -2,34 +2,19 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 export class FormEngine {
   private formEngineDomain: string = process.env.FORM_ENGINE_DOMAIN!;
+  private enviroment: string = process.env.APP_ENVIROMENT!;
   private supabase: SupabaseClient<any, string, any>;
   constructor(supabase: SupabaseClient<any, string, any>) {
     this.supabase = supabase;
   }
 
-  async updateSubCheckbox(
-    formId: string,
-    subCheckboxId: string,
-    newValue: boolean
-  ) {
-    console.log("updateSubCheckbox called");
-    // 1. Get user session for auth
+  private async callFormEngine(url: string, body: any) {
     const { data, error } = await this.supabase.auth.getSession();
     if (error || !data.session) {
       throw new Error("User is not authenticated");
     }
 
     const accessToken = data.session.access_token;
-
-    // 2. Build request
-    const url = `http://${this.formEngineDomain}/update-sub-checkbox`;
-    const body = {
-      form_id: formId,
-      checkbox_id: subCheckboxId,
-      new_value: newValue,
-    };
-
-    // 3. Call backend
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -38,10 +23,56 @@ export class FormEngine {
       },
       body: JSON.stringify(body),
     });
+    return response;
+  }
+
+  async updateSubCheckbox(
+    formId: string,
+    subCheckboxId: string,
+    newValue: boolean
+  ) {
+    // 1. Build request
+    const url = `http${this.enviroment === "development" ? "" : "s"}://${
+      this.formEngineDomain
+    }/manual-update-checkbox/sub-checkbox`;
+    const body = {
+      form_id: formId,
+      checkbox_id: subCheckboxId,
+      new_value: newValue,
+    };
+
+    // 2. Call api
+    const response = await this.callFormEngine(url, body);
 
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Failed to update sub checkbox: ${errorText}`);
+    }
+
+    return response.json();
+  }
+
+  async updateMainCheckbox(
+    formId: string,
+    mainCheckboxId: string,
+    newValue: boolean
+  ) {
+    // 1. Build request
+    const url = `http${this.enviroment === "development" ? "" : "s"}://${
+      this.formEngineDomain
+    }/manual-update-checkbox/main-checkbox`;
+    const body = {
+      form_id: formId,
+      checkbox_id: mainCheckboxId,
+      new_value: newValue,
+    };
+
+    // 2. Call api
+    const response = await this.callFormEngine(url, body);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to update main checkbox: ${errorText}`);
     }
 
     return response.json();
