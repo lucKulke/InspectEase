@@ -1,7 +1,7 @@
 // components/Bar.tsx
 import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { ApiResponse, transcribeAudio } from "./actions";
+import { transcribeAudio } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 
 import { Mic, Square } from "lucide-react";
@@ -26,7 +26,7 @@ export function useQueueProcessor(
   queue: RecordingItem[],
   setQueue: React.Dispatch<React.SetStateAction<RecordingItem[]>>,
 
-  proccessTranscript: (userInput: string) => Promise<ApiResponse | false>
+  proccessTranscript: (userInput: string) => Promise<any | false>
 ) {
   useEffect(() => {
     const current = queue.find((item) => item.status === "queued");
@@ -59,13 +59,13 @@ export function useQueueProcessor(
         setTimeout(() => removeItem(item.id), 2000);
         return;
       }
-      const filledOutFields =
-        intent.checkboxes
-          .map((box) => box.label + ": " + box.checked)
-          .join("\n") +
-        "\n" +
-        intent.textInputFields.map((field) => field.id + ": " + field.value); // Replace with your intent recognition
-      updateItem(item.id, { intentResult: filledOutFields });
+      // const filledOutFields =
+      //   intent.checkboxes
+      //     .map((box) => box.label + ": " + box.checked)
+      //     .join("\n") +
+      //   "\n" +
+      //   intent.textInputFields.map((field) => field.id + ": " + field.value); // Replace with your intent recognition
+      // updateItem(item.id, { intentResult: filledOutFields });
 
       updateStatus(item.id, "done");
       setTimeout(() => removeItem(item.id), 5000);

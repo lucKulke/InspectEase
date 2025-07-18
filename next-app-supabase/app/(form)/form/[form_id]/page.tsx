@@ -4,7 +4,7 @@ import { DBActionsFormBuilderFetch } from "@/lib/database/form-builder/formBuild
 import { createClient } from "@/utils/supabase/server";
 import { UUID } from "crypto";
 import Link from "next/link";
-import { MainComp } from "./MainComp";
+
 import { DBActionsFormFillerFetch } from "@/lib/database/form-filler/formFillerFetch";
 import {
   IMainCheckboxResponse,
@@ -68,6 +68,7 @@ export default async function FormPage({
             checked: mainCheckbox.checked,
             prio_number: mainCheckbox.prio_number,
             annotation_id: mainCheckbox.annotation_id,
+            updated_by: mainCheckbox.updated_by,
           });
 
           mainCheckbox.sub_checkbox.forEach((subCheckbox) => {
@@ -92,7 +93,11 @@ export default async function FormPage({
 
         <FormComp
           userId={user.id}
-          sessionAwarenessFeatureUrl={`https://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/api/form-activity`}
+          sessionAwarenessFeatureUrl={`http${
+            process.env.APP_ENVIROMENT === "development" ? "" : "s"
+          }://${
+            process.env.SESSION_AWARENESS_FEATURE_DOMAIN
+          }/api/form-activity`}
           formData={formData}
           subCheckboxes={subCheckboxes}
           mainCheckboxes={mainCheckboxes}

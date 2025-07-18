@@ -24,22 +24,50 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
+import { DBActionsBucket } from "@/lib/database/bucket";
 
 export default async function FormFillerPage() {
-  const supabase = await createClient("form_filler");
+  const supabaseFormFiller = await createClient("form_filler");
+  const supabasePublic = await createClient();
+  const bucket = new DBActionsBucket(supabasePublic);
 
-  const { data: user } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabasePublic.auth.getUser();
 
-  if (!user.user) {
+  if (!user) {
     redirect("/auth/login");
   }
 
-  const dbActions = new DBActionsFormFillerFetch(supabase);
-  const wsUrl = `wss://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/ws/dashboard`;
+  const dbActionsFormFiller = new DBActionsFormFillerFetch(supabaseFormFiller);
+  const dbActionsPublic = new DBActionsPublicFetch(supabasePublic);
+  const wsUrl = `ws${
+    process.env.APP_ENVIROMENT === "development" ? "" : "s"
+  }://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/ws/dashboard`;
 
-  const { forms, formsError } = await dbActions.fetchAllFillableForms(
-    user.user?.id as UUID
+  const { forms, formsError } = await dbActionsFormFiller.fetchAllFillableForms(
+    user.id as UUID
   );
+
+  const { teamMembers, teamMembersError } =
+    await dbActionsPublic.fetchTeamMembers();
+
+  const profilePictures: Record<UUID, string | undefined> = {};
+
+  if (teamMembers) {
+    for (const member of teamMembers) {
+      console.log("member: ", member);
+      if (member.picture_id) {
+        const { bucketResponse, bucketError } =
+          await bucket.downloadProfilePicutreViaSignedUrl(member.picture_id);
+        profilePictures[member.user_id] =
+          bucketResponse?.signedUrl || undefined;
+      }
+    }
+  }
+  console.log("---");
+  console.log("profilePictures: ", profilePictures);
 
   return (
     <>
@@ -57,7 +85,13 @@ export default async function FormFillerPage() {
         </div>
       </header>
       <div className="m-5 ml-8 mr-8">
-        <FormFilter wsUrl={wsUrl} forms={forms}></FormFilter>
+        <FormFilter
+          userId={user.id}
+          teamMembers={teamMembers}
+          wsUrl={wsUrl}
+          forms={forms}
+          teamMemberProfilePictures={profilePictures}
+        ></FormFilter>
       </div>
     </>
   );

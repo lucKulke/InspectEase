@@ -21,13 +21,23 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { IUserProfileResponse } from "@/lib/database/public/publicInterface";
 
 interface FormFilterProps {
+  userId: string;
   forms: IFillableFormPlusFillableFields[] | null;
   wsUrl: string;
+  teamMembers: IUserProfileResponse[] | null;
+  teamMemberProfilePictures: Record<UUID, string | undefined>;
 }
 
-export const FormFilter = ({ forms, wsUrl }: FormFilterProps) => {
+export const FormFilter = ({
+  userId,
+  forms,
+  wsUrl,
+  teamMembers,
+  teamMemberProfilePictures,
+}: FormFilterProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabFromUrl = searchParams.get("tab");
@@ -120,13 +130,18 @@ export const FormFilter = ({ forms, wsUrl }: FormFilterProps) => {
                 .sort(compare)
                 .map((form) => (
                   <FormCard
-                    isBeeingEdited={activeForms}
+                    userId={userId}
+                    isBeeingEdited={
+                      activeForms.filter((f) => f.formId === form.id)[0]
+                    }
                     key={form.id}
                     form={form}
                     selectedForm={selectedForm}
                     setSelectedForm={setSelectedForm}
                     setOpenAlertDialog={setOpenAlertDialog}
                     setFillableForms={setFillableForms}
+                    teamMembers={teamMembers}
+                    teamMemberProfilePictures={teamMemberProfilePictures}
                   />
                 ))}
             </div>
@@ -146,13 +161,18 @@ export const FormFilter = ({ forms, wsUrl }: FormFilterProps) => {
                 .sort(compare)
                 .map((form) => (
                   <FormCard
-                    isBeeingEdited={activeForms}
+                    teamMemberProfilePictures={teamMemberProfilePictures}
+                    userId={userId}
+                    isBeeingEdited={
+                      activeForms.filter((f) => f.formId === form.id)[0]
+                    }
                     key={form.id}
                     form={form}
                     selectedForm={selectedForm}
                     setSelectedForm={setSelectedForm}
                     setOpenAlertDialog={setOpenAlertDialog}
                     setFillableForms={setFillableForms}
+                    teamMembers={teamMembers}
                   />
                 ))}
             </div>

@@ -23,7 +23,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 
-import React from "react";
+import React, { useState } from "react";
 
 import {
   ContextMenu,
@@ -38,8 +38,15 @@ import { useNotification } from "@/app/context/NotificationContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ActiveForm } from "@/lib/globalInterfaces";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
+import { IUserProfileResponse } from "@/lib/database/public/publicInterface";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Calendar, Clock, Eye, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface FormCardProps {
+  userId: string;
   form: IFillableFormPlusFillableFields;
   selectedForm: UUID | undefined;
   setSelectedForm: React.Dispatch<React.SetStateAction<UUID | undefined>>;
@@ -47,19 +54,25 @@ interface FormCardProps {
   setFillableForms: React.Dispatch<
     React.SetStateAction<IFillableFormPlusFillableFields[]>
   >;
-  isBeeingEdited: ActiveForm[];
+  isBeeingEdited: ActiveForm;
+  teamMembers: IUserProfileResponse[] | null;
+  teamMemberProfilePictures: Record<UUID, string | undefined>;
 }
 
 export const FormCard = ({
+  userId,
   form,
   selectedForm,
   setSelectedForm,
   setOpenAlertDialog,
   setFillableForms,
   isBeeingEdited,
+  teamMembers,
+  teamMemberProfilePictures,
 }: FormCardProps) => {
   const router = useRouter();
   const { showNotification } = useNotification();
+  const [isExpanded, setIsExpanded] = useState(false);
   let max = 0;
   let filled = 0;
   form.main_section.forEach((main) => {
@@ -132,6 +145,28 @@ export const FormCard = ({
     }
   };
 
+  const getInitials = (name: string | undefined) => {
+    if (!name) return "";
+    return name
+      .split(" ")
+      .map((word) => word.charAt(0))
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    setIsExpanded(!isExpanded);
+  };
+
+  console.log("user id", userId);
+  let currentUsers = isBeeingEdited
+    ? isBeeingEdited.users.map((editingUserId) =>
+        teamMembers?.find((member) => member.user_id === editingUserId)
+      )
+    : [];
+  currentUsers = currentUsers.filter((user) => user?.user_id !== userId);
+  console.log("currentUsers", currentUsers); //currentUsers
   return (
     <ContextMenu modal={false}>
       <ContextMenuTrigger>
@@ -139,12 +174,116 @@ export const FormCard = ({
           key={form.id}
           className="h-full hover:shadow-md transition-shadow relative max-w-[400px] overflow-hidden"
         >
-          {isBeeingEdited.filter((f) => f.formId === form.id).length > 0 && (
-            <div className="absolute top-2 right-2 ">
-              <span className="relative flex size-3">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
-                <span className="relative inline-flex size-3 rounded-full bg-sky-500"></span>
-              </span>
+          {/* Current Users Indicator Overlay */}
+          {isBeeingEdited && currentUsers.length > 0 && (
+            <div className="absolute top-2 right-2 z-10">
+              <motion.div
+                className="bg-blue-500 text-white rounded-lg shadow-lg overflow-hidden"
+                layout
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              >
+                {/* Collapsed State */}
+
+                <motion.div
+                  className="flex items-center gap-1 px-2 py-1 cursor-pointer hover:bg-blue-600 transition-colors"
+                  onClick={handleOverlayClick}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="flex -space-x-1">
+                    {currentUsers!.slice(0, 3).map((user, index) => (
+                      <Avatar
+                        key={user?.user_id}
+                        className="h-5 w-5 border border-white"
+                      >
+                        <AvatarImage
+                          src={user && teamMemberProfilePictures[user?.user_id]}
+                        />
+                        <AvatarFallback className="text-xs bg-blue-600 text-white">
+                          {getInitials(
+                            user?.first_name && user?.last_name
+                              ? user?.first_name + " " + user?.last_name
+                              : user?.email
+                          )}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {isBeeingEdited.activeUsers > 3 && (
+                      <div className="h-5 w-5 bg-blue-700 rounded-full border border-white flex items-center justify-center">
+                        <span className="text-xs font-bold">
+                          +{isBeeingEdited.activeUsers - 3}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Eye className="h-3 w-3" />
+                    <span className="text-xs font-medium">
+                      {isBeeingEdited.activeUsers === 1
+                        ? false
+                        : `${isBeeingEdited.activeUsers} users`}
+                    </span>
+                    <motion.div
+                      animate={{ rotate: isExpanded ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown className="h-3 w-3" />
+                    </motion.div>
+                  </div>
+                </motion.div>
+
+                {/* Expanded State */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="border-t border-blue-400"
+                    >
+                      <div className="p-2 space-y-2 max-h-48 overflow-y-auto">
+                        {currentUsers &&
+                          currentUsers.map((user, index) => (
+                            <motion.div
+                              key={user?.user_id}
+                              initial={{ x: -20, opacity: 0 }}
+                              animate={{ x: 0, opacity: 1 }}
+                              transition={{ delay: index * 0.1, duration: 0.2 }}
+                              className="flex items-center gap-2 p-1 rounded hover:bg-blue-600 transition-colors"
+                            >
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage
+                                  src={
+                                    user &&
+                                    teamMemberProfilePictures[user?.user_id]
+                                  }
+                                />
+                                <AvatarFallback className="text-xs bg-blue-600 text-white">
+                                  {getInitials(
+                                    user?.first_name + " " + user?.last_name
+                                  )}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <span className="text-xs font-medium truncate">
+                                  {user?.first_name + " " + user?.last_name}
+                                </span>
+                                <span className="text-xs opacity-75 truncate">
+                                  {user?.email}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 text-green-300">
+                                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                                <span className="text-xs">Active</span>
+                              </div>
+                            </motion.div>
+                          ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             </div>
           )}
           <div className="flex justify-between">

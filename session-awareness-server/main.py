@@ -41,6 +41,7 @@ class ConnectionManager:
             if users:  # Only include forms with active users
                 active_forms.append({
                     "formId": form_id,
+                    "users": list(users.keys()),
                     "activeUsers": len(users),
                     "lastActive": max(users.values())
                 })

@@ -40,6 +40,7 @@ export interface IUserProfile {
 
 export interface ActiveForm {
   formId: string;
+  users: [UUID];
   activeUsers: number;
   lastActive: number;
 }

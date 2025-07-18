@@ -17,6 +17,7 @@ class SubCheckbox(BaseModel):
     user_id: UUID
     created_at: datetime
     main_checkbox_id: UUID
+    updated_by: str
 
 class MainCheckbox(BaseModel):
     id: UUID
@@ -31,6 +32,7 @@ class MainCheckbox(BaseModel):
     order_number: int
     sub_checkbox: List[SubCheckbox]
     annotation_id: UUID
+    updated_by: str
 
 class Task(BaseModel):
     id: UUID

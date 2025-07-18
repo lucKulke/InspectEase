@@ -16,6 +16,7 @@ export function useWebSocket<T>(url: string) {
     ws.onmessage = (event) => {
       try {
         const parsedData = JSON.parse(event.data);
+        console.log(parsedData.data);
         setData(parsedData.data);
       } catch (error) {
         console.error("Failed to parse WebSocket message:", error);

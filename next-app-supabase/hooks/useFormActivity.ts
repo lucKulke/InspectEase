@@ -24,7 +24,7 @@ export function useFormActivity({ formId, userId, url }: FormActivityProps) {
     registerActivity();
 
     // Set up polling interval for heartbeat (every 4 seconds)
-    const intervalId = setInterval(registerActivity, 4000);
+    const intervalId = setInterval(registerActivity, 2000);
 
     // Cleanup function
     return () => {

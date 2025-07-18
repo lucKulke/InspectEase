@@ -31,7 +31,7 @@ def find_all_sub_by_task(main_checkboxes: list[MainCheckbox], task_id) -> list[S
         if sub["task_id"] == task_id
     ]
     
-def validate_sub_checkbox_selection(selected_id: str,new_value: bool, db_item: DBGroupModel) -> List[SubCheckbox]:
+def validate_sub_checkbox_selection(selected_id: str,new_value: bool, db_item: DBGroupModel, user_id: str) -> List[SubCheckbox]:
     # Extract data
     result: List[SubCheckbox] = []
     
@@ -65,6 +65,7 @@ def validate_sub_checkbox_selection(selected_id: str,new_value: bool, db_item: D
             checkbox["checked"] = True
         else:
             checkbox["checked"] = False
+        checkbox["updated_by"] = user_id
         result.append(checkbox)
             
     return result
@@ -74,7 +75,8 @@ def validate_sub_checkbox_selection(selected_id: str,new_value: bool, db_item: D
 def select_main_checkbox_for_section(
     main_checkboxes: List[dict],
     task_ids: List[str],
-    selectable_together: List[str]
+    selectable_together: List[str],
+    user_id: str
 ) -> Optional[List[dict]]:
     """
     Determine which main checkboxes to select:
@@ -92,7 +94,9 @@ def select_main_checkbox_for_section(
                 task_coverage[str(sub_cb["task_id"])] = True
 
     if not all(task_coverage.values()):
-        return None
+        for checkbox in main_checkboxes:
+            checkbox.pop("sub_checkbox", None)
+        return main_checkboxes
 
     # Find all main checkboxes that have at least one checked sub-checkbox
     candidates = [cb for cb in main_checkboxes if any(sub["checked"] for sub in cb["sub_checkbox"])]
@@ -118,23 +122,25 @@ def select_main_checkbox_for_section(
     
     # Remove sub_checkbox key
     for checkbox in main_checkboxes:
+        checkbox["updated_by"] = user_id
         checkbox.pop("sub_checkbox", None)
 
     return main_checkboxes
 
 
   
-def auto_select_main_checkbox_selection(db_item: DBGroupModel) -> List[MainCheckbox]:
+def auto_select_main_checkbox_selection(db_item: DBGroupModel, user_id: str) -> List[MainCheckbox]:
     all_main: List[MainCheckbox] = db_item["group"]["checkbox_group"]["main_checkbox"]
     task_ids = [str(task["id"]) for task in db_item["group"]["checkbox_group"]["task"]]
-    result = select_main_checkbox_for_section(all_main, task_ids, db_item["group"]["checkbox_group"]["checkboxes_selected_together"])
+    result = select_main_checkbox_for_section(all_main, task_ids, db_item["group"]["checkbox_group"]["checkboxes_selected_together"], user_id)
     return result
 
 
     
     
 @router.post("/sub-checkbox")
-async def update_checkbox(payload: CheckboxUpdatePayload, user: Session = Depends(get_current_user)):
+async def update_sub_checkbox(payload: CheckboxUpdatePayload, user: Session = Depends(get_current_user)):
+    user_id = user.user_id
     form_id = payload.form_id
     checkbox_id = payload.checkbox_id
     new_value = payload.new_value
@@ -154,7 +160,7 @@ async def update_checkbox(payload: CheckboxUpdatePayload, user: Session = Depend
               
         data: DBGroupModel = db_fetch_sub_checkbox_data_response.data
         # sub_checkbox_data: SubCheckboxDataResponseItem = db_fetch_sub_checkbox_data_response.data
-        updateable_sub_checkboxes = validate_sub_checkbox_selection(checkbox_id,new_value, data)
+        updateable_sub_checkboxes = validate_sub_checkbox_selection(checkbox_id,new_value, data, user_id)
         # ✅ Apply updates to db_item before selecting main checkbox
         for updated in updateable_sub_checkboxes:
             for main_cb in data["group"]["checkbox_group"]["main_checkbox"]:
@@ -164,7 +170,7 @@ async def update_checkbox(payload: CheckboxUpdatePayload, user: Session = Depend
         
         db_update_sub_checkbox_response = client.schema("form_filler").table("sub_checkbox").upsert(updateable_sub_checkboxes).execute()
 
-        updateable_main_checkboxes = auto_select_main_checkbox_selection(data)
+        updateable_main_checkboxes = auto_select_main_checkbox_selection(data, user_id)
         
         if updateable_main_checkboxes:
             db_update_main_checkbox_response = client.schema("form_filler").table("main_checkbox").upsert(updateable_main_checkboxes).execute()
@@ -182,7 +188,8 @@ async def update_checkbox(payload: CheckboxUpdatePayload, user: Session = Depend
 
 
 @router.post("/main-checkbox")
-async def update_checkbox(payload: CheckboxUpdatePayload, user: Session = Depends(get_current_user)):
+async def update_main_checkbox(payload: CheckboxUpdatePayload, user: Session = Depends(get_current_user)):
+    user_id = user.user_id
     form_id = payload.form_id
     checkbox_id = payload.checkbox_id
     new_value = payload.new_value
@@ -214,10 +221,7 @@ async def update_checkbox(payload: CheckboxUpdatePayload, user: Session = Depend
                 # Only uncheck if NOT in allowed_together
                 if main_checkbox["id"] not in allowed_together:
                     main_checkbox["checked"] = False
-
-        
-        print(flush=True)
-        print(main_checkboxes, flush=True)
+            main_checkbox["updated_by"] = user_id
         
             
         db_update_main_checkbox_response = client.schema("form_filler").table("main_checkbox").upsert(main_checkboxes).execute()
@@ -227,4 +231,4 @@ async def update_checkbox(payload: CheckboxUpdatePayload, user: Session = Depend
         print(f"Database error: {e}", flush=True)
         raise HTTPException(status_code=500, detail=f"Database operation failed: {str(e)}")
 
-    return {"status": "success", "updated_main_checkboxes": db_update_main_checkbox_response}
+    return {"status": "success", "updated_main_checkboxes": db_update_main_checkbox_response.data}
