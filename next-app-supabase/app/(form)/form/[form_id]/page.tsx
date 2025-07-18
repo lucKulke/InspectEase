@@ -13,6 +13,7 @@ import {
 } from "@/lib/database/form-filler/formFillerInterfaces";
 import { FormComp } from "./Form";
 import { redirect } from "next/navigation";
+import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
 
 export default async function FormPage({
   params,
@@ -22,6 +23,7 @@ export default async function FormPage({
   const formId = (await params).form_id;
 
   const supabase = await createClient();
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -32,9 +34,8 @@ export default async function FormPage({
   const formBuilderSupabase = await createClient("form_builder");
   const formFillerSupabase = await createClient("form_filler");
   const supabaseStorage = await createClient();
-  const formBuilderDbActions = new DBActionsFormBuilderFetch(
-    formBuilderSupabase
-  );
+
+  const pubilcFetch = new DBActionsPublicFetch(supabase);
   const formFillerDbActions = new DBActionsFormFillerFetch(formFillerSupabase);
   const storageActions = new DBActionsBucket(supabaseStorage);
 
@@ -81,6 +82,31 @@ export default async function FormPage({
     });
   });
 
+  const wsUrl = `ws${
+    process.env.APP_ENVIROMENT === "development" ? "" : "s"
+  }://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/ws/form/${formId}?token=${
+    process.env.SESSION_AWARENESS_FEATURE_TOKEN
+  }`;
+
+  const { teamMembers, teamMembersError } =
+    await pubilcFetch.fetchTeamMembers();
+
+  const profilePictures: Record<UUID, string | undefined> = {};
+
+  if (teamMembers) {
+    for (const member of teamMembers) {
+      console.log("member: ", member);
+      if (member.picture_id) {
+        const { bucketResponse, bucketError } =
+          await storageActions.downloadProfilePicutreViaSignedUrl(
+            member.picture_id
+          );
+        profilePictures[member.user_id] =
+          bucketResponse?.signedUrl || undefined;
+      }
+    }
+  }
+
   return (
     <div className="">
       <Link className="ml-2" href="/form-filler">
@@ -93,15 +119,20 @@ export default async function FormPage({
 
         <FormComp
           userId={user.id}
-          sessionAwarenessFeatureUrl={`http${
+          sessionAwarenessRegistrationUrl={`http${
             process.env.APP_ENVIROMENT === "development" ? "" : "s"
           }://${
             process.env.SESSION_AWARENESS_FEATURE_DOMAIN
-          }/api/form-activity`}
+          }/api/form-activity?token=${
+            process.env.SESSION_AWARENESS_FEATURE_TOKEN
+          }`}
           formData={formData}
           subCheckboxes={subCheckboxes}
           mainCheckboxes={mainCheckboxes}
           textInputFields={textInputFields}
+          sessionAwarenessMonitoringWsUrl={wsUrl}
+          teamMembers={teamMembers}
+          profilePictures={profilePictures}
         ></FormComp>
       </div>
     </div>

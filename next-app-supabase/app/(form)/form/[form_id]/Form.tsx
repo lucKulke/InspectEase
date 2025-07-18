@@ -37,6 +37,10 @@ import { motion, AnimatePresence } from "framer-motion";
 //import Bar, { useQueueProcessor, QueueLog } from "./Bar";
 import { RecordingItem } from "./Bar";
 import { createClient } from "@/utils/supabase/client";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { ActiveForm } from "@/lib/globalInterfaces";
+import { IUserProfileResponse } from "@/lib/database/public/publicInterface";
+import UserIndicatorOverlay from "@/components/UserIndicatorOverlay";
 
 interface FormCompProps {
   userId: string;
@@ -44,24 +48,33 @@ interface FormCompProps {
   subCheckboxes: Record<string, ISubCheckboxResponse[]>;
   mainCheckboxes: Record<string, IMainCheckboxResponse[]>;
   textInputFields: Record<string, ITextInputResponse[]>;
-  sessionAwarenessFeatureUrl: string;
+  sessionAwarenessRegistrationUrl: string;
+  sessionAwarenessMonitoringWsUrl: string;
+  teamMembers: IUserProfileResponse[] | null;
+  profilePictures: Record<UUID, string | undefined>;
 }
 
 export const FormComp = ({
   userId,
-  sessionAwarenessFeatureUrl,
+  sessionAwarenessRegistrationUrl,
+  sessionAwarenessMonitoringWsUrl,
   formData,
   subCheckboxes,
   mainCheckboxes,
   textInputFields,
+  teamMembers,
+  profilePictures,
 }: FormCompProps) => {
   const supabase = createClient();
   // Register form activity and start heartbeat
   useFormActivity({
-    formId: formData.id as string,
+    formId: formData.id,
     userId,
-    url: sessionAwarenessFeatureUrl,
+    url: sessionAwarenessRegistrationUrl,
   });
+  const { data: activeForms, isConnected } = useWebSocket<ActiveForm>(
+    sessionAwarenessMonitoringWsUrl
+  );
 
   const { showNotification } = useNotification();
   const [fillableSubCheckboxes, setFillableSubCheckboxes] =
@@ -573,9 +586,28 @@ export const FormComp = ({
   }
 
   const [queue, setQueue] = useState<RecordingItem[]>([]);
+  // useEffect(() => {
+  //   console.log("activeForms", activeForms);
+  // }, [activeForms]);
+
+  let currentUsers = activeForms
+    ? activeForms.users.map((editingUserId) =>
+        teamMembers?.find((member) => member.user_id === editingUserId)
+      )
+    : [];
+  currentUsers = currentUsers.filter((user) => user?.user_id !== userId);
 
   return (
     <div className="mb-36">
+      {currentUsers && (
+        <UserIndicatorOverlay
+          isBeeingEdited={activeForms}
+          currentUsers={currentUsers as IUserProfileResponse[]}
+          teamMemberProfilePictures={profilePictures as Record<UUID, string>}
+          position="top-right"
+          type="fixed"
+        ></UserIndicatorOverlay>
+      )}
       <ul className="space-y-2">
         {formData.main_section.sort(sortMainSections).map((mainSection) => (
           <li key={mainSection.id}>
