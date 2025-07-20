@@ -13,6 +13,7 @@ import {
 } from "@/lib/database/form-filler/formFillerInterfaces";
 import { FormComp } from "./Form";
 import { redirect } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
 import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
 
 export default async function FormPage({
@@ -107,6 +108,8 @@ export default async function FormPage({
     }
   }
 
+  const sessionId = uuidv4();
+
   return (
     <div className="">
       <Link className="ml-2" href="/form-filler">
@@ -118,6 +121,7 @@ export default async function FormPage({
         </div>
 
         <FormComp
+          sessionId={sessionId}
           userId={user.id}
           sessionAwarenessRegistrationUrl={`http${
             process.env.APP_ENVIROMENT === "development" ? "" : "s"

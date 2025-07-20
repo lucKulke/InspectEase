@@ -1,6 +1,7 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -21,14 +22,17 @@ import {
   ITextInputResponse,
   LogEntry,
 } from "@/lib/database/form-filler/formFillerInterfaces";
-import { UUID } from "crypto";
+
 import { ChevronDown, ChevronRight } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { act, use, useEffect, useState } from "react";
 import { TextInputField } from "./TextInputField";
 import {
+  takeoverSession,
   updateMainCheckboxValue,
   updateSubCheckboxValue,
   updateTextInputFieldValue,
+  upsertMainCheckboxesValues,
+  upsertSubCheckboxesValues,
 } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { Separator } from "@/components/ui/separator";
@@ -41,8 +45,11 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { ActiveForm } from "@/lib/globalInterfaces";
 import { IUserProfileResponse } from "@/lib/database/public/publicInterface";
 import UserIndicatorOverlay from "@/components/UserIndicatorOverlay";
+import { v4 as uuidv4 } from "uuid";
+import { UUID } from "crypto";
 
 interface FormCompProps {
+  sessionId: string;
   userId: string;
   formData: IFormData;
   subCheckboxes: Record<string, ISubCheckboxResponse[]>;
@@ -53,8 +60,16 @@ interface FormCompProps {
   teamMembers: IUserProfileResponse[] | null;
   profilePictures: Record<UUID, string | undefined>;
 }
-
+const getSessionId = () => {
+  let sessionId = sessionStorage.getItem("formSessionId");
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    sessionStorage.setItem("formSessionId", sessionId);
+  }
+  return sessionId;
+};
 export const FormComp = ({
+  sessionId,
   userId,
   sessionAwarenessRegistrationUrl,
   sessionAwarenessMonitoringWsUrl,
@@ -65,16 +80,52 @@ export const FormComp = ({
   teamMembers,
   profilePictures,
 }: FormCompProps) => {
+  const currentSessionId = getSessionId();
   const supabase = createClient();
+  const [isMonitoring, setIsMonitoring] = useState(true);
   // Register form activity and start heartbeat
   useFormActivity({
     formId: formData.id,
     userId,
     url: sessionAwarenessRegistrationUrl,
+    sessionId: currentSessionId,
   });
   const { data: activeForms, isConnected } = useWebSocket<ActiveForm>(
     sessionAwarenessMonitoringWsUrl
   );
+
+  let allUsers = activeForms?.users;
+  let currentUsers: IUserProfileResponse[] = [];
+  let sessionType: string = "Unknown";
+  if (allUsers) {
+    Object.entries(allUsers).forEach(([editingUserIds, sessions]) => {
+      let temp = teamMembers?.find(
+        (member) => member.user_id === editingUserIds
+      );
+      if (editingUserIds === userId) {
+        Object.values(sessions).forEach((session) => {
+          sessionType = session[currentSessionId];
+        });
+      }
+      if (temp) currentUsers.push(temp);
+    });
+  }
+
+  currentUsers = currentUsers.filter((user) => user?.user_id !== userId);
+
+  const sendSessionTakeOverCommand = async () => {
+    takeoverSession(formData.id, userId, currentSessionId);
+  };
+  const monitoring = sessionType === "monitor";
+
+  useEffect(() => {
+    console.log("------- monitoring state ----", monitoring);
+    console.log("------- session type ----", sessionType); // Log the sessionType
+    setIsMonitoring(sessionType === "monitor");
+  }, [monitoring]);
+  // const [monitoring, setMonitoring] = useState<boolean>(
+
+  // );
 
   const { showNotification } = useNotification();
   const [fillableSubCheckboxes, setFillableSubCheckboxes] =
@@ -161,7 +212,7 @@ export const FormComp = ({
         (payload) => {
           const { eventType, new: newRow, old } = payload;
           console.log("main checkbox payload", newRow);
-          if (userId === newRow.updated_by) return;
+          //if (userId === newRow.updated_by) return;
           handleAutoUpdateMainCheckbox(
             newRow.id,
             newRow.checked,
@@ -179,8 +230,8 @@ export const FormComp = ({
         },
         (payload) => {
           const { eventType, new: newRow, old } = payload;
-          console.log("sub checkbox payload", newRow);
-          if (userId === newRow.updated_by) return;
+          //console.log("sub checkbox payload", newRow);
+          //if (userId === newRow.updated_by) return;
           handleAutoUpdateSubCheckbox(
             newRow.id,
             newRow.checked,
@@ -199,7 +250,7 @@ export const FormComp = ({
         (payload) => {
           const { eventType, new: newRow, old } = payload;
           console.log("text inputpayload", newRow);
-          if (userId === newRow.updated_by) return;
+          //if (userId === newRow.updated_by) return;
           handleAutoUpdateTextInputField(
             newRow.id,
             newRow.value,
@@ -225,7 +276,7 @@ export const FormComp = ({
   }, [aiSelectedFields]);
 
   // ------------- HANDLE CHECKBOX STATE CHANGES FOR BETTER PERFORMANCE --------------
-  const handleCheckSubCheckbox = (
+  const handleCheckSubCheckbox = async (
     mainCheckboxId: UUID,
     checkboxId: UUID,
     selectionGroup: ICheckboxGroupData,
@@ -316,8 +367,9 @@ export const FormComp = ({
     }
 
     setFillableSubCheckboxes(copy);
-
     handleAutoCheckMainCheckbox(selectionGroup);
+    await updateSubCheckboxValue(formData.id, checkboxId, newValue);
+    await upsertSubCheckboxesValues(checkboxesThatNeedToBeUnchecked);
   };
 
   const currentFillState = (selectionGroup: ICheckboxGroupData) => {
@@ -413,6 +465,7 @@ export const FormComp = ({
       });
 
       setFillableMainCheckboxes(copy);
+      await upsertMainCheckboxesValues(upsertList);
     } else {
       // uncheck all main checkboxes
 
@@ -426,7 +479,44 @@ export const FormComp = ({
         return mainCheckbox;
       });
       setFillableMainCheckboxes(copy);
+      await upsertMainCheckboxesValues(unCheck);
     }
+  };
+
+  const handleCheckMainCheckbox = async (
+    checkboxId: UUID,
+    selectionGroup: ICheckboxGroupData
+  ) => {
+    let newValue: boolean = false;
+    const copy = { ...fillableMainCheckboxes };
+    let unCheck: IMainCheckboxResponse[] = [];
+
+    copy[selectionGroup.id] = copy[selectionGroup.id].map((mainCheckbox) => {
+      if (mainCheckbox.id === checkboxId) {
+        mainCheckbox.checked = !mainCheckbox.checked;
+        newValue = mainCheckbox.checked;
+      } else {
+        if (selectionGroup.checkboxes_selected_together?.includes(checkboxId)) {
+          if (
+            !selectionGroup.checkboxes_selected_together?.includes(
+              mainCheckbox.id
+            )
+          ) {
+            mainCheckbox.checked = false;
+            unCheck.push(mainCheckbox);
+          }
+        } else {
+          mainCheckbox.checked = false;
+          unCheck.push(mainCheckbox);
+        }
+      }
+
+      return mainCheckbox;
+    });
+
+    setFillableMainCheckboxes(copy);
+    await updateMainCheckboxValue(formData.id, checkboxId, newValue);
+    await upsertMainCheckboxesValues(unCheck);
   };
 
   // ----------------------------
@@ -486,58 +576,6 @@ export const FormComp = ({
     setFillableTextInputFields(copy);
   };
 
-  const handleManualUpdateMainCheckbox = async (
-    checkboxId: UUID,
-    selectionGroup: ICheckboxGroupData
-  ) => {
-    let newValue: boolean = false;
-    const copy = { ...fillableMainCheckboxes };
-    let unCheck: IMainCheckboxResponse[] = [];
-
-    copy[selectionGroup.id] = copy[selectionGroup.id].map((mainCheckbox) => {
-      if (mainCheckbox.id === checkboxId) {
-        mainCheckbox.checked = !mainCheckbox.checked;
-        newValue = mainCheckbox.checked;
-      } else {
-        if (selectionGroup.checkboxes_selected_together?.includes(checkboxId)) {
-          if (
-            !selectionGroup.checkboxes_selected_together?.includes(
-              mainCheckbox.id
-            )
-          ) {
-            mainCheckbox.checked = false;
-            unCheck.push(mainCheckbox);
-          }
-        } else {
-          mainCheckbox.checked = false;
-          unCheck.push(mainCheckbox);
-        }
-      }
-
-      return mainCheckbox;
-    });
-
-    setFillableMainCheckboxes(copy);
-    await updateMainCheckboxValue(formData.id, checkboxId, newValue);
-  };
-
-  const handleManualUpdateSubCheckbox = async (
-    currentCheckbox: ISubCheckboxResponse,
-    selectionGroup: ICheckboxGroupData
-  ) => {
-    handleCheckSubCheckbox(
-      currentCheckbox.main_checkbox_id,
-      currentCheckbox.id,
-      selectionGroup,
-      currentCheckbox.task_id
-    );
-    await updateSubCheckboxValue(
-      formData.id,
-      currentCheckbox.id,
-      currentCheckbox.checked!
-    );
-  };
-
   function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
@@ -586,19 +624,25 @@ export const FormComp = ({
   }
 
   const [queue, setQueue] = useState<RecordingItem[]>([]);
+  //console.log("active forms", activeForms);
+
   // useEffect(() => {
   //   console.log("activeForms", activeForms);
   // }, [activeForms]);
 
-  let currentUsers = activeForms
-    ? activeForms.users.map((editingUserId) =>
-        teamMembers?.find((member) => member.user_id === editingUserId)
-      )
-    : [];
-  currentUsers = currentUsers.filter((user) => user?.user_id !== userId);
+  // ); // remove currentcurrentUsers
+  // console.log("currentUserMoreThanOneSession", currentUserMoreThanOneSession);
+  // if (currentUserMoreThanOneSession.length > 1) {
+  //   //console.log("currentUserMoreThanOneSession", currentUserMoreThanOneSession);
+  // }
+  // currentUsers = currentUsers.filter((user) => user?.user_id !== userId);
 
   return (
     <div className="mb-36">
+      {monitoring && (
+        <button onClick={sendSessionTakeOverCommand}>Takeover</button>
+      )}
+
       {currentUsers && (
         <UserIndicatorOverlay
           isBeeingEdited={activeForms}
@@ -793,6 +837,9 @@ export const FormComp = ({
                                                                               className="font-medium text-center whitespace-nowrap py-4"
                                                                             >
                                                                               <Checkbox
+                                                                                disabled={
+                                                                                  monitoring
+                                                                                }
                                                                                 checked={
                                                                                   currentCheckbox.checked
                                                                                 }
@@ -809,9 +856,11 @@ export const FormComp = ({
                                                                                       currentCheckbox.id,
                                                                                     ]
                                                                                   );
-                                                                                  handleManualUpdateSubCheckbox(
-                                                                                    currentCheckbox,
-                                                                                    selectionGroup
+                                                                                  handleCheckSubCheckbox(
+                                                                                    mainCheckbox.id,
+                                                                                    currentCheckbox.id,
+                                                                                    selectionGroup,
+                                                                                    task.id
                                                                                   );
                                                                                 }}
                                                                               ></Checkbox>
@@ -848,11 +897,14 @@ export const FormComp = ({
                                                                       }
                                                                     >
                                                                       <Checkbox
+                                                                        disabled={
+                                                                          monitoring
+                                                                        }
                                                                         checked={
                                                                           mainCheckbox.checked
                                                                         }
                                                                         onClick={() => {
-                                                                          handleManualUpdateMainCheckbox(
+                                                                          handleCheckMainCheckbox(
                                                                             mainCheckbox.id,
                                                                             selectionGroup
                                                                           );
@@ -892,6 +944,7 @@ export const FormComp = ({
                                                 return (
                                                   <li key={inputField.id}>
                                                     <TextInputField
+                                                      disabled={monitoring}
                                                       aiSelectedFields={
                                                         aiSelectedFields
                                                       }

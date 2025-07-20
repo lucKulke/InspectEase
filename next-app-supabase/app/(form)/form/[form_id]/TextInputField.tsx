@@ -15,12 +15,14 @@ interface TextInputFieldProps {
     value: string
   ) => Promise<void>;
   aiSelectedFields: UUID[];
+  disabled: boolean;
 }
 
 export const TextInputField = ({
   fillableInputField,
   aiSelectedFields,
   handleSaveNewTextInput,
+  disabled,
 }: TextInputFieldProps) => {
   const [input, setInput] = useState<string>(fillableInputField.value ?? "");
   const [valueChanged, setValueChanged] = useState<boolean>(false);
@@ -56,6 +58,7 @@ export const TextInputField = ({
     >
       <p className="w-2/3">{fillableInputField.label}</p>
       <Input
+        disabled={disabled}
         className="w-1/3"
         placeholder={fillableInputField.placeholder_text ?? ""}
         value={input}
@@ -67,7 +70,7 @@ export const TextInputField = ({
         </Button>
       ) : (
         <>
-          {valueChanged ? (
+          {!disabled ? (
             <Button
               onClick={() => {
                 handleSave();

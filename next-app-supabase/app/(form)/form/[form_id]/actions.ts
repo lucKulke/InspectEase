@@ -14,26 +14,58 @@ import { SupabaseError, WhisperResponse } from "@/lib/globalInterfaces";
 import { createClient } from "@/utils/supabase/server";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { UUID } from "crypto";
+import axios from "axios";
 
-export async function updateMainCheckboxValue(
-  formId: UUID,
-  checkboxId: UUID,
-  value: boolean
-) {
-  const supabase = await createClient();
-  const formEngine = new FormEngine(supabase);
-  formEngine.updateMainCheckbox(formId, checkboxId, value);
+interface TakeoverRequest {
+  form_id: string;
+  user_id: string;
+  session_id: string;
 }
+export const takeoverSession = async (
+  formId: string,
+  userId: string,
+  sessionId: string
+): Promise<{ status: string; message: string }> => {
+  try {
+    const response = await axios.post<{ status: string; message: string }>(
+      `http${process.env.APP_ENVIROMENT === "development" ? "" : "s"}://${
+        process.env.SESSION_AWARENESS_FEATURE_DOMAIN
+      }/api/takeover?token=${process.env.SESSION_AWARENESS_FEATURE_TOKEN}`,
+      {
+        form_id: formId,
+        user_id: userId,
+        session_id: sessionId,
+      } as TakeoverRequest
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "Failed to takeover session:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
 
-export async function updateSubCheckboxValue(
-  formId: UUID,
-  checkboxId: UUID,
-  value: boolean
-) {
-  const supabase = await createClient();
-  const formEngine = new FormEngine(supabase);
-  formEngine.updateSubCheckbox(formId, checkboxId, value);
-}
+// export async function updateMainCheckboxValue(
+//   formId: UUID,
+//   checkboxId: UUID,
+//   value: boolean
+// ) {
+//   const supabase = await createClient();
+//   const formEngine = new FormEngine(supabase);
+//   formEngine.updateMainCheckbox(formId, checkboxId, value);
+// }
+
+// export async function updateSubCheckboxValue(
+//   formId: UUID,
+//   checkboxId: UUID,
+//   value: boolean
+// ) {
+//   const supabase = await createClient();
+//   const formEngine = new FormEngine(supabase);
+//   formEngine.updateSubCheckbox(formId, checkboxId, value);
+// }
 
 export async function updateTextInputFieldValue(
   formId: UUID,
@@ -45,6 +77,48 @@ export async function updateTextInputFieldValue(
   const dbActions = new DBActionsFormFillerUpdate(supabase);
 
   return await dbActions.updateTextInputField(textInputFieldId, value);
+}
+
+export async function updateMainCheckboxValue(
+  formId: UUID,
+  checkboxId: UUID,
+  value: boolean
+) {
+  const supabase = await createClient("form_filler");
+
+  const dbActions = new DBActionsFormFillerUpdate(supabase);
+  return await dbActions.updateMainCheckboxValue(checkboxId, value);
+}
+
+export async function updateSubCheckboxValue(
+  formId: UUID,
+  checkboxId: UUID,
+  value: boolean
+) {
+  const supabase = await createClient("form_filler");
+
+  const dbActions = new DBActionsFormFillerUpdate(supabase);
+  return await dbActions.updateSubCheckboxValue(checkboxId, value);
+}
+
+export async function upsertSubCheckboxesValues(
+  checkboxes: ISubCheckboxResponse[]
+) {
+  const supabase = await createClient("form_filler");
+
+  const dbActions = new DBActionsFormFillerUpdate(supabase);
+  //updateFormUpdateAt(formId, supabase);
+  return await dbActions.upsertSubCheckboxesValues(checkboxes);
+}
+
+export async function upsertMainCheckboxesValues(
+  checkboxes: IMainCheckboxResponse[]
+) {
+  const supabase = await createClient("form_filler");
+
+  const dbActions = new DBActionsFormFillerUpdate(supabase);
+  //updateFormUpdateAt(formId, supabase);
+  return await dbActions.upsertMainCheckboxesValues(checkboxes);
 }
 
 // intent recognition

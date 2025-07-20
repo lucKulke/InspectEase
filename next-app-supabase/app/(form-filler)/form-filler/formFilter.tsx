@@ -6,7 +6,7 @@ import { IFillableFormPlusFillableFields } from "@/lib/database/form-filler/form
 import { FormCard } from "./formCard";
 import { useNotification } from "@/app/context/NotificationContext";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { ActiveForm } from "@/lib/globalInterfaces";
+import { ActiveForm, DashboardActiveForm } from "@/lib/globalInterfaces";
 import { useRouter, useSearchParams } from "next/navigation";
 import { UUID } from "crypto";
 import { deleteForms } from "./actions";
@@ -44,8 +44,8 @@ export const FormFilter = ({
   const [activeTab, setActiveTab] = useState(tabFromUrl || "inProgress");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data, isConnected } = useWebSocket<ActiveForm[]>(wsUrl);
-  const [activeForms, setActiveForms] = useState<ActiveForm[]>([]);
+  const { data, isConnected } = useWebSocket<DashboardActiveForm[]>(wsUrl);
+  const [activeForms, setActiveForms] = useState<DashboardActiveForm[]>([]);
   const { showNotification } = useNotification();
 
   const [fillableForms, setFillableForms] = useState<

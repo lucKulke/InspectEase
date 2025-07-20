@@ -36,7 +36,7 @@ import { UUID } from "crypto";
 import { fillPDF, updateFormProgressState } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ActiveForm } from "@/lib/globalInterfaces";
+import { ActiveForm, DashboardActiveForm } from "@/lib/globalInterfaces";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 import { IUserProfileResponse } from "@/lib/database/public/publicInterface";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +55,7 @@ interface FormCardProps {
   setFillableForms: React.Dispatch<
     React.SetStateAction<IFillableFormPlusFillableFields[]>
   >;
-  isBeeingEdited: ActiveForm;
+  isBeeingEdited: DashboardActiveForm;
   teamMembers: IUserProfileResponse[] | null;
   teamMemberProfilePictures: Record<UUID, string | undefined>;
 }
@@ -160,12 +160,35 @@ export const FormCard = ({
     setIsExpanded(!isExpanded);
   };
 
+  console.log("isBeeingEdited", isBeeingEdited);
+  console.log("user id", userId);
   let currentUsers = isBeeingEdited
     ? isBeeingEdited.users.map((editingUserId) =>
         teamMembers?.find((member) => member.user_id === editingUserId)
       )
     : [];
-  currentUsers = currentUsers.filter((user) => user?.user_id !== userId);
+
+  let allreadyWorkingOnIt = false;
+  currentUsers = currentUsers.filter((user) => {
+    if (user?.user_id !== userId) {
+      return user;
+    } else {
+      allreadyWorkingOnIt = true;
+    }
+  });
+
+  // let allUsers = isBeeingEdited?.users;
+  // let currentUsers: IUserProfileResponse[] = [];
+
+  // if (allUsers) {
+  //   Object.entries(allUsers).forEach(([editingUserIds, sessions]) => {
+  //     let temp = teamMembers?.find(
+  //       (member) => member.user_id === editingUserIds
+  //     );
+
+  //     if (temp) currentUsers.push(temp);
+  //   });
+  // }
 
   //currentUsers
   return (
@@ -177,6 +200,34 @@ export const FormCard = ({
             isBeeingEdited && "border-blue-600"
           }`}
         >
+          {/* Indicator Badge */}
+          {allreadyWorkingOnIt && (
+            <div className="absolute top-2 left-2 z-10 flex items-center gap-2 rounded-full bg-blue-600 text-white px-3 py-1 shadow-md text-xs font-medium">
+              <span className="flex items-center gap-1">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 11c0 .943-.79 1.71-1.75 1.71-.96 0-1.75-.767-1.75-1.71s.79-1.71 1.75-1.71c.96 0 1.75.767 1.75 1.71zM19 11c0 .943-.79 1.71-1.75 1.71-.96 0-1.75-.767-1.75-1.71s.79-1.71 1.75-1.71c.96 0 1.75.767 1.75 1.71z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M8 15c-2.21 0-4 1.567-4 3.5v.5h8v-.5c0-1.933-1.79-3.5-4-3.5zM16 15c-2.21 0-4 1.567-4 3.5v.5h8v-.5c0-1.933-1.79-3.5-4-3.5z"
+                  />
+                </svg>
+                You’re working on this
+              </span>
+            </div>
+          )}
           {isBeeingEdited && currentUsers.length > 0 && (
             <UserIndicatorOverlay
               isBeeingEdited={isBeeingEdited}
@@ -189,8 +240,7 @@ export const FormCard = ({
             ></UserIndicatorOverlay>
           )}
           {/* Current Users Indicator Overlay */}
-
-          <div className="flex justify-between">
+          <div className="flex justify-between mt-2">
             <CardHeader>
               <CardTitle>ID: {form.identifier_string} </CardTitle>
               <CardDescription>{form.form_type}</CardDescription>
@@ -219,7 +269,6 @@ export const FormCard = ({
               </HoverCard>
             </div>
           </div>
-
           <CardContent>
             <p className="text-sm text-gray-600">Metadata:</p>
             <ScrollArea className="h-44 border-2 p-2 w-full  rounded-xl mb-3">

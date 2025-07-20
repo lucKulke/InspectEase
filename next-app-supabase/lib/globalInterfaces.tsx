@@ -38,11 +38,24 @@ export interface IUserProfile {
   email: string;
 }
 
-export interface ActiveForm {
+export interface DashboardActiveForm {
   formId: string;
-  users: [UUID];
   activeUsers: number;
   lastActive: number;
+  users: string[];
+}
+
+export interface ActiveForm {
+  type: "form_users_update";
+  formId: string;
+  activeUsers: number;
+  users: {
+    [userId: string]: {
+      sessions: {
+        [sessionId: string]: "active" | "monitor";
+      };
+    };
+  };
 }
 
 export interface WhisperSegment {
