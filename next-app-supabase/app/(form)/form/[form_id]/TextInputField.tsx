@@ -4,10 +4,12 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { IFormTextInputFieldResponse } from "@/lib/database/form-builder/formBuilderInterfaces";
 import { ITextInputResponse } from "@/lib/database/form-filler/formFillerInterfaces";
+import { IUserProfileResponse } from "@/lib/database/public/publicInterface";
 import { UUID } from "crypto";
 import React, { useEffect, useState } from "react";
 
 interface TextInputFieldProps {
+  teamMembers: IUserProfileResponse[] | null;
   fillableInputField: ITextInputResponse;
   handleSaveNewTextInput: (
     subSectionId: UUID,
@@ -23,6 +25,7 @@ export const TextInputField = ({
   aiSelectedFields,
   handleSaveNewTextInput,
   disabled,
+  teamMembers,
 }: TextInputFieldProps) => {
   const [input, setInput] = useState<string>(fillableInputField.value ?? "");
   const [valueChanged, setValueChanged] = useState<boolean>(false);
@@ -50,6 +53,10 @@ export const TextInputField = ({
     setIsSaving(false);
   };
 
+  const color = teamMembers?.find(
+    (teamMember) => teamMember.user_id === fillableInputField.updated_by
+  )?.color;
+
   return (
     <Card
       className={`p-3 flex justify-between items-center ${
@@ -59,7 +66,7 @@ export const TextInputField = ({
       <p className="w-2/3">{fillableInputField.label}</p>
       <Input
         disabled={disabled}
-        className="w-1/3"
+        className={`w-1/3 ${color && "bg-" + color + "-500 shadow-xl"}`}
         placeholder={fillableInputField.placeholder_text ?? ""}
         value={input}
         onChange={(e) => setInput(e.target.value)}

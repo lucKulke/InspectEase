@@ -83,7 +83,7 @@ export default async function FormPage({
     });
   });
 
-  const wsUrl = `ws${
+  const formActivityWsUrl = `ws${
     process.env.APP_ENVIROMENT === "development" ? "" : "s"
   }://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/ws/form/${formId}?token=${
     process.env.SESSION_AWARENESS_FEATURE_TOKEN
@@ -134,9 +134,14 @@ export default async function FormPage({
           subCheckboxes={subCheckboxes}
           mainCheckboxes={mainCheckboxes}
           textInputFields={textInputFields}
-          sessionAwarenessMonitoringWsUrl={wsUrl}
-          teamMembers={teamMembers}
+          sessionAwarenessFormActivityWsUrl={formActivityWsUrl}
+          teamMemberList={teamMembers}
           profilePictures={profilePictures}
+          sessionAwarenessFocusWsUrl={`ws${
+            process.env.APP_ENVIROMENT === "development" ? "" : "s"
+          }://${
+            process.env.SESSION_AWARENESS_FEATURE_DOMAIN
+          }/ws/form/${formId}/focus?token=Hallo`}
         ></FormComp>
       </div>
     </div>

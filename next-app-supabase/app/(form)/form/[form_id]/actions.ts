@@ -15,6 +15,7 @@ import { createClient } from "@/utils/supabase/server";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { UUID } from "crypto";
 import axios from "axios";
+import { DatabasePublicUpdate } from "@/lib/database/public/publicUpdate";
 
 interface TakeoverRequest {
   form_id: string;
@@ -66,6 +67,21 @@ export const takeoverSession = async (
 //   const formEngine = new FormEngine(supabase);
 //   formEngine.updateSubCheckbox(formId, checkboxId, value);
 // }
+
+export async function refetchTeamMembers() {
+  const supabase = await createClient();
+
+  const dbActions = new DBActionsPublicFetch(supabase);
+  return await dbActions.fetchTeamMembers();
+}
+
+export async function changeUserColor(userId: UUID, colorCode: string) {
+  const supabase = await createClient();
+
+  const dbActions = new DatabasePublicUpdate(supabase);
+
+  return await dbActions.updateProfileColor(userId, colorCode);
+}
 
 export async function updateTextInputFieldValue(
   formId: UUID,

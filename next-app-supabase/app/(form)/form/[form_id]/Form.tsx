@@ -27,6 +27,8 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import React, { act, use, useEffect, useState } from "react";
 import { TextInputField } from "./TextInputField";
 import {
+  changeUserColor,
+  refetchTeamMembers,
   takeoverSession,
   updateMainCheckboxValue,
   updateSubCheckboxValue,
@@ -47,7 +49,12 @@ import { IUserProfileResponse } from "@/lib/database/public/publicInterface";
 import UserIndicatorOverlay from "@/components/UserIndicatorOverlay";
 import { v4 as uuidv4 } from "uuid";
 import { UUID } from "crypto";
+import { useFormRealtime } from "@/hooks/useFormRealtime";
+import { useFocusSync } from "@/hooks/useFocusSync";
+import { scrollToSection } from "@/utils/general";
+import { ColorPicker } from "./ColorPicker";
 
+const availableColors = ["red", "blue", "green", "yellow", "purple"];
 interface FormCompProps {
   sessionId: string;
   userId: string;
@@ -56,42 +63,50 @@ interface FormCompProps {
   mainCheckboxes: Record<string, IMainCheckboxResponse[]>;
   textInputFields: Record<string, ITextInputResponse[]>;
   sessionAwarenessRegistrationUrl: string;
-  sessionAwarenessMonitoringWsUrl: string;
-  teamMembers: IUserProfileResponse[] | null;
+  sessionAwarenessFormActivityWsUrl: string;
+  sessionAwarenessFocusWsUrl: string;
+  teamMemberList: IUserProfileResponse[] | null;
   profilePictures: Record<UUID, string | undefined>;
 }
-const getSessionId = () => {
+const getSessionData = () => {
   let sessionId = sessionStorage.getItem("formSessionId");
+
   if (!sessionId) {
-    sessionId = crypto.randomUUID();
+    sessionId = uuidv4();
     sessionStorage.setItem("formSessionId", sessionId);
   }
-  return sessionId;
+
+  return { sessionId };
 };
 export const FormComp = ({
   sessionId,
   userId,
   sessionAwarenessRegistrationUrl,
-  sessionAwarenessMonitoringWsUrl,
+  sessionAwarenessFormActivityWsUrl,
+  sessionAwarenessFocusWsUrl,
   formData,
   subCheckboxes,
   mainCheckboxes,
   textInputFields,
-  teamMembers,
+  teamMemberList,
   profilePictures,
 }: FormCompProps) => {
-  const currentSessionId = getSessionId();
+  const [teamMembers, setTeamMembers] = useState<IUserProfileResponse[] | null>(
+    teamMemberList
+  );
+  const currentSessionData = getSessionData();
   const supabase = createClient();
-  const [isMonitoring, setIsMonitoring] = useState(true);
+
+  // teamMemberColors[userId] = currentSessionData.userColor;
   // Register form activity and start heartbeat
   useFormActivity({
     formId: formData.id,
     userId,
     url: sessionAwarenessRegistrationUrl,
-    sessionId: currentSessionId,
+    sessionId: currentSessionData.sessionId,
   });
   const { data: activeForms, isConnected } = useWebSocket<ActiveForm>(
-    sessionAwarenessMonitoringWsUrl
+    sessionAwarenessFormActivityWsUrl
   );
 
   let allUsers = activeForms?.users;
@@ -104,7 +119,7 @@ export const FormComp = ({
       );
       if (editingUserIds === userId) {
         Object.values(sessions).forEach((session) => {
-          sessionType = session[currentSessionId];
+          sessionType = session[currentSessionData.sessionId];
         });
       }
       if (temp) currentUsers.push(temp);
@@ -114,18 +129,9 @@ export const FormComp = ({
   currentUsers = currentUsers.filter((user) => user?.user_id !== userId);
 
   const sendSessionTakeOverCommand = async () => {
-    takeoverSession(formData.id, userId, currentSessionId);
+    takeoverSession(formData.id, userId, currentSessionData.sessionId);
   };
   const monitoring = sessionType === "monitor";
-
-  useEffect(() => {
-    console.log("------- monitoring state ----", monitoring);
-    console.log("------- session type ----", sessionType); // Log the sessionType
-    setIsMonitoring(sessionType === "monitor");
-  }, [monitoring]);
-  // const [monitoring, setMonitoring] = useState<boolean>(
-
-  // );
 
   const { showNotification } = useNotification();
   const [fillableSubCheckboxes, setFillableSubCheckboxes] =
@@ -144,7 +150,8 @@ export const FormComp = ({
   const handleAutoUpdateMainCheckbox = async (
     mainCheckboxId: UUID,
     checked: boolean,
-    groupId: UUID
+    groupId: UUID,
+    updatedBy: UUID
   ) => {
     console.log("AUTOUPDATE MAINCHECKBOX");
     const updatedMainCheckboxes = { ...fillableMainCheckboxes };
@@ -153,6 +160,7 @@ export const FormComp = ({
       (mainCheckbox) => {
         if (mainCheckbox.id === mainCheckboxId) {
           mainCheckbox.checked = checked;
+          mainCheckbox.updated_by = updatedBy;
         }
         return mainCheckbox;
       }
@@ -164,7 +172,8 @@ export const FormComp = ({
   const handleAutoUpdateSubCheckbox = async (
     subCheckboxId: UUID,
     checked: boolean,
-    mainCheckboxId: UUID
+    mainCheckboxId: UUID,
+    updatedBy: UUID
   ) => {
     console.log("AUTOUPDATE SUBCHECKBOX");
     const updatedSubCheckboxes = { ...fillableSubCheckboxes };
@@ -174,6 +183,7 @@ export const FormComp = ({
     ].map((subCheckbox) => {
       if (subCheckbox.id === subCheckboxId) {
         subCheckbox.checked = checked;
+        subCheckbox.updated_by = updatedBy;
       }
       return subCheckbox;
     });
@@ -183,7 +193,8 @@ export const FormComp = ({
   const handleAutoUpdateTextInputField = async (
     textInputFieldId: UUID,
     value: string,
-    subCheckboxId: UUID
+    subCheckboxId: UUID,
+    updatedBy: UUID
   ) => {
     const updatedTextInputFields = { ...fillableTextInputFields };
     updatedTextInputFields[subCheckboxId] = updatedTextInputFields[
@@ -191,79 +202,22 @@ export const FormComp = ({
     ].map((textInput) => {
       if (textInput.id === textInputFieldId) {
         textInput.value = value;
+        textInput.updated_by = updatedBy;
       }
       return textInput;
     });
     setFillableTextInputFields(updatedTextInputFields);
   };
 
-  useEffect(() => {
-    // 2. Subscribe to INSERT, UPDATE, DELETE events
-    const channel = supabase
-      .channel(`realtime-form-${formData.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "form_filler",
-          table: "main_checkbox",
-          filter: `form_id=eq.${formData.id}`,
-        },
-        (payload) => {
-          const { eventType, new: newRow, old } = payload;
-          console.log("main checkbox payload", newRow);
-          //if (userId === newRow.updated_by) return;
-          handleAutoUpdateMainCheckbox(
-            newRow.id,
-            newRow.checked,
-            newRow.group_id
-          );
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "form_filler",
-          table: "sub_checkbox",
-          filter: `form_id=eq.${formData.id}`,
-        },
-        (payload) => {
-          const { eventType, new: newRow, old } = payload;
-          //console.log("sub checkbox payload", newRow);
-          //if (userId === newRow.updated_by) return;
-          handleAutoUpdateSubCheckbox(
-            newRow.id,
-            newRow.checked,
-            newRow.main_checkbox_id
-          );
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "form_filler",
-          table: "text_input",
-          filter: `form_id=eq.${formData.id}`,
-        },
-        (payload) => {
-          const { eventType, new: newRow, old } = payload;
-          console.log("text inputpayload", newRow);
-          //if (userId === newRow.updated_by) return;
-          handleAutoUpdateTextInputField(
-            newRow.id,
-            newRow.value,
-            newRow.sub_section_id
-          );
-        }
-      )
-      .subscribe();
+  useFormRealtime({
+    formId: formData.id,
+    onMainCheckboxUpdate: handleAutoUpdateMainCheckbox,
+    onSubCheckboxUpdate: handleAutoUpdateSubCheckbox,
+    onTextInputUpdate: handleAutoUpdateTextInputField,
+    supabase: supabase,
+  });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [formData.id]);
+  useFocusSync(formData.id, userId, formData.id, sessionAwarenessFocusWsUrl);
 
   useEffect(() => {
     if (aiSelectedFields) {
@@ -624,18 +578,66 @@ export const FormComp = ({
   }
 
   const [queue, setQueue] = useState<RecordingItem[]>([]);
-  //console.log("active forms", activeForms);
 
-  // useEffect(() => {
-  //   console.log("activeForms", activeForms);
-  // }, [activeForms]);
+  useEffect(() => {
+    const ws = new WebSocket(sessionAwarenessFocusWsUrl);
 
-  // ); // remove currentcurrentUsers
-  // console.log("currentUserMoreThanOneSession", currentUserMoreThanOneSession);
-  // if (currentUserMoreThanOneSession.length > 1) {
-  //   //console.log("currentUserMoreThanOneSession", currentUserMoreThanOneSession);
-  // }
-  // currentUsers = currentUsers.filter((user) => user?.user_id !== userId);
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === "focus_update") {
+        const { main_section_id, sub_section_id, field_id } = data;
+        console.log("is also monitoring", monitoring);
+        console.log("Received focus update:", data);
+
+        // Expand main section
+        if (monitoring) {
+          if (!selectedMainSections.includes(main_section_id)) {
+            handleExpandMainSection(main_section_id);
+          }
+          if (!selectedSubSections.includes(sub_section_id)) {
+            handleExpandSubSection(sub_section_id);
+          }
+
+          // Expand sub-section
+
+          // Scroll to the field
+
+          setTimeout(() => {
+            console.log("Scrolling to field:", field_id);
+            const fieldElement = document.querySelector(
+              `[data-field-id="${field_id}"]`
+            );
+            if (fieldElement) {
+              console.log("found element");
+              fieldElement.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              });
+            }
+          }, 1200);
+        }
+      }
+    };
+    ws.onopen = () => {
+      console.log("WebSocket connection opened for focus update");
+    };
+
+    return () => ws.close();
+  }, [formData.id, monitoring]);
+
+  const handleChangeUserColor = async (color: string) => {
+    const { updatedProfile, updatedProfileError } = await changeUserColor(
+      userId as UUID,
+      color
+    );
+
+    if (updatedProfile) {
+      const { teamMembers, teamMembersError } = await refetchTeamMembers();
+      if (teamMembers) {
+        setTeamMembers(teamMembers);
+      }
+    }
+  };
 
   return (
     <div className="mb-36">
@@ -654,7 +656,7 @@ export const FormComp = ({
       )}
       <ul className="space-y-2">
         {formData.main_section.sort(sortMainSections).map((mainSection) => (
-          <li key={mainSection.id}>
+          <li key={mainSection.id} data-main-section-id={mainSection.id}>
             <Card>
               <CardHeader
                 className="cursor-pointer flex flex-row items-center space-y-0 py-4 select-none"
@@ -689,7 +691,11 @@ export const FormComp = ({
                         {mainSection.sub_section
                           .sort(sortSubSections)
                           .map((subSection) => (
-                            <li className={subSection.id} key={subSection.id}>
+                            <li
+                              className={subSection.id}
+                              key={subSection.id}
+                              data-sub-section-id={subSection.id}
+                            >
                               <Card>
                                 <CardHeader
                                   className="cursor-pointer flex flex-row items-center space-y-0 py-4 select-none"
@@ -769,6 +775,9 @@ export const FormComp = ({
                                                                         }
                                                                       >
                                                                         <Checkbox
+                                                                          data-field-id={
+                                                                            checkbox.id
+                                                                          }
                                                                           disabled
                                                                           checked={
                                                                             checkbox.checked
@@ -787,89 +796,115 @@ export const FormComp = ({
                                                             <TableBody>
                                                               {selectionGroup.task
                                                                 .sort(sortTasks)
-                                                                .map((task) => (
-                                                                  <TableRow
-                                                                    className={`${
-                                                                      aiSelectedFields.includes(
-                                                                        task.id
-                                                                      ) &&
-                                                                      "bg-green-300"
-                                                                    }`}
-                                                                    key={
-                                                                      task.id +
-                                                                      "tablerow"
-                                                                    }
-                                                                  >
-                                                                    <TableCell className="font-medium text-left py-4">
-                                                                      {
-                                                                        task.description
+                                                                .map((task) => {
+                                                                  return (
+                                                                    <TableRow
+                                                                      className={`${
+                                                                        aiSelectedFields.includes(
+                                                                          task.id
+                                                                        ) &&
+                                                                        "bg-green-300"
+                                                                      }`}
+                                                                      key={
+                                                                        task.id +
+                                                                        "tablerow"
                                                                       }
-                                                                    </TableCell>
-                                                                    {fillableMainCheckboxes[
-                                                                      selectionGroup
-                                                                        .id
-                                                                    ]
-                                                                      .sort(
-                                                                        sortMainCheckboxes
-                                                                      )
-                                                                      .map(
-                                                                        (
-                                                                          mainCheckbox
-                                                                        ) => {
-                                                                          const currentCheckbox =
-                                                                            fillableSubCheckboxes[
-                                                                              mainCheckbox
-                                                                                .id
-                                                                            ].filter(
-                                                                              (
-                                                                                subCheckbox
-                                                                              ) =>
-                                                                                subCheckbox.task_id ===
-                                                                                task.id
-                                                                            )[0];
-
-                                                                          return (
-                                                                            <TableCell
-                                                                              key={
-                                                                                currentCheckbox.id +
-                                                                                "cell"
-                                                                              }
-                                                                              className="font-medium text-center whitespace-nowrap py-4"
-                                                                            >
-                                                                              <Checkbox
-                                                                                disabled={
-                                                                                  monitoring
-                                                                                }
-                                                                                checked={
-                                                                                  currentCheckbox.checked
-                                                                                }
-                                                                                onClick={() => {
-                                                                                  console.log(
-                                                                                    "need to increase over time",
-                                                                                    selectedByUser
-                                                                                  );
-                                                                                  setSelectedByUser(
-                                                                                    (
-                                                                                      prev
-                                                                                    ) => [
-                                                                                      ...prev,
-                                                                                      currentCheckbox.id,
-                                                                                    ]
-                                                                                  );
-                                                                                  handleCheckSubCheckbox(
-                                                                                    mainCheckbox.id,
-                                                                                    currentCheckbox.id,
-                                                                                    selectionGroup,
-                                                                                    task.id
-                                                                                  );
-                                                                                }}
-                                                                              ></Checkbox>
-                                                                            </TableCell>
-                                                                          );
+                                                                    >
+                                                                      <TableCell className="font-medium text-left py-4">
+                                                                        {
+                                                                          task.description
                                                                         }
-                                                                      )}
-                                                                  </TableRow>
-                                                                ))}
+                                                                      </TableCell>
+                                                                      {fillableMainCheckboxes[
+                                                                        selectionGroup
+                                                                          .id
+                                                                      ]
+                                                                        .sort(
+                                                                          sortMainCheckboxes
+                                                                        )
+                                                                        .map(
+                                                                          (
+                                                                            mainCheckbox
+                                                                          ) => {
+                                                                            const currentCheckbox =
+                                                                              fillableSubCheckboxes[
+                                                                                mainCheckbox
+                                                                                  .id
+                                                                              ].filter(
+                                                                                (
+                                                                                  subCheckbox
+                                                                                ) =>
+                                                                                  subCheckbox.task_id ===
+                                                                                  task.id
+                                                                              )[0];
+
+                                                                            let color =
+                                                                              currentCheckbox.checked &&
+                                                                              currentCheckbox.updated_by &&
+                                                                              teamMembers?.find(
+                                                                                (
+                                                                                  member
+                                                                                ) =>
+                                                                                  member.user_id ===
+                                                                                  currentCheckbox.updated_by
+                                                                              )
+                                                                                ?.color;
+
+                                                                            return (
+                                                                              <TableCell
+                                                                                key={
+                                                                                  currentCheckbox.id +
+                                                                                  "cell"
+                                                                                }
+                                                                                className={`font-medium text-center whitespace-nowrap py-4 `}
+                                                                              >
+                                                                                <div
+                                                                                  className={`p-1  flex justify-center items-center rounded-xl `}
+                                                                                  style={{
+                                                                                    backgroundColor:
+                                                                                      color ||
+                                                                                      "#ffffff",
+                                                                                  }}
+                                                                                >
+                                                                                  <Checkbox
+                                                                                    data-field-id={
+                                                                                      currentCheckbox.id
+                                                                                    }
+                                                                                    disabled={
+                                                                                      monitoring
+                                                                                    }
+                                                                                    checked={
+                                                                                      currentCheckbox.checked
+                                                                                    }
+                                                                                    onClick={() => {
+                                                                                      console.log(
+                                                                                        "need to increase over time",
+                                                                                        selectedByUser
+                                                                                      );
+                                                                                      setSelectedByUser(
+                                                                                        (
+                                                                                          prev
+                                                                                        ) => [
+                                                                                          ...prev,
+                                                                                          currentCheckbox.id,
+                                                                                        ]
+                                                                                      );
+                                                                                      handleCheckSubCheckbox(
+                                                                                        mainCheckbox.id,
+                                                                                        currentCheckbox.id,
+                                                                                        selectionGroup,
+                                                                                        task.id
+                                                                                      );
+                                                                                    }}
+                                                                                  ></Checkbox>
+                                                                                </div>
+                                                                              </TableCell>
+                                                                            );
+                                                                          }
+                                                                        )}
+                                                                    </TableRow>
+                                                                  );
+                                                                })}
                                                             </TableBody>
                                                           </Table>
                                                         ) : (
@@ -884,37 +919,55 @@ export const FormComp = ({
                                                                 (
                                                                   mainCheckbox
                                                                 ) => {
+                                                                  let color =
+                                                                    mainCheckbox.checked &&
+                                                                    mainCheckbox.updated_by &&
+                                                                    teamMembers?.find(
+                                                                      (
+                                                                        member
+                                                                      ) =>
+                                                                        member.user_id ===
+                                                                        mainCheckbox.updated_by
+                                                                    )?.color;
                                                                   return (
                                                                     <div
-                                                                      className={`flex items-center space-x-2 ${
-                                                                        aiSelectedFields.includes(
-                                                                          mainCheckbox.id
-                                                                        ) &&
-                                                                        "bg-green-300"
-                                                                      }`}
+                                                                      className={`flex items-center space-x-2 `}
                                                                       key={
                                                                         mainCheckbox.id
                                                                       }
                                                                     >
-                                                                      <Checkbox
-                                                                        disabled={
-                                                                          monitoring
-                                                                        }
-                                                                        checked={
-                                                                          mainCheckbox.checked
-                                                                        }
-                                                                        onClick={() => {
-                                                                          handleCheckMainCheckbox(
-                                                                            mainCheckbox.id,
-                                                                            selectionGroup
-                                                                          );
+                                                                      <div
+                                                                        className={`pl-2 pr-2 space-x-3 flex justify-center items-center rounded-xl `}
+                                                                        style={{
+                                                                          backgroundColor:
+                                                                            color ||
+                                                                            "#ffffff",
                                                                         }}
-                                                                      ></Checkbox>
-                                                                      <p>
-                                                                        {
-                                                                          mainCheckbox.label
-                                                                        }
-                                                                      </p>
+                                                                      >
+                                                                        <Checkbox
+                                                                          data-field-id={
+                                                                            mainCheckbox.id
+                                                                          }
+                                                                          disabled={
+                                                                            monitoring
+                                                                          }
+                                                                          checked={
+                                                                            mainCheckbox.checked
+                                                                          }
+                                                                          onClick={() => {
+                                                                            handleCheckMainCheckbox(
+                                                                              mainCheckbox.id,
+                                                                              selectionGroup
+                                                                            );
+                                                                          }}
+                                                                        ></Checkbox>
+
+                                                                        <p>
+                                                                          {
+                                                                            mainCheckbox.label
+                                                                          }
+                                                                        </p>
+                                                                      </div>
                                                                     </div>
                                                                   );
                                                                 }
@@ -944,6 +997,7 @@ export const FormComp = ({
                                                 return (
                                                   <li key={inputField.id}>
                                                     <TextInputField
+                                                      teamMembers={teamMembers}
                                                       disabled={monitoring}
                                                       aiSelectedFields={
                                                         aiSelectedFields
@@ -978,6 +1032,15 @@ export const FormComp = ({
       </ul>
       {/* <QueueLog queue={queue} />
       <Bar queue={queue} setQueue={setQueue} /> */}
+      {!monitoring && (
+        <ColorPicker
+          onColorSelect={handleChangeUserColor}
+          originalColor={
+            teamMembers?.find((member) => member.user_id === userId)?.color ??
+            "#ffffff"
+          }
+        />
+      )}
     </div>
   );
 };

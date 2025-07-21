@@ -5,6 +5,7 @@ from typing import Dict, List
 import asyncio
 import time
 import os
+from collections import defaultdict
 
 import dotenv
 dotenv.load_dotenv()
@@ -265,3 +266,70 @@ async def takeover_session(req: TakeoverRequest, background_tasks: BackgroundTas
     background_tasks.add_task(form_manager.broadcast_form_update, form_id)
 
     return {"status": "success", "message": f"Session {session_id} is now active"}
+
+
+# active_sessions: Dict[str, List[WebSocket]] = defaultdict(list)
+
+class FocusConnectionManager:
+    def __init__(self):
+        self.connections: Dict[str, List[WebSocket]] = {}
+
+    async def connect(self, websocket: WebSocket, form_id: str):
+        await websocket.accept()
+        if form_id not in self.connections:
+            self.connections[form_id] = []
+        self.connections[form_id].append(websocket)
+
+    def disconnect(self, websocket: WebSocket, form_id: str):
+        if form_id in self.connections:
+            self.connections[form_id].remove(websocket)
+            if not self.connections[form_id]:
+                del self.connections[form_id]
+
+    async def broadcast(self, form_id: str, message: dict):
+        if form_id in self.connections:
+            for conn in self.connections[form_id]:
+                try:
+                    await conn.send_json(message)
+                except Exception:
+                    pass
+                
+focus_manager = FocusConnectionManager()
+
+@app.websocket("/ws/form/{form_id}/focus")
+async def focus_websocket(websocket: WebSocket, form_id: str, token: str = Query(None)):
+    if token != ACCESS_TOKEN:
+        await websocket.close(code=1008)
+        return
+
+    await focus_manager.connect(websocket, form_id)
+
+    try:
+        while True:
+            data = await websocket.receive_json()
+            user_id = data["user_id"]
+            session_id = data["session_id"]
+            main_section_id = data.get("main_section_id")
+            sub_section_id = data.get("sub_section_id")
+            field_id = data.get("field_id")
+
+            # Update in-memory session data
+            if form_id in active_form_sessions and user_id in active_form_sessions[form_id]:
+                if session_id in active_form_sessions[form_id][user_id]:
+                    active_form_sessions[form_id][user_id][session_id]["focus"] = {
+                        "main_section_id": main_section_id,
+                        "sub_section_id": sub_section_id,
+                        "field_id": field_id
+                    }
+
+            # Broadcast to all monitors
+            await focus_manager.broadcast(form_id, {
+                "type": "focus_update",
+                "user_id": user_id,
+                "main_section_id": main_section_id,
+                "sub_section_id": sub_section_id,
+                "field_id": field_id
+            })
+
+    except WebSocketDisconnect:
+        focus_manager.disconnect(websocket, form_id)

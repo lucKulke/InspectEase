@@ -29,6 +29,7 @@ export interface IUserProfileResponse {
   email: string;
   active_team_id: UUID | null;
   picture_id: string | null;
+  color: string | null;
 }
 
 export interface ITeamMembershipsInsert {

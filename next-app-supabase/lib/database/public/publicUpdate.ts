@@ -100,6 +100,28 @@ export class DatabasePublicUpdate {
     return { updatedMembership: data, updatedMembershipError: error };
   }
 
+  async updateProfileColor(
+    userId: UUID,
+    colorCode: string
+  ): Promise<{
+    updatedProfile: IUserProfileResponse | null;
+    updatedProfileError: SupabaseError | null;
+  }> {
+    const { data, error } = await this.supabase
+      .from("user_profile")
+      .update({ color: colorCode })
+      .eq("user_id", userId)
+      .select()
+      .single();
+
+    console.log("updated profile color in db: ", data);
+    if (error) {
+      console.error("updated profile color in db error: ", error);
+    }
+
+    return { updatedProfile: data, updatedProfileError: error };
+  }
+
   async updateProfilePicture(
     userId: UUID,
     profilePicture: string

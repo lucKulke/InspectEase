@@ -155,13 +155,7 @@ export const FormCard = ({
       .toUpperCase()
       .slice(0, 2);
   };
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click
-    setIsExpanded(!isExpanded);
-  };
 
-  console.log("isBeeingEdited", isBeeingEdited);
-  console.log("user id", userId);
   let currentUsers = isBeeingEdited
     ? isBeeingEdited.users.map((editingUserId) =>
         teamMembers?.find((member) => member.user_id === editingUserId)
@@ -176,19 +170,6 @@ export const FormCard = ({
       allreadyWorkingOnIt = true;
     }
   });
-
-  // let allUsers = isBeeingEdited?.users;
-  // let currentUsers: IUserProfileResponse[] = [];
-
-  // if (allUsers) {
-  //   Object.entries(allUsers).forEach(([editingUserIds, sessions]) => {
-  //     let temp = teamMembers?.find(
-  //       (member) => member.user_id === editingUserIds
-  //     );
-
-  //     if (temp) currentUsers.push(temp);
-  //   });
-  // }
 
   //currentUsers
   return (
@@ -319,7 +300,7 @@ export const FormCard = ({
 
               <Button
                 onClick={() => {
-                  router.push("/form/" + form.id);
+                  window.location.href = `/form/${form.id}`;
                 }}
               >
                 Continue

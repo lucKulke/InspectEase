@@ -135,7 +135,7 @@ export class DBActionsPublicFetch {
   }> {
     const { data, error } = await this.supabase
       .from("user_profile")
-      .select(`user_id, first_name, last_name, email, picture_id`);
+      .select(`user_id, first_name, last_name, email, picture_id, color`);
 
     if (error) {
       console.error("fetch team members from db error: ", error);
