@@ -1,5 +1,5 @@
-import dotenv
-dotenv.load_dotenv()
+# import dotenv
+# dotenv.load_dotenv()
 from fastapi import FastAPI
 from routers import manual_update_checkbox  # Import your routers
 

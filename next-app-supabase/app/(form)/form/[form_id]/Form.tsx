@@ -53,8 +53,8 @@ import { useFormRealtime } from "@/hooks/useFormRealtime";
 import { useFocusSync } from "@/hooks/useFocusSync";
 import { scrollToSection } from "@/utils/general";
 import { ColorPicker } from "./ColorPicker";
+import axios from "axios";
 
-const availableColors = ["red", "blue", "green", "yellow", "purple"];
 interface FormCompProps {
   sessionId: string;
   userId: string;
@@ -65,6 +65,8 @@ interface FormCompProps {
   sessionAwarenessRegistrationUrl: string;
   sessionAwarenessFormActivityWsUrl: string;
   sessionAwarenessFocusWsUrl: string;
+  sessionAwarenessColorChangeWsUrl: string;
+  sessionAwarenessColorChangeUrl: string;
   teamMemberList: IUserProfileResponse[] | null;
   profilePictures: Record<UUID, string | undefined>;
 }
@@ -84,6 +86,8 @@ export const FormComp = ({
   sessionAwarenessRegistrationUrl,
   sessionAwarenessFormActivityWsUrl,
   sessionAwarenessFocusWsUrl,
+  sessionAwarenessColorChangeWsUrl,
+  sessionAwarenessColorChangeUrl,
   formData,
   subCheckboxes,
   mainCheckboxes,
@@ -580,9 +584,9 @@ export const FormComp = ({
   const [queue, setQueue] = useState<RecordingItem[]>([]);
 
   useEffect(() => {
-    const ws = new WebSocket(sessionAwarenessFocusWsUrl);
+    const focusWs = new WebSocket(sessionAwarenessFocusWsUrl);
 
-    ws.onmessage = (event) => {
+    focusWs.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === "focus_update") {
         const { main_section_id, sub_section_id, field_id } = data;
@@ -597,10 +601,6 @@ export const FormComp = ({
           if (!selectedSubSections.includes(sub_section_id)) {
             handleExpandSubSection(sub_section_id);
           }
-
-          // Expand sub-section
-
-          // Scroll to the field
 
           setTimeout(() => {
             console.log("Scrolling to field:", field_id);
@@ -618,26 +618,100 @@ export const FormComp = ({
         }
       }
     };
-    ws.onopen = () => {
+    focusWs.onopen = () => {
       console.log("WebSocket connection opened for focus update");
     };
 
-    return () => ws.close();
+    return () => focusWs.close();
   }, [formData.id, monitoring]);
+
+  useEffect(() => {
+    const colorChangeWs = new WebSocket(sessionAwarenessColorChangeWsUrl);
+
+    colorChangeWs.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === "color_change") {
+        const { type, user_id, color } = data;
+
+        console.log("Received color update:", data);
+
+        // Expand main section
+        if (teamMembers)
+          setTeamMembers(
+            teamMembers.map((member) => {
+              if (member.user_id === user_id) {
+                member.color = color;
+              }
+              return member;
+            })
+          );
+      }
+    };
+    colorChangeWs.onopen = () => {
+      console.log("WebSocket connection opened for color update");
+    };
+
+    return () => colorChangeWs.close();
+  }, [formData.id]);
 
   const handleChangeUserColor = async (color: string) => {
     const { updatedProfile, updatedProfileError } = await changeUserColor(
       userId as UUID,
       color
     );
-
+    await axios.post(sessionAwarenessColorChangeUrl, {
+      form_id: formData.id,
+      user_id: userId,
+      color: color, // Send the session ID
+    });
     if (updatedProfile) {
-      const { teamMembers, teamMembersError } = await refetchTeamMembers();
-      if (teamMembers) {
-        setTeamMembers(teamMembers);
-      }
+      if (teamMembers)
+        setTeamMembers(
+          teamMembers.map((member) => {
+            if (member.user_id === userId) {
+              member.color = color;
+            }
+            return member;
+          })
+        );
     }
   };
+
+  const findInvolvedUsers = () => {
+    const involvedUsers: string[] = [];
+    Object.values(subCheckboxes).forEach((subCheckbox) => {
+      subCheckbox.forEach((subCheckbox) => {
+        const currentId = subCheckbox.updated_by ?? subCheckbox.user_id;
+        if (!involvedUsers.includes(currentId)) {
+          involvedUsers.push(currentId);
+        }
+      });
+    });
+
+    Object.values(mainCheckboxes).forEach((mainCheckbox) => {
+      mainCheckbox.forEach((mainCheckbox) => {
+        const currentId = mainCheckbox.updated_by ?? mainCheckbox.user_id;
+        if (!involvedUsers.includes(currentId)) {
+          involvedUsers.push(currentId);
+        }
+      });
+    });
+
+    Object.values(textInputFields).forEach((textInputFieldGroup) => {
+      textInputFieldGroup.forEach((textInputField) => {
+        const currentId = textInputField.updated_by ?? textInputField.user_id;
+        if (!involvedUsers.includes(currentId)) {
+          involvedUsers.push(currentId);
+        }
+      });
+    });
+
+    return involvedUsers;
+  };
+
+  const [involvedUsers, setInvolvedUsers] = useState<string[]>(
+    findInvolvedUsers()
+  );
 
   return (
     <div className="mb-36">
@@ -1032,13 +1106,13 @@ export const FormComp = ({
       </ul>
       {/* <QueueLog queue={queue} />
       <Bar queue={queue} setQueue={setQueue} /> */}
-      {!monitoring && (
+      {!monitoring && teamMembers && (
         <ColorPicker
-          onColorSelect={handleChangeUserColor}
-          originalColor={
-            teamMembers?.find((member) => member.user_id === userId)?.color ??
-            "#ffffff"
-          }
+          currentUser={teamMembers.find((member) => member.user_id === userId)}
+          teammates={involvedUsers.map((id) =>
+            teamMembers.find((member) => member.user_id === id)
+          )}
+          onColorChange={handleChangeUserColor}
         />
       )}
     </div>

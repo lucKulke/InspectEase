@@ -32,7 +32,7 @@ export function useFormActivity({
     registerActivity();
 
     // Set up polling interval for heartbeat (every 4 seconds)
-    const intervalId = setInterval(registerActivity, 2000);
+    const intervalId = setInterval(registerActivity, 4000);
 
     // Cleanup function
     return () => {

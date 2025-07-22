@@ -77,6 +77,7 @@ export interface IMainCheckboxResponse extends IMainCheckboxInsert {
   created_at: Date | string;
   checked: boolean;
   updated_by: string | null;
+  user_id: string;
 }
 
 export interface ISubCheckboxInsert {
@@ -89,6 +90,7 @@ export interface ISubCheckboxResponse extends ISubCheckboxInsert {
   created_at: Date | string;
   checked: boolean;
   updated_by: string | null;
+  user_id: string;
 }
 
 export interface ITextInputInsert {
@@ -105,6 +107,7 @@ export interface ITextInputResponse extends ITextInputInsert {
   created_at: Date | string;
   value: string | null;
   updated_by: string | null;
+  user_id: string;
 }
 
 // test

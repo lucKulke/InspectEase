@@ -71,6 +71,7 @@ export default async function FormPage({
             prio_number: mainCheckbox.prio_number,
             annotation_id: mainCheckbox.annotation_id,
             updated_by: mainCheckbox.updated_by,
+            user_id: mainCheckbox.user_id,
           });
 
           mainCheckbox.sub_checkbox.forEach((subCheckbox) => {
@@ -142,6 +143,18 @@ export default async function FormPage({
           }://${
             process.env.SESSION_AWARENESS_FEATURE_DOMAIN
           }/ws/form/${formId}/focus?token=Hallo`}
+          sessionAwarenessColorChangeWsUrl={`ws${
+            process.env.APP_ENVIROMENT === "development" ? "" : "s"
+          }://${
+            process.env.SESSION_AWARENESS_FEATURE_DOMAIN
+          }/ws/form/${formId}/color?token=Hallo`}
+          sessionAwarenessColorChangeUrl={`http${
+            process.env.APP_ENVIROMENT === "development" ? "" : "s"
+          }://${
+            process.env.SESSION_AWARENESS_FEATURE_DOMAIN
+          }/api/user-color?token=${
+            process.env.SESSION_AWARENESS_FEATURE_TOKEN
+          }`}
         ></FormComp>
       </div>
     </div>

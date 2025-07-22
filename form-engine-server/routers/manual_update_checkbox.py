@@ -12,7 +12,7 @@ from fastapi import APIRouter
 
 router = APIRouter(
     prefix="/manual-update-checkbox",
-    tags=["Users"]
+    tags=["Checkbox Update"]
 )
 
 
