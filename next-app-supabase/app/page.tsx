@@ -9,7 +9,17 @@ import { ArrowRight, Edit3, Mic } from "lucide-react";
 import type React from "react";
 import { formBuilderLinks } from "@/lib/links/formBuilderLinks";
 import { formFillerLinks } from "@/lib/links/formFillerLinks";
-export default function Home() {
+import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    redirect("/form-filler");
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <form action="/auth/signout" method="post">

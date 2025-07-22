@@ -10,3 +10,21 @@ export async function switchActiveTeam(userId: UUID, teamId: UUID | null) {
 
   return await publicUpdate.switchActiveTeam(userId, teamId);
 }
+
+export async function passwordCheck(password: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: user?.email ?? "",
+    password: password,
+  });
+  if (error) {
+    return false;
+  } else {
+    return true;
+  }
+}

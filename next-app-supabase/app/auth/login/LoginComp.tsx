@@ -27,6 +27,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2, Eye, EyeOff, LogIn } from "lucide-react";
 import { login } from "./actions";
+import { useSearchParams } from "next/navigation";
 
 const signinSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -37,6 +38,7 @@ const signinSchema = z.object({
 type SigninFormValues = z.infer<typeof signinSchema>;
 
 export default function LoginComp() {
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [success, setSuccess] = useState<boolean>(false);
@@ -60,9 +62,13 @@ export default function LoginComp() {
     if (code !== "success") {
       setError(message);
     } else {
+      let url = "/";
+      if (searchParams.get("type") === "team-invite") {
+        url = "/auth/team-invite?token=" + searchParams.get("token");
+      }
       setSuccess(true);
       setTimeout(() => {
-        router.push("/");
+        router.push(url);
       }, 1500); // 1.5 seconds
     }
 

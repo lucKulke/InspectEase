@@ -24,6 +24,11 @@ import {
   Car,
   Blocks,
   Mic,
+  User as UserIcon,
+  GroupIcon,
+  Key,
+  Bell,
+  Shield,
 } from "lucide-react";
 
 import { NavUser } from "@/components/SideBar/NavUser";
@@ -48,6 +53,7 @@ import { NavMain } from "./NavMain";
 // This is sample data.
 const dataBuilder = {
   user: {
+    id: "1",
     name: "Unknown",
     email: "m@unknown.com",
     avatar: "/avatars/shadcn.jpg",
@@ -62,6 +68,11 @@ const dataBuilder = {
       name: "Builder",
       logo: Blocks,
       path: "/form-builder",
+    },
+    {
+      name: "Settings",
+      logo: Settings2,
+      path: "/settings",
     },
   ],
   navMain: [
@@ -119,6 +130,7 @@ const dataBuilder = {
 
 const dataFiller = {
   user: {
+    id: "1",
     name: "Unknown",
     email: "m@unknown.com",
     avatar: "/avatars/shadcn.jpg",
@@ -133,6 +145,11 @@ const dataFiller = {
       name: "Filler",
       logo: Mic,
       path: "/form-filler",
+    },
+    {
+      name: "Settings",
+      logo: Settings2,
+      path: "/settings",
     },
   ],
   navMain: [
@@ -151,16 +168,78 @@ const dataFiller = {
   ],
 };
 
+const dataSettings = {
+  user: {
+    id: "1",
+    name: "Unknown",
+    email: "m@unknown.com",
+    avatar: "/avatars/shadcn.jpg",
+  },
+  apps: [
+    {
+      name: "Builder",
+      logo: Blocks,
+      path: "/form-builder",
+    },
+    {
+      name: "Filler",
+      logo: Mic,
+      path: "/form-filler",
+    },
+    {
+      name: "Settings",
+      logo: Settings2,
+      path: "/settings",
+    },
+  ],
+  navMain: [
+    {
+      title: "User Profile",
+      icon: UserIcon,
+      isActive: false,
+      items: [
+        {
+          icon: UserIcon,
+          title: "Personal",
+          url: "/settings/user-profile/personal",
+        },
+        {
+          icon: Shield,
+          title: "Security",
+          url: "/settings/user-profile/security",
+        },
+        {
+          icon: Bell,
+          title: "Notifications",
+          url: "/settings/user-profile/notifications",
+        },
+        {
+          icon: Key,
+          title: "AI API",
+          url: "/settings/user-profile/ai-api",
+        },
+        {
+          icon: GroupIcon,
+          title: "Teams",
+          url: "/settings/user-profile/teams",
+        },
+      ],
+    },
+  ],
+};
+
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: User;
   profile: IUserProfileResponse | null;
   teams: ITeamResponse[] | null;
+  profilePicture: string | undefined;
 }
 
 export function AppSidebar({
   user,
   profile,
   teams,
+  profilePicture,
   ...props
 }: AppSidebarProps) {
   const pathname = usePathname() ?? "";
@@ -169,11 +248,17 @@ export function AppSidebar({
 
   if (pathname.startsWith("/form-filler")) {
     data = dataFiller;
-  } else {
+  } else if (pathname.startsWith("/form-builder")) {
     data = dataBuilder;
+  } else if (pathname.startsWith("/settings")) {
+    data = dataSettings;
   }
 
+  if (!data) {
+    return null;
+  }
   if (user) {
+    data.user.id = user.id ?? "";
     data.user.email = user.email ?? "";
   }
 
@@ -187,7 +272,12 @@ export function AppSidebar({
         {/* <NavSections sections={sections}></NavSections> */}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} profile={profile} teams={teams} />
+        <NavUser
+          user={data.user}
+          profile={profile}
+          teams={teams}
+          profilePicture={profilePicture}
+        />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

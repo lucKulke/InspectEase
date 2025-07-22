@@ -11,6 +11,7 @@ import { DBActionsFormBuilderCreate } from "@/lib/database/form-builder/formBuil
 import OpenAI from "openai";
 import { ResponseInput } from "openai/resources/responses/responses.mjs";
 import { IUserProfile } from "@/lib/globalInterfaces";
+import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
 
 export async function fetchExistingExamples(trainingId: UUID) {
   const supabase = await createClient("form_builder");
@@ -70,17 +71,16 @@ export async function requestToChatGPT(
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data, error } = await supabase
-    .from("user_profile")
-    .select()
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const publicFetch = new DBActionsPublicFetch(supabase);
+  const { userApiKeys, userApiKeysError } = await publicFetch.fetchUserApiKeys(
+    user.id as UUID
+  );
 
-  if (error) return null;
-  const profile: IUserProfile = data;
+  if (userApiKeysError) return null;
+  if (!userApiKeys) return null;
 
   const client = new OpenAI({
-    apiKey: profile.openai_token, // Ensure this is stored in .env.local
+    apiKey: userApiKeys.openai_token ?? "", // Ensure this is stored in .env.local
   });
 
   const messages: { role: string; content: string }[] = [];

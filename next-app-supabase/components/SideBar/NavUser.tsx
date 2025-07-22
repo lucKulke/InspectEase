@@ -26,53 +26,63 @@ import type {
 import { TeamSwitcher } from "./TeamSwitcher";
 import { switchActiveTeam } from "@/lib/globalActions";
 import { UUID } from "crypto";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 export function NavUser({
   user,
   profile,
   teams,
+  profilePicture,
 }: {
   user: {
+    id: string;
     name: string;
     email: string;
     avatar: string;
   };
+  profilePicture: string | undefined;
   profile: IUserProfileResponse | null;
   teams: ITeamResponse[] | null;
 }) {
   const { isMobile } = useSidebar();
-  const router = useRouter();
+  if (!profile) return;
+
   const pathname = usePathname();
 
   const handleTeamChange = async (team: ITeamResponse | null) => {
-    // Handle team change logic here
     console.log("Selected team:", team);
     if (!profile) return;
+
     const { updatedProfile, updatedProfileError } = await switchActiveTeam(
-      profile?.user_id,
+      profile.user_id,
       team ? (team.id as UUID) : null
     );
-    if (!updatedProfileError) {
+
+    if (updatedProfile) {
+      // Trigger a full page reload
       if (pathname.includes("/form-filler")) {
-        router.push("/form-filler");
+        window.location.href = "/form-filler"; // full reload
       } else {
-        router.push("/form-builder");
+        window.location.href = "/form-builder"; // full reload
       }
     }
-
-    // You can add your team switching logic here
-    // For example: router.push(`/team/${team.id}`) or update global state
   };
+
+  const hasFirstAndLastName =
+    profile.first_name &&
+    profile.first_name.length >= 0 &&
+    profile.last_name &&
+    profile.last_name.length >= 0;
 
   return (
     <div className="flex flex-col gap-2">
       {/* Team Switcher */}
       <TeamSwitcher
+        userId={user.id}
         teams={teams}
         onTeamChange={handleTeamChange}
         activeTeam={
-          teams?.find((team) => team.id === profile?.active_team_id) ?? null
+          teams?.find((team) => team?.id === profile?.active_team_id) ?? null
         }
       />
 
@@ -86,17 +96,26 @@ export function NavUser({
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage
-                    src={user.avatar || "/placeholder.svg"}
-                    alt={user.name}
-                  />
+                  <AvatarImage src={profilePicture} alt={user.name} />
                   <AvatarFallback className="rounded-lg">
                     {(user.email[0] + user.email[2]).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{user.email}</span>
-                </div>
+                {hasFirstAndLastName ? (
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">
+                      {profile.first_name} {profile.last_name}
+                    </span>
+                    <span className="truncate text-xs text-sidebar-foreground/70">
+                      {profile.email}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">{user.email}</span>
+                  </div>
+                )}
+
                 <ChevronsUpDown className="ml-auto size-4" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
@@ -109,23 +128,33 @@ export function NavUser({
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage
-                      src={user.avatar || "/placeholder.svg"}
-                      alt={user.name}
-                    />
+                    <AvatarImage src={profilePicture} alt={user.name} />
                     <AvatarFallback className="rounded-lg">
                       {(user.email[0] + user.email[2]).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{user.email}</span>
-                  </div>
+                  {hasFirstAndLastName ? (
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                      <span className="truncate font-semibold">
+                        {profile.first_name} {profile.last_name}
+                      </span>
+                      <span className="truncate text-xs text-sidebar-foreground/70">
+                        {profile.email}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                      <span className="truncate font-semibold">
+                        {user.email}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </DropdownMenuLabel>
 
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <Link href={"/user-profile"}>
+                <Link href={"/settings/user-profile"}>
                   <DropdownMenuItem>
                     <UserPen />
                     Profile

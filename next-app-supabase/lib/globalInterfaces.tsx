@@ -1,5 +1,6 @@
 import { UUID } from "crypto";
 
+export type RoleType = "owner" | "builder" | "filler";
 export interface SupabaseError {
   code: string;
   details: string | null;
@@ -34,13 +35,27 @@ export interface IUserProfile {
   user_id: UUID;
   first_name: string;
   last_name: string;
-  openai_token: string;
+  email: string;
 }
 
-export interface ActiveForm {
+export interface DashboardActiveForm {
   formId: string;
   activeUsers: number;
   lastActive: number;
+  users: string[];
+}
+
+export interface ActiveForm {
+  type: "form_users_update";
+  formId: string;
+  activeUsers: number;
+  users: {
+    [userId: string]: {
+      sessions: {
+        [sessionId: string]: "active" | "monitor";
+      };
+    };
+  };
 }
 
 export interface WhisperSegment {

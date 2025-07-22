@@ -1,11 +1,24 @@
+import { RoleType } from "@/lib/globalInterfaces";
 import { UUID } from "crypto";
 
-export interface ITeamResponse {
-  id: string;
+export interface ITeamInsert {
   name: string;
-  created_by: string;
   description: string | null;
-  picture_id: UUID | null;
+  owner_id: UUID;
+}
+export interface ITeamResponse extends ITeamInsert {
+  id: string;
+  created_at: string;
+  picture_id: string | null;
+  openai_token: string;
+  deepgram_token: string;
+  require_two_factor: boolean;
+}
+
+export interface ITeamSettings {
+  name: string;
+  description: string;
+  require_two_factor: boolean;
 }
 
 export interface IUserProfileResponse {
@@ -13,12 +26,43 @@ export interface IUserProfileResponse {
   user_id: UUID;
   first_name: string;
   last_name: string;
-  openai_token: string;
-  role: "admin" | "normal";
+  email: string;
   active_team_id: UUID | null;
+  picture_id: string | null;
+  color: string | null;
 }
 
-export interface IUserProfileEmailResponse {
-  id: UUID;
+export interface ITeamMembershipsInsert {
+  team_id: UUID;
+  user_id: UUID;
+}
+export interface ITeamMembershipsResponse extends ITeamMembershipsInsert {
+  created_at: Date | string;
+
+  disabled: boolean;
+  role: RoleType[];
+}
+
+export interface IUserApiKeysResponse {
+  openai_token: string | null;
+  anthropic_token: string | null;
+  deepgram_token: string | null;
+}
+
+export interface IMemberRequestInsert {
+  team_id: UUID;
+  user_id: UUID;
   email: string;
+}
+
+export interface IMemberRequestResponse extends IMemberRequestInsert {
+  created_at: Date | string;
+}
+
+export interface ITeamMembershipsWithUser extends ITeamMembershipsResponse {
+  user_profile: IUserProfileResponse;
+}
+
+export interface ITeamAndTeamMembers extends ITeamResponse {
+  team_memberships: ITeamMembershipsWithUser[];
 }

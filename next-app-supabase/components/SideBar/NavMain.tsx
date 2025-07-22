@@ -25,12 +25,13 @@ export function NavMain({
 }: {
   items: {
     title: string;
-    url: string;
+    url?: string;
     icon?: LucideIcon;
     isActive?: boolean;
     items?: {
       title: string;
       url: string;
+      icon?: LucideIcon;
     }[];
   }[];
 }) {
@@ -56,28 +57,36 @@ export function NavMain({
                       tooltip={item.title}
                       onClick={() => {
                         if (pathname !== item.url) {
-                          router.push(item.url);
+                          if (item.url) router.push(item.url);
                         }
                       }}
                     >
                       {item.icon && <item.icon />}
-                      <Link href={item.url}>
+                      {item.url ? (
+                        <Link href={item.url}>
+                          <span>{item.title}</span>
+                        </Link>
+                      ) : (
                         <span>{item.title}</span>
-                      </Link>
+                      )}
+
                       <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
-                      {item.items?.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild>
-                            <a href={subItem.url}>
-                              <span>{subItem.title}</span>
-                            </a>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
+                      {item.items?.map((subItem) => {
+                        return (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton asChild>
+                              <a href={subItem.url}>
+                                {subItem.icon && <subItem.icon />}
+                                <span>{subItem.title}</span>
+                              </a>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })}
                     </SidebarMenuSub>
                   </CollapsibleContent>
                 </>
@@ -85,12 +94,18 @@ export function NavMain({
                 <>
                   <SidebarMenuButton
                     tooltip={item.title}
-                    onClick={() => router.push(item.url)}
+                    onClick={() => {
+                      if (item.url) router.push(item.url);
+                    }}
                   >
                     {item.icon && <item.icon />}
-                    <Link href={item.url}>
+                    {item.url ? (
+                      <Link href={item.url}>
+                        <span>{item.title}</span>
+                      </Link>
+                    ) : (
                       <span>{item.title}</span>
-                    </Link>
+                    )}
                   </SidebarMenuButton>
                 </>
               )}
