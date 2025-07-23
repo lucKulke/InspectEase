@@ -66,10 +66,14 @@ export const TextInputField = ({
       <p className="w-2/3">{fillableInputField.label}</p>
       <Input
         disabled={disabled}
-        className={`w-1/3 ${color && "bg-" + color + "-500 shadow-xl"}`}
+        className={`w-1/3 ${color && "shadow-xl"}`}
         placeholder={fillableInputField.placeholder_text ?? ""}
         value={input}
         onChange={(e) => setInput(e.target.value)}
+        style={{
+          borderColor: color || "#ffffff",
+          borderWidth: "2px",
+        }}
       ></Input>
       {isSaving ? (
         <Button className="ml-2 w-16" variant="outline">

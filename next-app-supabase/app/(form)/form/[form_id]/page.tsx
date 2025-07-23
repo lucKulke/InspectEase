@@ -117,7 +117,7 @@ export default async function FormPage({
         Back
       </Link>
       <div>
-        <div className="flex justify-center">
+        <div className="flex justify-center mt-6">
           <h1 className="font-bold underline">{formData.identifier_string}</h1>
         </div>
 

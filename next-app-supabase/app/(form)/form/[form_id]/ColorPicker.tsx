@@ -33,12 +33,14 @@ const colorOptions = [
 ];
 
 interface ColorPickerProps {
+  disabled: boolean;
   currentUser: IUserProfileResponse | undefined;
   teammates: (IUserProfileResponse | undefined)[];
   onColorChange: (color: string) => void;
 }
 
 export const ColorPicker = ({
+  disabled,
   currentUser,
   teammates,
   onColorChange,
@@ -111,6 +113,7 @@ export const ColorPicker = ({
             <Popover>
               <PopoverTrigger asChild>
                 <Button
+                  disabled={disabled}
                   variant="ghost"
                   size="sm"
                   className="h-8 w-8 p-0 rounded-full"

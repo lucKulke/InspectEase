@@ -23,7 +23,7 @@ import {
   LogEntry,
 } from "@/lib/database/form-filler/formFillerInterfaces";
 
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Monitor, Pen } from "lucide-react";
 import React, { act, use, useEffect, useRef, useState } from "react";
 import { TextInputField } from "./TextInputField";
 import {
@@ -54,6 +54,8 @@ import { useFocusSync } from "@/hooks/useFocusSync";
 import { scrollToSection } from "@/utils/general";
 import { ColorPicker } from "./ColorPicker";
 import axios from "axios";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 
 interface FormCompProps {
   sessionId: string;
@@ -110,12 +112,14 @@ export const FormComp = ({
 
   // teamMemberColors[userId] = currentSessionData.userColor;
   // Register form activity and start heartbeat
+
   useFormActivity({
     formId: formData.id,
     userId,
     url: sessionAwarenessRegistrationUrl,
     sessionId: currentSessionData.sessionId,
   });
+
   const { data: activeForms, isConnected } = useWebSocket<ActiveForm>(
     sessionAwarenessFormActivityWsUrl
   );
@@ -735,7 +739,22 @@ export const FormComp = ({
   return (
     <div className="mb-36">
       {monitoring && (
-        <button onClick={sendSessionTakeOverCommand}>Takeover</button>
+        <div className="fixed  left-1/2 transform -translate-x-1/2 top-2 flex items-center space-x-2 border p-2 rounded-lg shadow-xl bg-white">
+          <Monitor className="text-blue-500" size={16}></Monitor>
+          <Badge
+            variant={"secondary"}
+            className={"bg-blue-100 text-blue-800 hover:bg-blue-200"}
+          >
+            Monitor Session
+          </Badge>
+
+          <button
+            onClick={sendSessionTakeOverCommand}
+            className="w-6 h-6 transition-transform duration-200 ease-in-out hover:scale-110"
+          >
+            <Pen size={16}></Pen>
+          </button>
+        </div>
       )}
 
       {currentUsers && (
@@ -1125,8 +1144,9 @@ export const FormComp = ({
       </ul>
       {/* <QueueLog queue={queue} />
       <Bar queue={queue} setQueue={setQueue} /> */}
-      {!monitoring && teamMembers && (
+      {teamMembers && (
         <ColorPicker
+          disabled={monitoring}
           currentUser={teamMembers.find((member) => member.user_id === userId)}
           teammates={involvedUsers.map((id) =>
             teamMembers.find((member) => member.user_id === id)
