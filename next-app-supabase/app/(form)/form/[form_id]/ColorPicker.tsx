@@ -13,24 +13,6 @@ import { Users, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IUserProfileResponse } from "@/lib/database/public/publicInterface";
 
-// Mock data - replace with your actual data source
-const mockTeammates = [
-  {
-    id: "1",
-    first_name: "Alice",
-    last_name: "Johnson",
-    color: "#ef4444",
-    initials: "AJ",
-  },
-  {
-    id: "2",
-    first_name: "Moin",
-    last_name: "Servus",
-    color: "#3b82f6",
-    initials: "BS",
-  },
-];
-
 const colorOptions = [
   "#ef4444", // red
   "#f97316", // orange
@@ -66,7 +48,6 @@ export const ColorPicker = ({
   }
   const [isExpanded, setIsExpanded] = useState(false);
   const [userColor, setUserColor] = useState(currentUser.color);
-  console.log("team mates", teammates);
 
   const handleColorChange = (color: string) => {
     setUserColor(color);

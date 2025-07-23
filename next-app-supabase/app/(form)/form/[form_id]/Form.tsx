@@ -24,7 +24,7 @@ import {
 } from "@/lib/database/form-filler/formFillerInterfaces";
 
 import { ChevronDown, ChevronRight } from "lucide-react";
-import React, { act, use, useEffect, useState } from "react";
+import React, { act, use, useEffect, useRef, useState } from "react";
 import { TextInputField } from "./TextInputField";
 import {
   changeUserColor,
@@ -101,6 +101,13 @@ export const FormComp = ({
   const currentSessionData = getSessionData();
   const supabase = createClient();
 
+  const [currentUsers, setCurrentUsers] = useState<IUserProfileResponse[]>([]);
+  const [monitoring, setMonitoring] = useState<boolean>(false);
+  const monitoringRef = useRef(monitoring);
+  useEffect(() => {
+    monitoringRef.current = monitoring;
+  }, [monitoring]);
+
   // teamMemberColors[userId] = currentSessionData.userColor;
   // Register form activity and start heartbeat
   useFormActivity({
@@ -113,29 +120,41 @@ export const FormComp = ({
     sessionAwarenessFormActivityWsUrl
   );
 
-  let allUsers = activeForms?.users;
-  let currentUsers: IUserProfileResponse[] = [];
-  let sessionType: string = "Unknown";
-  if (allUsers) {
-    Object.entries(allUsers).forEach(([editingUserIds, sessions]) => {
-      let temp = teamMembers?.find(
-        (member) => member.user_id === editingUserIds
-      );
-      if (editingUserIds === userId) {
-        Object.values(sessions).forEach((session) => {
-          sessionType = session[currentSessionData.sessionId];
-        });
-      }
-      if (temp) currentUsers.push(temp);
-    });
-  }
+  useEffect(() => {
+    let allUsers = activeForms?.users;
+    let users: IUserProfileResponse[] = [];
+    let sessionString: string = "Unknown";
+    if (allUsers) {
+      Object.entries(allUsers).forEach(([editingUserIds, sessions]) => {
+        let temp = teamMembers?.find(
+          (member) => member.user_id === editingUserIds
+        );
+        if (editingUserIds === userId) {
+          Object.values(sessions).forEach((session) => {
+            sessionString = session[currentSessionData.sessionId];
+          });
+        }
+        if (temp) users.push(temp);
+      });
+    }
 
-  currentUsers = currentUsers.filter((user) => user?.user_id !== userId);
+    users = users.filter((user) => user?.user_id !== userId);
+
+    if (sessionString === "monitor" && monitoring === false) {
+      setMonitoring(true);
+      console.log("set monitoring to ture");
+    } else if (sessionString !== "monitor" && monitoring === true) {
+      setMonitoring(false);
+      console.log("set monitoring to false");
+    }
+
+    setCurrentUsers(users);
+  }, [activeForms]);
 
   const sendSessionTakeOverCommand = async () => {
     takeoverSession(formData.id, userId, currentSessionData.sessionId);
   };
-  const monitoring = sessionType === "monitor";
+  // const monitoring = sessionType === "monitor";
 
   const { showNotification } = useNotification();
   const [fillableSubCheckboxes, setFillableSubCheckboxes] =
@@ -590,11 +609,11 @@ export const FormComp = ({
       const data = JSON.parse(event.data);
       if (data.type === "focus_update") {
         const { main_section_id, sub_section_id, field_id } = data;
-        console.log("is also monitoring", monitoring);
+        console.log("is also monitoring", monitoringRef.current);
         console.log("Received focus update:", data);
 
         // Expand main section
-        if (monitoring) {
+        if (monitoringRef.current) {
           if (!selectedMainSections.includes(main_section_id)) {
             handleExpandMainSection(main_section_id);
           }
@@ -623,7 +642,7 @@ export const FormComp = ({
     };
 
     return () => focusWs.close();
-  }, [formData.id, monitoring]);
+  }, [formData.id]);
 
   useEffect(() => {
     const colorChangeWs = new WebSocket(sessionAwarenessColorChangeWsUrl);
