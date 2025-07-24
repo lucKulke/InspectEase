@@ -15,6 +15,7 @@ import { FormComp } from "./Form";
 import { redirect } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { DBActionsPublicFetch } from "@/lib/database/public/publicFetch";
+import { LogOut, X } from "lucide-react";
 
 export default async function FormPage({
   params,
@@ -112,10 +113,12 @@ export default async function FormPage({
   const sessionId = uuidv4();
 
   return (
-    <div className="">
-      <Link className="ml-2" href="/form-filler">
-        Back
-      </Link>
+    <div>
+      <div className="m-2">
+        <Link href="/form-filler">
+          <X></X>
+        </Link>
+      </div>
       <div>
         <div className="flex justify-center mt-6">
           <h1 className="font-bold underline">{formData.identifier_string}</h1>

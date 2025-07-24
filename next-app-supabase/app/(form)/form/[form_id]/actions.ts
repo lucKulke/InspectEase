@@ -68,13 +68,6 @@ export const takeoverSession = async (
 //   formEngine.updateSubCheckbox(formId, checkboxId, value);
 // }
 
-export async function refetchTeamMembers() {
-  const supabase = await createClient();
-
-  const dbActions = new DBActionsPublicFetch(supabase);
-  return await dbActions.fetchTeamMembers();
-}
-
 export async function changeUserColor(userId: UUID, colorCode: string) {
   const supabase = await createClient();
 

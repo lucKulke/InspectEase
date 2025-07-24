@@ -29,6 +29,9 @@ import {
   Key,
   Bell,
   Shield,
+  Plus,
+  ChevronDown,
+  ListFilter,
 } from "lucide-react";
 
 import { NavUser } from "@/components/SideBar/NavUser";
@@ -92,6 +95,7 @@ const dataBuilder = {
         {
           title: "create",
           url: "/form-builder/inspectable-object-profiles/create",
+          icon: Plus,
         },
       ],
     },
@@ -104,6 +108,7 @@ const dataBuilder = {
         {
           title: "create",
           url: "/form-builder/inspectable-objects/create",
+          icon: Plus,
         },
       ],
     },
@@ -162,6 +167,7 @@ const dataFiller = {
         {
           title: "select",
           url: "/form-filler/select-form",
+          icon: ListFilter,
         },
       ],
     },
