@@ -458,8 +458,8 @@ export const TeamForm = ({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 3 * 1024 * 1024) {
-      alert("File too large (max 3MB).");
+    if (file.size > 1 * 1024 * 1024) {
+      alert("File too large (max 1MB).");
       return;
     }
     const fileExt = file.name.split(".").pop();
@@ -520,7 +520,7 @@ export const TeamForm = ({
               </label>
             </Button>
             <p className="mt-2 text-xs text-muted-foreground">
-              JPG, GIF or PNG. Max size of 3MB.
+              JPG, GIF or PNG. Max size of 1MB.
             </p>
           </div>
         </div>

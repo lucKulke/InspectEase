@@ -53,3 +53,9 @@ class Group(BaseModel):
 
 class DBGroupModel(BaseModel):
     group: Group
+
+
+
+class VoiceCommand(BaseModel):
+    formId: str
+    

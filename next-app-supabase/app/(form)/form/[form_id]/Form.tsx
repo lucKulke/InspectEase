@@ -28,7 +28,6 @@ import React, { act, use, useEffect, useRef, useState } from "react";
 import { TextInputField } from "./TextInputField";
 import {
   changeUserColor,
-  refetchTeamMembers,
   takeoverSession,
   updateMainCheckboxValue,
   updateSubCheckboxValue,
@@ -41,7 +40,7 @@ import { Separator } from "@/components/ui/separator";
 import { useFormActivity } from "@/hooks/useFormActivity";
 import { motion, AnimatePresence } from "framer-motion";
 //import Bar, { useQueueProcessor, QueueLog } from "./Bar";
-import { RecordingItem } from "./Bar";
+import Bar, { QueueLog, RecordingItem } from "./Bar";
 import { createClient } from "@/utils/supabase/client";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { ActiveForm } from "@/lib/globalInterfaces";
@@ -56,6 +55,18 @@ import { ColorPicker } from "./ColorPicker";
 import axios from "axios";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 interface FormCompProps {
   sessionId: string;
@@ -102,7 +113,10 @@ export const FormComp = ({
   );
   const currentSessionData = getSessionData();
   const supabase = createClient();
-
+  const [
+    supabaseRealtimeChannelDisconnected,
+    setSupabaseRealtimeChannelDisconnected,
+  ] = useState<boolean>(false);
   const [currentUsers, setCurrentUsers] = useState<IUserProfileResponse[]>([]);
   const [monitoring, setMonitoring] = useState<boolean>(false);
   const monitoringRef = useRef(monitoring);
@@ -242,6 +256,7 @@ export const FormComp = ({
     onSubCheckboxUpdate: handleAutoUpdateSubCheckbox,
     onTextInputUpdate: handleAutoUpdateTextInputField,
     supabase: supabase,
+    channelDisconnected: setSupabaseRealtimeChannelDisconnected,
   });
 
   useFocusSync(formData.id, userId, formData.id, sessionAwarenessFocusWsUrl);
@@ -738,6 +753,23 @@ export const FormComp = ({
 
   return (
     <div className="mb-36">
+      {
+        <AlertDialog
+          open={supabaseRealtimeChannelDisconnected}
+          onOpenChange={setSupabaseRealtimeChannelDisconnected}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-red-500">
+                Realtime chanal disconnected..
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Attempting to reconnect in 3 seconds..
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          </AlertDialogContent>
+        </AlertDialog>
+      }
       {monitoring && (
         <div className="fixed  left-1/2 transform -translate-x-1/2 top-2 flex items-center space-x-2 border p-2 rounded-lg shadow-xl bg-white">
           <Monitor className="text-blue-500" size={16}></Monitor>
@@ -1142,8 +1174,12 @@ export const FormComp = ({
           </li>
         ))}
       </ul>
-      {/* <QueueLog queue={queue} />
-      <Bar queue={queue} setQueue={setQueue} /> */}
+      {!monitoring && (
+        <>
+          <QueueLog queue={queue} />
+          <Bar queue={queue} setQueue={setQueue} />
+        </>
+      )}
       {teamMembers && (
         <ColorPicker
           disabled={monitoring}
