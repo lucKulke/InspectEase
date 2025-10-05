@@ -39,6 +39,8 @@ export function useFormRealtime({
   useEffect(() => {
     if (!formId) return;
 
+    /*************  ✨ Windsurf Command ⭐  *************/
+    /*******  2c2a8218-bf65-4090-89d9-e20ddc317c0e  *******/
     const subscribeToChannel = () => {
       console.log("✅ Subscribing to Supabase Realtime for form:", formId);
 

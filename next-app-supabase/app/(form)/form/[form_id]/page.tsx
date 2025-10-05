@@ -41,6 +41,14 @@ export default async function FormPage({
   const formFillerDbActions = new DBActionsFormFillerFetch(formFillerSupabase);
   const storageActions = new DBActionsBucket(supabaseStorage);
 
+  const { userProfile, userProfileError } = await pubilcFetch.fetchUserProfile(
+    user.id as UUID
+  );
+
+  if (!userProfile) {
+    redirect("/auth/login");
+  }
+
   const { formData, formDataError } =
     await formFillerDbActions.fetchFillableFormData(formId);
 
@@ -125,6 +133,7 @@ export default async function FormPage({
         </div>
 
         <FormComp
+          teamId={userProfile.active_team_id}
           sessionId={sessionId}
           userId={user.id}
           sessionAwarenessRegistrationUrl={`http${

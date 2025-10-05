@@ -31,6 +31,8 @@ export default async function FormFillerPage() {
   const supabaseFormFiller = await createClient("form_filler");
   const supabasePublic = await createClient();
   const bucket = new DBActionsBucket(supabasePublic);
+  const dbActionsFormFiller = new DBActionsFormFillerFetch(supabaseFormFiller);
+  const dbActionsPublic = new DBActionsPublicFetch(supabasePublic);
 
   const {
     data: { user },
@@ -40,8 +42,13 @@ export default async function FormFillerPage() {
     redirect("/auth/login");
   }
 
-  const dbActionsFormFiller = new DBActionsFormFillerFetch(supabaseFormFiller);
-  const dbActionsPublic = new DBActionsPublicFetch(supabasePublic);
+  const { userProfile, userProfileError } =
+    await dbActionsPublic.fetchUserProfile(user.id as UUID);
+
+  if (!userProfile) {
+    redirect("/auth/login");
+  }
+
   const wsUrl = `ws${
     process.env.APP_ENVIROMENT === "development" ? "" : "s"
   }://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/ws/dashboard?token=${
@@ -87,6 +94,7 @@ export default async function FormFillerPage() {
       <div className="m-5 ml-8 mr-8">
         <FormFilter
           userId={user.id}
+          teamId={userProfile.active_team_id}
           teamMembers={teamMembers}
           wsUrl={wsUrl}
           forms={forms}

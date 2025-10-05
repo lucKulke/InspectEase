@@ -67,8 +67,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { useFormEditorPresence } from "@/hooks/useFormEditorPresence";
 
 interface FormCompProps {
+  teamId: UUID | null;
   sessionId: string;
   userId: string;
   formData: IFormData;
@@ -94,6 +96,7 @@ const getSessionData = () => {
   return { sessionId };
 };
 export const FormComp = ({
+  teamId,
   sessionId,
   userId,
   sessionAwarenessRegistrationUrl,
@@ -111,7 +114,7 @@ export const FormComp = ({
   const [teamMembers, setTeamMembers] = useState<IUserProfileResponse[] | null>(
     teamMemberList
   );
-  const currentSessionData = getSessionData();
+  //const currentSessionData = getSessionData();
   const supabase = createClient();
   const [
     supabaseRealtimeChannelDisconnected,
@@ -124,54 +127,64 @@ export const FormComp = ({
     monitoringRef.current = monitoring;
   }, [monitoring]);
 
+  const { others } = useFormEditorPresence({
+    teamId,
+    formId: formData.id,
+    user: {
+      id: userId,
+      name:
+        teamMembers?.find((member) => member.user_id === userId)?.email || "",
+    },
+  });
+
   // teamMemberColors[userId] = currentSessionData.userColor;
   // Register form activity and start heartbeat
 
-  useFormActivity({
-    formId: formData.id,
-    userId,
-    url: sessionAwarenessRegistrationUrl,
-    sessionId: currentSessionData.sessionId,
-  });
+  // useFormActivity({
+  //   formId: formData.id,
+  //   userId,
+  //   url: sessionAwarenessRegistrationUrl,
+  //   sessionId: currentSessionData.sessionId,
+  // });
 
-  const { data: activeForms, isConnected } = useWebSocket<ActiveForm>(
-    sessionAwarenessFormActivityWsUrl
-  );
+  // const { data: activeForms, isConnected } = useWebSocket<ActiveForm>(
+  //   sessionAwarenessFormActivityWsUrl
+  // );
 
-  useEffect(() => {
-    let allUsers = activeForms?.users;
-    let users: IUserProfileResponse[] = [];
-    let sessionString: string = "Unknown";
-    if (allUsers) {
-      Object.entries(allUsers).forEach(([editingUserIds, sessions]) => {
-        let temp = teamMembers?.find(
-          (member) => member.user_id === editingUserIds
-        );
-        if (editingUserIds === userId) {
-          Object.values(sessions).forEach((session) => {
-            sessionString = session[currentSessionData.sessionId];
-          });
-        }
-        if (temp) users.push(temp);
-      });
-    }
+  // useEffect(() => {
+  //   let allUsers = activeForms?.users;
+  //   let users: IUserProfileResponse[] = [];
+  //   let sessionString: string = "Unknown";
+  //   if (allUsers) {
+  //     Object.entries(allUsers).forEach(([editingUserIds, sessions]) => {
+  //       let temp = teamMembers?.find(
+  //         (member) => member.user_id === editingUserIds
+  //       );
+  //       if (editingUserIds === userId) {
+  //         Object.values(sessions).forEach((session) => {
+  //           sessionString = session[currentSessionData.sessionId];
+  //         });
+  //       }
+  //       if (temp) users.push(temp);
+  //     });
+  //   }
 
-    users = users.filter((user) => user?.user_id !== userId);
+  //   users = users.filter((user) => user?.user_id !== userId);
 
-    if (sessionString === "monitor" && monitoring === false) {
-      setMonitoring(true);
-      console.log("set monitoring to ture");
-    } else if (sessionString !== "monitor" && monitoring === true) {
-      setMonitoring(false);
-      console.log("set monitoring to false");
-    }
+  //   if (sessionString === "monitor" && monitoring === false) {
+  //     setMonitoring(true);
+  //     console.log("set monitoring to ture");
+  //   } else if (sessionString !== "monitor" && monitoring === true) {
+  //     setMonitoring(false);
+  //     console.log("set monitoring to false");
+  //   }
 
-    setCurrentUsers(users);
-  }, [activeForms]);
+  //   setCurrentUsers(users);
+  // }, [activeForms]);
 
-  const sendSessionTakeOverCommand = async () => {
-    takeoverSession(formData.id, userId, currentSessionData.sessionId);
-  };
+  // const sendSessionTakeOverCommand = async () => {
+  //   takeoverSession(formData.id, userId, currentSessionData.sessionId);
+  // };
   // const monitoring = sessionType === "monitor";
 
   const { showNotification } = useNotification();
@@ -621,76 +634,76 @@ export const FormComp = ({
 
   const [queue, setQueue] = useState<RecordingItem[]>([]);
 
-  useEffect(() => {
-    const focusWs = new WebSocket(sessionAwarenessFocusWsUrl);
+  // useEffect(() => {
+  //   const focusWs = new WebSocket(sessionAwarenessFocusWsUrl);
 
-    focusWs.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === "focus_update") {
-        const { main_section_id, sub_section_id, field_id } = data;
-        console.log("is also monitoring", monitoringRef.current);
-        console.log("Received focus update:", data);
+  //   focusWs.onmessage = (event) => {
+  //     const data = JSON.parse(event.data);
+  //     if (data.type === "focus_update") {
+  //       const { main_section_id, sub_section_id, field_id } = data;
+  //       console.log("is also monitoring", monitoringRef.current);
+  //       console.log("Received focus update:", data);
 
-        // Expand main section
-        if (monitoringRef.current) {
-          if (!selectedMainSections.includes(main_section_id)) {
-            handleExpandMainSection(main_section_id);
-          }
-          if (!selectedSubSections.includes(sub_section_id)) {
-            handleExpandSubSection(sub_section_id);
-          }
+  //       // Expand main section
+  //       if (monitoringRef.current) {
+  //         if (!selectedMainSections.includes(main_section_id)) {
+  //           handleExpandMainSection(main_section_id);
+  //         }
+  //         if (!selectedSubSections.includes(sub_section_id)) {
+  //           handleExpandSubSection(sub_section_id);
+  //         }
 
-          setTimeout(() => {
-            console.log("Scrolling to field:", field_id);
-            const fieldElement = document.querySelector(
-              `[data-field-id="${field_id}"]`
-            );
-            if (fieldElement) {
-              console.log("found element");
-              fieldElement.scrollIntoView({
-                behavior: "smooth",
-                block: "center",
-              });
-            }
-          }, 1200);
-        }
-      }
-    };
-    focusWs.onopen = () => {
-      console.log("WebSocket connection opened for focus update");
-    };
+  //         setTimeout(() => {
+  //           console.log("Scrolling to field:", field_id);
+  //           const fieldElement = document.querySelector(
+  //             `[data-field-id="${field_id}"]`
+  //           );
+  //           if (fieldElement) {
+  //             console.log("found element");
+  //             fieldElement.scrollIntoView({
+  //               behavior: "smooth",
+  //               block: "center",
+  //             });
+  //           }
+  //         }, 1200);
+  //       }
+  //     }
+  //   };
+  //   focusWs.onopen = () => {
+  //     console.log("WebSocket connection opened for focus update");
+  //   };
 
-    return () => focusWs.close();
-  }, [formData.id]);
+  //   return () => focusWs.close();
+  // }, [formData.id]);
 
-  useEffect(() => {
-    const colorChangeWs = new WebSocket(sessionAwarenessColorChangeWsUrl);
+  // useEffect(() => {
+  //   const colorChangeWs = new WebSocket(sessionAwarenessColorChangeWsUrl);
 
-    colorChangeWs.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === "color_change") {
-        const { type, user_id, color } = data;
+  //   colorChangeWs.onmessage = (event) => {
+  //     const data = JSON.parse(event.data);
+  //     if (data.type === "color_change") {
+  //       const { type, user_id, color } = data;
 
-        console.log("Received color update:", data);
+  //       console.log("Received color update:", data);
 
-        // Expand main section
-        if (teamMembers)
-          setTeamMembers(
-            teamMembers.map((member) => {
-              if (member.user_id === user_id) {
-                member.color = color;
-              }
-              return member;
-            })
-          );
-      }
-    };
-    colorChangeWs.onopen = () => {
-      console.log("WebSocket connection opened for color update");
-    };
+  //       // Expand main section
+  //       if (teamMembers)
+  //         setTeamMembers(
+  //           teamMembers.map((member) => {
+  //             if (member.user_id === user_id) {
+  //               member.color = color;
+  //             }
+  //             return member;
+  //           })
+  //         );
+  //     }
+  //   };
+  //   colorChangeWs.onopen = () => {
+  //     console.log("WebSocket connection opened for color update");
+  //   };
 
-    return () => colorChangeWs.close();
-  }, [formData.id]);
+  //   return () => colorChangeWs.close();
+  // }, [formData.id]);
 
   const handleChangeUserColor = async (color: string) => {
     const { updatedProfile, updatedProfileError } = await changeUserColor(
@@ -753,6 +766,19 @@ export const FormComp = ({
 
   return (
     <div className="mb-36">
+      <div className="space-y-3">
+        <div className="text-sm text-gray-500">
+          {others.length === 0
+            ? "No one else is editing"
+            : `Also editing: ${others.map((o) => o.name).join(", ")}`}
+        </div>
+
+        {/* your actual form UI below */}
+        <div className="rounded-2xl border p-4">
+          <h1 className="text-xl font-semibold">Editing plan {formData.id}</h1>
+          {/* ... */}
+        </div>
+      </div>
       {
         <AlertDialog
           open={supabaseRealtimeChannelDisconnected}
@@ -780,18 +806,18 @@ export const FormComp = ({
             Monitor Session
           </Badge>
 
-          <button
+          {/* <button
             onClick={sendSessionTakeOverCommand}
             className="w-6 h-6 transition-transform duration-200 ease-in-out hover:scale-110"
           >
             <Pen size={16}></Pen>
-          </button>
+          </button> */}
         </div>
       )}
 
       {currentUsers && (
         <UserIndicatorOverlay
-          isBeeingEdited={activeForms}
+          isBeeingEdited={null}
           currentUsers={currentUsers as IUserProfileResponse[]}
           teamMemberProfilePictures={profilePictures as Record<UUID, string>}
           position="top-right"

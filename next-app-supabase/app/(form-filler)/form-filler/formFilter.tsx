@@ -22,9 +22,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { IUserProfileResponse } from "@/lib/database/public/publicInterface";
+import { useFormsPresence } from "@/hooks/useFormsPresence";
 
 interface FormFilterProps {
   userId: string;
+  teamId: UUID | null;
   forms: IFillableFormPlusFillableFields[] | null;
   wsUrl: string;
   teamMembers: IUserProfileResponse[] | null;
@@ -33,6 +35,7 @@ interface FormFilterProps {
 
 export const FormFilter = ({
   userId,
+  teamId,
   forms,
   wsUrl,
   teamMembers,
@@ -43,8 +46,8 @@ export const FormFilter = ({
   const tabFromUrl = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(tabFromUrl || "inProgress");
   const [searchTerm, setSearchTerm] = useState("");
+  const active = useFormsPresence({ teamId });
 
-  const { data, isConnected } = useWebSocket<DashboardActiveForm[]>(wsUrl);
   const [activeForms, setActiveForms] = useState<DashboardActiveForm[]>([]);
   const { showNotification } = useNotification();
 
@@ -63,10 +66,10 @@ export const FormFilter = ({
   }, [activeTab]);
 
   useEffect(() => {
-    if (data) {
-      setActiveForms(data);
+    if (active) {
+      setActiveForms(active);
     }
-  }, [data]);
+  }, [active]);
 
   const handleDeleteForms = async (formIds: string[]) => {
     setFillableForms((prev) =>
