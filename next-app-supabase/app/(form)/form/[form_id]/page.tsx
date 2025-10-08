@@ -122,11 +122,6 @@ export default async function FormPage({
 
   return (
     <div>
-      <div className="m-2">
-        <Link href="/form-filler">
-          <X></X>
-        </Link>
-      </div>
       <div>
         <div className="flex justify-center mt-6">
           <h1 className="font-bold underline">{formData.identifier_string}</h1>

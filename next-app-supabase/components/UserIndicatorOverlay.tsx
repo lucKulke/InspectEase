@@ -7,7 +7,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { IUserProfileResponse } from "@/lib/database/public/publicInterface";
 
 type Props = {
-  isBeeingEdited: { activeUsers: number } | null;
   currentUsers: IUserProfileResponse[];
   teamMemberProfilePictures: Record<string, string>;
   position?: "top-left" | "top-right" | "bottom-left" | "bottom-right";
@@ -15,7 +14,6 @@ type Props = {
 };
 
 export default function UserIndicatorOverlay({
-  isBeeingEdited,
   currentUsers,
   teamMemberProfilePictures,
   position = "top-right",
@@ -25,7 +23,7 @@ export default function UserIndicatorOverlay({
 
   const handleOverlayClick = () => setIsExpanded(!isExpanded);
 
-  if (!isBeeingEdited || currentUsers.length === 0) return null;
+  if (currentUsers.length === 0) return null;
 
   const positionClasses = {
     "top-left": "top-2 left-2",
@@ -73,10 +71,10 @@ export default function UserIndicatorOverlay({
                 </AvatarFallback>
               </Avatar>
             ))}
-            {isBeeingEdited.activeUsers > 3 && (
+            {currentUsers.length > 3 && (
               <div className="h-5 w-5 bg-blue-700 rounded-full border border-white flex items-center justify-center">
                 <span className="text-xs font-bold">
-                  +{isBeeingEdited.activeUsers - 3}
+                  +{currentUsers.length - 3}
                 </span>
               </div>
             )}

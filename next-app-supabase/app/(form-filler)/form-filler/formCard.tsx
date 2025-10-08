@@ -55,7 +55,7 @@ interface FormCardProps {
   setFillableForms: React.Dispatch<
     React.SetStateAction<IFillableFormPlusFillableFields[]>
   >;
-  isBeeingEdited: DashboardActiveForm;
+  isBeeingEdited: string[];
   teamMembers: IUserProfileResponse[] | null;
   teamMemberProfilePictures: Record<UUID, string | undefined>;
 }
@@ -156,20 +156,13 @@ export const FormCard = ({
       .slice(0, 2);
   };
 
-  let currentUsers = isBeeingEdited
-    ? isBeeingEdited.users.map((editingUserId) =>
-        teamMembers?.find((member) => member.user_id === editingUserId)
-      )
-    : [];
-
-  let allreadyWorkingOnIt = false;
-  currentUsers = currentUsers.filter((user) => {
-    if (user?.user_id !== userId) {
-      return user;
-    } else {
-      allreadyWorkingOnIt = true;
+  let currentUsers = teamMembers?.filter((member) => {
+    if (isBeeingEdited.includes(member.user_id)) {
+      return true;
     }
   });
+
+  let allreadyWorkingOnIt = isBeeingEdited.length > 0;
 
   //currentUsers
   return (
@@ -178,11 +171,11 @@ export const FormCard = ({
         <Card
           key={form.id}
           className={`h-full hover:shadow-md transition-shadow relative max-w-[400px] overflow-hidden ${
-            isBeeingEdited && "border-blue-600"
+            allreadyWorkingOnIt && "border-blue-600"
           }`}
         >
           {/* Indicator Badge */}
-          {allreadyWorkingOnIt && (
+          {isBeeingEdited.includes(userId) && (
             <div className="absolute top-2 left-2 z-10 flex items-center gap-2 rounded-full bg-blue-600 text-white px-3 py-1 shadow-md text-xs font-medium">
               <span className="flex items-center gap-1">
                 <svg
@@ -209,9 +202,8 @@ export const FormCard = ({
               </span>
             </div>
           )}
-          {isBeeingEdited && currentUsers.length > 0 && (
+          {allreadyWorkingOnIt && (
             <UserIndicatorOverlay
-              isBeeingEdited={isBeeingEdited}
               currentUsers={currentUsers as IUserProfileResponse[]}
               teamMemberProfilePictures={
                 teamMemberProfilePictures as Record<UUID, string>

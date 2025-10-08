@@ -71,12 +71,15 @@ export function useFormEditorPresence(params: {
     channel
       .on("presence", { event: "sync" }, () => {
         setRoster(channel.presenceState() as PresenceState);
+        console.log("Presence sync:", channel.presenceState());
       })
       .on("presence", { event: "join" }, () => {
         setRoster(channel.presenceState() as PresenceState);
+        console.log("Presence join:", channel.presenceState());
       })
       .on("presence", { event: "leave" }, () => {
         setRoster(channel.presenceState() as PresenceState);
+        console.log("Presence leave:", channel.presenceState());
       });
 
     channel.subscribe(async (status) => {

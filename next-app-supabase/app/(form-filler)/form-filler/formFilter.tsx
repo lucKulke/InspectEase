@@ -22,7 +22,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { IUserProfileResponse } from "@/lib/database/public/publicInterface";
-import { useFormsPresence } from "@/hooks/useFormsPresence";
+import { useMemo } from "react";
+import { useTeamPresence } from "@/hooks/useTeamPresence";
+import { set } from "date-fns";
+import { createClient } from "@/utils/supabase/client";
 
 interface FormFilterProps {
   userId: string;
@@ -43,13 +46,39 @@ export const FormFilter = ({
 }: FormFilterProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const supabase = createClient();
   const tabFromUrl = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(tabFromUrl || "inProgress");
   const [searchTerm, setSearchTerm] = useState("");
-  const active = useFormsPresence({ teamId });
 
   const [activeForms, setActiveForms] = useState<DashboardActiveForm[]>([]);
   const { showNotification } = useNotification();
+
+  const enabled = Boolean(teamId);
+  const { byForm, members } = enabled
+    ? useTeamPresence(String(teamId), userId, supabase)
+    : { byForm: new Map<string, string[]>() };
+
+  // const { members } = useTeamPresence(
+  //   teamId,
+  //   {
+  //     user_id: userId,
+  //     user_name: teamMembers?.find((m) => m.user_id === userId)?.email || "",
+  //     current_form_id: null,
+  //   },
+  //   supabase
+  // );
+
+  // const byForm = useMemo(() => {
+  //   const map = new Map<string, { names: string[] }>();
+  //   for (const m of members) {
+  //     const key = m.current_form_id ?? "_idle";
+  //     const bucket = map.get(key) ?? { names: [] };
+  //     bucket.names.push(m.user_name);
+  //     map.set(key, bucket);
+  //   }
+  //   return map;
+  // }, [members]);
 
   const [fillableForms, setFillableForms] = useState<
     IFillableFormPlusFillableFields[]
@@ -64,12 +93,6 @@ export const FormFilter = ({
       router.replace(`?${params.toString()}`, { scroll: false });
     }
   }, [activeTab]);
-
-  useEffect(() => {
-    if (active) {
-      setActiveForms(active);
-    }
-  }, [active]);
 
   const handleDeleteForms = async (formIds: string[]) => {
     setFillableForms((prev) =>
@@ -105,6 +128,7 @@ export const FormFilter = ({
 
   return (
     <div className="w-full">
+      <div className="space-y-6"></div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="lg:flex lg:justify-between ">
           <TabsList className="mb-6">
@@ -134,9 +158,7 @@ export const FormFilter = ({
                 .map((form) => (
                   <FormCard
                     userId={userId}
-                    isBeeingEdited={
-                      activeForms.filter((f) => f.formId === form.id)[0]
-                    }
+                    isBeeingEdited={byForm.get(String(form.id)) ?? []}
                     key={form.id}
                     form={form}
                     selectedForm={selectedForm}
@@ -166,9 +188,7 @@ export const FormFilter = ({
                   <FormCard
                     teamMemberProfilePictures={teamMemberProfilePictures}
                     userId={userId}
-                    isBeeingEdited={
-                      activeForms.filter((f) => f.formId === form.id)[0]
-                    }
+                    isBeeingEdited={byForm.get(String(form.id)) ?? []}
                     key={form.id}
                     form={form}
                     selectedForm={selectedForm}

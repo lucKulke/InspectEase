@@ -23,7 +23,7 @@ import {
   LogEntry,
 } from "@/lib/database/form-filler/formFillerInterfaces";
 
-import { ChevronDown, ChevronRight, Monitor, Pen } from "lucide-react";
+import { ChevronDown, ChevronRight, Monitor, Pen, X } from "lucide-react";
 import React, { act, use, useEffect, useRef, useState } from "react";
 import { TextInputField } from "./TextInputField";
 import {
@@ -68,6 +68,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useFormEditorPresence } from "@/hooks/useFormEditorPresence";
+import { useFormChannel } from "@/hooks/useFormChannel";
 
 interface FormCompProps {
   teamId: UUID | null;
@@ -85,16 +86,23 @@ interface FormCompProps {
   teamMemberList: IUserProfileResponse[] | null;
   profilePictures: Record<UUID, string | undefined>;
 }
-const getSessionData = () => {
-  let sessionId = sessionStorage.getItem("formSessionId");
 
-  if (!sessionId) {
-    sessionId = uuidv4();
-    sessionStorage.setItem("formSessionId", sessionId);
-  }
-
-  return { sessionId };
+type FormMember = {
+  user_id: string;
+  user_name: string;
+  tab_id: string;
 };
+
+// const getSessionData = () => {
+//   let sessionId = sessionStorage.getItem("formSessionId");
+
+//   if (!sessionId) {
+//     sessionId = uuidv4();
+//     sessionStorage.setItem("formSessionId", sessionId);
+//   }
+
+//   return { sessionId };
+// };
 export const FormComp = ({
   teamId,
   sessionId,
@@ -116,6 +124,7 @@ export const FormComp = ({
   );
   //const currentSessionData = getSessionData();
   const supabase = createClient();
+
   const [
     supabaseRealtimeChannelDisconnected,
     setSupabaseRealtimeChannelDisconnected,
@@ -123,69 +132,10 @@ export const FormComp = ({
   const [currentUsers, setCurrentUsers] = useState<IUserProfileResponse[]>([]);
   const [monitoring, setMonitoring] = useState<boolean>(false);
   const monitoringRef = useRef(monitoring);
+
   useEffect(() => {
     monitoringRef.current = monitoring;
   }, [monitoring]);
-
-  const { others } = useFormEditorPresence({
-    teamId,
-    formId: formData.id,
-    user: {
-      id: userId,
-      name:
-        teamMembers?.find((member) => member.user_id === userId)?.email || "",
-    },
-  });
-
-  // teamMemberColors[userId] = currentSessionData.userColor;
-  // Register form activity and start heartbeat
-
-  // useFormActivity({
-  //   formId: formData.id,
-  //   userId,
-  //   url: sessionAwarenessRegistrationUrl,
-  //   sessionId: currentSessionData.sessionId,
-  // });
-
-  // const { data: activeForms, isConnected } = useWebSocket<ActiveForm>(
-  //   sessionAwarenessFormActivityWsUrl
-  // );
-
-  // useEffect(() => {
-  //   let allUsers = activeForms?.users;
-  //   let users: IUserProfileResponse[] = [];
-  //   let sessionString: string = "Unknown";
-  //   if (allUsers) {
-  //     Object.entries(allUsers).forEach(([editingUserIds, sessions]) => {
-  //       let temp = teamMembers?.find(
-  //         (member) => member.user_id === editingUserIds
-  //       );
-  //       if (editingUserIds === userId) {
-  //         Object.values(sessions).forEach((session) => {
-  //           sessionString = session[currentSessionData.sessionId];
-  //         });
-  //       }
-  //       if (temp) users.push(temp);
-  //     });
-  //   }
-
-  //   users = users.filter((user) => user?.user_id !== userId);
-
-  //   if (sessionString === "monitor" && monitoring === false) {
-  //     setMonitoring(true);
-  //     console.log("set monitoring to ture");
-  //   } else if (sessionString !== "monitor" && monitoring === true) {
-  //     setMonitoring(false);
-  //     console.log("set monitoring to false");
-  //   }
-
-  //   setCurrentUsers(users);
-  // }, [activeForms]);
-
-  // const sendSessionTakeOverCommand = async () => {
-  //   takeoverSession(formData.id, userId, currentSessionData.sessionId);
-  // };
-  // const monitoring = sessionType === "monitor";
 
   const { showNotification } = useNotification();
   const [fillableSubCheckboxes, setFillableSubCheckboxes] =
@@ -263,16 +213,26 @@ export const FormComp = ({
     setFillableTextInputFields(updatedTextInputFields);
   };
 
-  useFormRealtime({
+  const [member, setMember] = useState<FormMember[]>([]);
+  const user = {
+    id: userId,
+    name: teamMemberList?.filter((m) => m.user_id === userId)[0]?.email || "",
+  };
+  const { members, sendCursor, sendLock } = useFormRealtime({
     formId: formData.id,
+    teamId: teamId,
+    user: user,
     onMainCheckboxUpdate: handleAutoUpdateMainCheckbox,
     onSubCheckboxUpdate: handleAutoUpdateSubCheckbox,
     onTextInputUpdate: handleAutoUpdateTextInputField,
     supabase: supabase,
     channelDisconnected: setSupabaseRealtimeChannelDisconnected,
+    onPresenceChange: (members) => {
+      setMember(members);
+    },
   });
 
-  useFocusSync(formData.id, userId, formData.id, sessionAwarenessFocusWsUrl);
+  // useFocusSync(formData.id, userId, formData.id, sessionAwarenessFocusWsUrl);
 
   useEffect(() => {
     if (aiSelectedFields) {
@@ -766,19 +726,12 @@ export const FormComp = ({
 
   return (
     <div className="mb-36">
-      <div className="space-y-3">
-        <div className="text-sm text-gray-500">
-          {others.length === 0
-            ? "No one else is editing"
-            : `Also editing: ${others.map((o) => o.name).join(", ")}`}
-        </div>
-
-        {/* your actual form UI below */}
-        <div className="rounded-2xl border p-4">
-          <h1 className="text-xl font-semibold">Editing plan {formData.id}</h1>
-          {/* ... */}
-        </div>
+      <div className="m-2 fixed top-2 left-2">
+        <button onClick={() => window.history.back()}>
+          <X></X>
+        </button>
       </div>
+
       {
         <AlertDialog
           open={supabaseRealtimeChannelDisconnected}
@@ -817,8 +770,12 @@ export const FormComp = ({
 
       {currentUsers && (
         <UserIndicatorOverlay
-          isBeeingEdited={null}
-          currentUsers={currentUsers as IUserProfileResponse[]}
+          currentUsers={
+            teamMemberList?.filter((m) => {
+              if (m.user_id === userId) return false;
+              return member.map((memb) => memb.user_id).includes(m.user_id);
+            }) as IUserProfileResponse[]
+          }
           teamMemberProfilePictures={profilePictures as Record<UUID, string>}
           position="top-right"
           type="fixed"
