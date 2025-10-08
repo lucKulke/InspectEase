@@ -742,8 +742,13 @@ export const FormComp = ({
               <AlertDialogTitle className="text-red-500">
                 Realtime chanal disconnected..
               </AlertDialogTitle>
-              <AlertDialogDescription>
-                Attempting to reconnect in 3 seconds..
+              <AlertDialogDescription className="flex justify-end">
+                <Button
+                  variant={"outline"}
+                  onClick={() => window.location.reload()}
+                >
+                  Reconnect Now
+                </Button>
               </AlertDialogDescription>
             </AlertDialogHeader>
           </AlertDialogContent>
