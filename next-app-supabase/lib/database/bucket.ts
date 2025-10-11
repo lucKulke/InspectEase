@@ -56,9 +56,6 @@ export class DBActionsBucket {
       .from("pictures")
       .createSignedUrl("private/" + fileName, 86400);
 
-    console.log("storage download document", data?.signedUrl);
-    console.log("error: ", error);
-
     return { bucketResponse: data, bucketError: error };
   }
 }

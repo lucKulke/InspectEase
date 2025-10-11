@@ -69,6 +69,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useFormEditorPresence } from "@/hooks/useFormEditorPresence";
 import { useFormChannel } from "@/hooks/useFormChannel";
+import { PresenceDots } from "./SectionPresenceDots";
 
 interface FormCompProps {
   teamId: UUID | null;
@@ -119,8 +120,8 @@ export const FormComp = ({
   teamMemberList,
   profilePictures,
 }: FormCompProps) => {
-  const [teamMembers, setTeamMembers] = useState<IUserProfileResponse[] | null>(
-    teamMemberList
+  const [teamMembers, setTeamMembers] = useState<IUserProfileResponse[]>(
+    teamMemberList ?? []
   );
   //const currentSessionData = getSessionData();
   const supabase = createClient();
@@ -132,6 +133,12 @@ export const FormComp = ({
   const [currentUsers, setCurrentUsers] = useState<IUserProfileResponse[]>([]);
   const [monitoring, setMonitoring] = useState<boolean>(false);
   const monitoringRef = useRef(monitoring);
+  const [lastOpendSubSection, setLastOpendSubSection] = useState<string | null>(
+    null
+  );
+  const [lastOpendMainSection, setLastOpendMainSection] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     monitoringRef.current = monitoring;
@@ -218,7 +225,12 @@ export const FormComp = ({
     id: userId,
     name: teamMemberList?.filter((m) => m.user_id === userId)[0]?.email || "",
   };
-  const { members, sendCursor, sendLock } = useFormRealtime({
+  const {
+    sendSection,
+    getUsersInMainOrSubs,
+    getUsersInSection,
+    sendUserColor,
+  } = useFormRealtime({
     formId: formData.id,
     teamId: teamId,
     user: user,
@@ -229,6 +241,12 @@ export const FormComp = ({
     channelDisconnected: setSupabaseRealtimeChannelDisconnected,
     onPresenceChange: (members) => {
       setMember(members);
+    },
+    onUserColor: ({ user_id, color }) => {
+      setTeamMembers((prev) => {
+        if (!prev) return prev;
+        return prev.map((m) => (m.user_id === user_id ? { ...m, color } : m));
+      });
     },
   });
 
@@ -495,12 +513,25 @@ export const FormComp = ({
       setSelectedMainSections((prev) =>
         prev.filter((mainSection) => mainSection !== mainSectionId)
       );
+      if (lastOpendSubSection)
+        sendSection({ type: "sub", id: lastOpendSubSection, state: "closed" });
+      setSelectedSubSections((prev) =>
+        prev.filter((subSection) => subSection !== lastOpendSubSection)
+      );
+      setLastOpendSubSection(null);
     } else {
       setSelectedMainSections((prev) => {
-        const copy = [...prev];
-        copy.push(mainSectionId);
-        return copy;
+        return [mainSectionId];
       });
+
+      if (lastOpendSubSection)
+        sendSection({ type: "sub", id: lastOpendSubSection, state: "closed" });
+      setSelectedSubSections((prev) =>
+        prev.filter((subSection) => subSection !== lastOpendSubSection)
+      );
+      setLastOpendSubSection(null);
+
+      setLastOpendMainSection(mainSectionId);
     }
   };
 
@@ -509,12 +540,13 @@ export const FormComp = ({
       setSelectedSubSections((prev) =>
         prev.filter((subSection) => subSection !== subSectionId)
       );
+      sendSection({ type: "sub", id: subSectionId, state: "closed" });
     } else {
       setSelectedSubSections((prev) => {
-        const copy = [...prev];
-        copy.push(subSectionId);
-        return copy;
+        return [subSectionId];
       });
+      setLastOpendSubSection(subSectionId);
+      sendSection({ type: "sub", id: subSectionId, state: "open" });
     }
   };
 
@@ -594,98 +626,25 @@ export const FormComp = ({
 
   const [queue, setQueue] = useState<RecordingItem[]>([]);
 
-  // useEffect(() => {
-  //   const focusWs = new WebSocket(sessionAwarenessFocusWsUrl);
-
-  //   focusWs.onmessage = (event) => {
-  //     const data = JSON.parse(event.data);
-  //     if (data.type === "focus_update") {
-  //       const { main_section_id, sub_section_id, field_id } = data;
-  //       console.log("is also monitoring", monitoringRef.current);
-  //       console.log("Received focus update:", data);
-
-  //       // Expand main section
-  //       if (monitoringRef.current) {
-  //         if (!selectedMainSections.includes(main_section_id)) {
-  //           handleExpandMainSection(main_section_id);
-  //         }
-  //         if (!selectedSubSections.includes(sub_section_id)) {
-  //           handleExpandSubSection(sub_section_id);
-  //         }
-
-  //         setTimeout(() => {
-  //           console.log("Scrolling to field:", field_id);
-  //           const fieldElement = document.querySelector(
-  //             `[data-field-id="${field_id}"]`
-  //           );
-  //           if (fieldElement) {
-  //             console.log("found element");
-  //             fieldElement.scrollIntoView({
-  //               behavior: "smooth",
-  //               block: "center",
-  //             });
-  //           }
-  //         }, 1200);
-  //       }
-  //     }
-  //   };
-  //   focusWs.onopen = () => {
-  //     console.log("WebSocket connection opened for focus update");
-  //   };
-
-  //   return () => focusWs.close();
-  // }, [formData.id]);
-
-  // useEffect(() => {
-  //   const colorChangeWs = new WebSocket(sessionAwarenessColorChangeWsUrl);
-
-  //   colorChangeWs.onmessage = (event) => {
-  //     const data = JSON.parse(event.data);
-  //     if (data.type === "color_change") {
-  //       const { type, user_id, color } = data;
-
-  //       console.log("Received color update:", data);
-
-  //       // Expand main section
-  //       if (teamMembers)
-  //         setTeamMembers(
-  //           teamMembers.map((member) => {
-  //             if (member.user_id === user_id) {
-  //               member.color = color;
-  //             }
-  //             return member;
-  //           })
-  //         );
-  //     }
-  //   };
-  //   colorChangeWs.onopen = () => {
-  //     console.log("WebSocket connection opened for color update");
-  //   };
-
-  //   return () => colorChangeWs.close();
-  // }, [formData.id]);
-
   const handleChangeUserColor = async (color: string) => {
     const { updatedProfile, updatedProfileError } = await changeUserColor(
       userId as UUID,
       color
     );
-    await axios.post(sessionAwarenessColorChangeUrl, {
-      form_id: formData.id,
-      user_id: userId,
-      color: color, // Send the session ID
-    });
-    if (updatedProfile) {
-      if (teamMembers)
-        setTeamMembers(
-          teamMembers.map((member) => {
-            if (member.user_id === userId) {
-              member.color = color;
-            }
-            return member;
-          })
-        );
+    if (updatedProfileError) {
+      // handle error UI if needed
+      return;
     }
+    if (teamMembers && updatedProfile) {
+      // optimistic local update
+      setTeamMembers(
+        teamMembers.map((m) =>
+          m.user_id === updatedProfile.user_id ? updatedProfile : m
+        )
+      );
+    }
+    // broadcast to everyone currently in this form
+    sendUserColor(color);
   };
 
   const findInvolvedUsers = () => {
@@ -787,380 +746,412 @@ export const FormComp = ({
         ></UserIndicatorOverlay>
       )}
       <ul className="space-y-2">
-        {formData.main_section.sort(sortMainSections).map((mainSection) => (
-          <li key={mainSection.id} data-main-section-id={mainSection.id}>
-            <Card>
-              <CardHeader
-                className="cursor-pointer flex flex-row items-center space-y-0 py-4 select-none"
-                onClick={() => handleExpandMainSection(mainSection.id)}
-              >
-                <CardTitle className="flex-1 text-xl">
-                  {mainSection.name}
-                </CardTitle>
-                {selectedMainSections.includes(mainSection.id) ? (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                )}
-              </CardHeader>
+        {formData.main_section.sort(sortMainSections).map((mainSection) => {
+          const subIds = mainSection.sub_section.map((s) => String(s.id)); // adapt to your shape
 
-              <AnimatePresence initial={false}>
-                {selectedMainSections.includes(mainSection.id) && (
-                  <motion.div
-                    key="main-content"
-                    initial="collapsed"
-                    animate="open"
-                    exit="collapsed"
-                    variants={{
-                      open: { height: "auto", opacity: 1 },
-                      collapsed: { height: 0, opacity: 0 },
-                    }}
-                    transition={{ duration: 0.4, ease: "easeInOut" }}
-                    className="overflow-hidden"
-                  >
-                    <CardContent>
-                      <ul className="space-y-4">
-                        {mainSection.sub_section
-                          .sort(sortSubSections)
-                          .map((subSection) => (
-                            <li
-                              className={subSection.id}
-                              key={subSection.id}
-                              data-sub-section-id={subSection.id}
-                            >
-                              <Card>
-                                <CardHeader
-                                  className="cursor-pointer flex flex-row items-center space-y-0 py-4 select-none"
-                                  onClick={() =>
-                                    handleExpandSubSection(subSection.id)
-                                  }
-                                >
-                                  <CardTitle className="flex-1 text-xl">
-                                    {subSection.name}
-                                  </CardTitle>
-                                  {selectedSubSections.includes(
-                                    subSection.id
-                                  ) ? (
-                                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                                  ) : (
-                                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                                  )}
-                                </CardHeader>
+          const teamMembersCurrentlyPresent = getUsersInMainOrSubs(
+            mainSection.id,
+            subIds
+          ).filter((id) => id !== userId);
 
-                                <AnimatePresence initial={false}>
-                                  {selectedSubSections.includes(
-                                    subSection.id
-                                  ) && (
-                                    <motion.div
-                                      key="sub-content"
-                                      initial="collapsed"
-                                      animate="open"
-                                      exit="collapsed"
-                                      variants={{
-                                        open: { height: "auto", opacity: 1 },
-                                        collapsed: { height: 0, opacity: 0 },
-                                      }}
-                                      transition={{
-                                        duration: 0.3,
-                                        ease: "easeInOut",
-                                      }}
-                                      className="overflow-hidden"
-                                    >
-                                      <CardContent className="pt-2 pb-6">
-                                        <ul className="space-y-4">
-                                          {subSection.checkbox_group.map(
-                                            (selectionGroup) => (
-                                              <li key={selectionGroup.id}>
-                                                <ul className="space-y-2">
-                                                  <li key={selectionGroup.id}>
-                                                    <Card>
-                                                      <CardHeader>
-                                                        <CardTitle>
-                                                          {selectionGroup.name}
-                                                        </CardTitle>
-                                                      </CardHeader>
-                                                      <CardContent>
-                                                        {selectionGroup.task
-                                                          .length > 0 ? (
-                                                          <Table>
-                                                            <TableHeader>
-                                                              <TableRow>
-                                                                <TableHead className="text-left flex items-end">
-                                                                  task
-                                                                </TableHead>
-                                                                {fillableMainCheckboxes[
-                                                                  selectionGroup
-                                                                    .id
-                                                                ]
+          return (
+            <li key={mainSection.id} data-main-section-id={mainSection.id}>
+              <Card>
+                <CardHeader
+                  className="cursor-pointer flex flex-row items-center space-y-0 py-4 select-none"
+                  onClick={() => handleExpandMainSection(mainSection.id)}
+                >
+                  <CardTitle className="flex-1 text-xl">
+                    {mainSection.name}
+                  </CardTitle>
+
+                  <PresenceDots
+                    teamMembers={teamMembers}
+                    userIds={teamMembersCurrentlyPresent}
+                    max={4}
+                  />
+                  {selectedMainSections.includes(mainSection.id) ? (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </CardHeader>
+
+                <AnimatePresence initial={false}>
+                  {selectedMainSections.includes(mainSection.id) && (
+                    <motion.div
+                      key="main-content"
+                      initial="collapsed"
+                      animate="open"
+                      exit="collapsed"
+                      variants={{
+                        open: { height: "auto", opacity: 1 },
+                        collapsed: { height: 0, opacity: 0 },
+                      }}
+                      transition={{ duration: 0.4, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <CardContent>
+                        <ul className="space-y-4">
+                          {mainSection.sub_section
+                            .sort(sortSubSections)
+                            .map((subSection) => (
+                              <li
+                                className={subSection.id}
+                                key={subSection.id}
+                                data-sub-section-id={subSection.id}
+                              >
+                                <Card>
+                                  <CardHeader
+                                    className="cursor-pointer flex flex-row items-center space-y-0 py-4 select-none"
+                                    onClick={() =>
+                                      handleExpandSubSection(subSection.id)
+                                    }
+                                  >
+                                    <CardTitle className="flex-1 text-xl">
+                                      {subSection.name}
+                                    </CardTitle>
+                                    <PresenceDots
+                                      teamMembers={teamMembers}
+                                      userIds={getUsersInSection(
+                                        "sub",
+                                        String(subSection.id)
+                                      ).filter((id) => id !== userId)}
+                                      max={4}
+                                    />
+                                    {selectedSubSections.includes(
+                                      subSection.id
+                                    ) ? (
+                                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                                    ) : (
+                                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                                    )}
+                                  </CardHeader>
+
+                                  <AnimatePresence initial={false}>
+                                    {selectedSubSections.includes(
+                                      subSection.id
+                                    ) && (
+                                      <motion.div
+                                        key="sub-content"
+                                        initial="collapsed"
+                                        animate="open"
+                                        exit="collapsed"
+                                        variants={{
+                                          open: { height: "auto", opacity: 1 },
+                                          collapsed: { height: 0, opacity: 0 },
+                                        }}
+                                        transition={{
+                                          duration: 0.3,
+                                          ease: "easeInOut",
+                                        }}
+                                        className="overflow-hidden"
+                                      >
+                                        <CardContent className="pt-2 pb-6">
+                                          <ul className="space-y-4">
+                                            {subSection.checkbox_group.map(
+                                              (selectionGroup) => (
+                                                <li key={selectionGroup.id}>
+                                                  <ul className="space-y-2">
+                                                    <li key={selectionGroup.id}>
+                                                      <Card>
+                                                        <CardHeader>
+                                                          <CardTitle>
+                                                            {
+                                                              selectionGroup.name
+                                                            }
+                                                          </CardTitle>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                          {selectionGroup.task
+                                                            .length > 0 ? (
+                                                            <Table>
+                                                              <TableHeader>
+                                                                <TableRow>
+                                                                  <TableHead className="text-left flex items-end">
+                                                                    task
+                                                                  </TableHead>
+                                                                  {fillableMainCheckboxes[
+                                                                    selectionGroup
+                                                                      .id
+                                                                  ]
+                                                                    .sort(
+                                                                      sortMainCheckboxes
+                                                                    )
+                                                                    .map(
+                                                                      (
+                                                                        checkbox
+                                                                      ) => (
+                                                                        <TableHead
+                                                                          className="text-center space-y-2 w-[100px]"
+                                                                          key={
+                                                                            checkbox.id +
+                                                                            "head"
+                                                                          }
+                                                                        >
+                                                                          <Checkbox
+                                                                            data-field-id={
+                                                                              checkbox.id
+                                                                            }
+                                                                            disabled
+                                                                            checked={
+                                                                              checkbox.checked
+                                                                            }
+                                                                          ></Checkbox>
+                                                                          <p>
+                                                                            {
+                                                                              checkbox.label
+                                                                            }
+                                                                          </p>
+                                                                        </TableHead>
+                                                                      )
+                                                                    )}
+                                                                </TableRow>
+                                                              </TableHeader>
+                                                              <TableBody>
+                                                                {selectionGroup.task
                                                                   .sort(
-                                                                    sortMainCheckboxes
+                                                                    sortTasks
                                                                   )
                                                                   .map(
-                                                                    (
-                                                                      checkbox
-                                                                    ) => (
-                                                                      <TableHead
-                                                                        className="text-center space-y-2 w-[100px]"
-                                                                        key={
-                                                                          checkbox.id +
-                                                                          "head"
-                                                                        }
-                                                                      >
-                                                                        <Checkbox
-                                                                          data-field-id={
-                                                                            checkbox.id
+                                                                    (task) => {
+                                                                      return (
+                                                                        <TableRow
+                                                                          className={`${
+                                                                            aiSelectedFields.includes(
+                                                                              task.id
+                                                                            ) &&
+                                                                            "bg-green-300"
+                                                                          }`}
+                                                                          key={
+                                                                            task.id +
+                                                                            "tablerow"
                                                                           }
-                                                                          disabled
-                                                                          checked={
-                                                                            checkbox.checked
-                                                                          }
-                                                                        ></Checkbox>
-                                                                        <p>
-                                                                          {
-                                                                            checkbox.label
-                                                                          }
-                                                                        </p>
-                                                                      </TableHead>
-                                                                    )
-                                                                  )}
-                                                              </TableRow>
-                                                            </TableHeader>
-                                                            <TableBody>
-                                                              {selectionGroup.task
-                                                                .sort(sortTasks)
-                                                                .map((task) => {
-                                                                  return (
-                                                                    <TableRow
-                                                                      className={`${
-                                                                        aiSelectedFields.includes(
-                                                                          task.id
-                                                                        ) &&
-                                                                        "bg-green-300"
-                                                                      }`}
-                                                                      key={
-                                                                        task.id +
-                                                                        "tablerow"
-                                                                      }
-                                                                    >
-                                                                      <TableCell className="font-medium text-left py-4">
-                                                                        {
-                                                                          task.description
-                                                                        }
-                                                                      </TableCell>
-                                                                      {fillableMainCheckboxes[
-                                                                        selectionGroup
-                                                                          .id
-                                                                      ]
-                                                                        .sort(
-                                                                          sortMainCheckboxes
-                                                                        )
-                                                                        .map(
-                                                                          (
-                                                                            mainCheckbox
-                                                                          ) => {
-                                                                            const currentCheckbox =
-                                                                              fillableSubCheckboxes[
+                                                                        >
+                                                                          <TableCell className="font-medium text-left py-4">
+                                                                            {
+                                                                              task.description
+                                                                            }
+                                                                          </TableCell>
+                                                                          {fillableMainCheckboxes[
+                                                                            selectionGroup
+                                                                              .id
+                                                                          ]
+                                                                            .sort(
+                                                                              sortMainCheckboxes
+                                                                            )
+                                                                            .map(
+                                                                              (
                                                                                 mainCheckbox
-                                                                                  .id
-                                                                              ].filter(
-                                                                                (
-                                                                                  subCheckbox
-                                                                                ) =>
-                                                                                  subCheckbox.task_id ===
-                                                                                  task.id
-                                                                              )[0];
+                                                                              ) => {
+                                                                                const currentCheckbox =
+                                                                                  fillableSubCheckboxes[
+                                                                                    mainCheckbox
+                                                                                      .id
+                                                                                  ].filter(
+                                                                                    (
+                                                                                      subCheckbox
+                                                                                    ) =>
+                                                                                      subCheckbox.task_id ===
+                                                                                      task.id
+                                                                                  )[0];
 
-                                                                            let color =
-                                                                              currentCheckbox.checked &&
-                                                                              currentCheckbox.updated_by &&
-                                                                              teamMembers?.find(
-                                                                                (
-                                                                                  member
-                                                                                ) =>
-                                                                                  member.user_id ===
-                                                                                  currentCheckbox.updated_by
-                                                                              )
-                                                                                ?.color;
+                                                                                let color =
+                                                                                  currentCheckbox.checked &&
+                                                                                  currentCheckbox.updated_by &&
+                                                                                  teamMembers?.find(
+                                                                                    (
+                                                                                      member
+                                                                                    ) =>
+                                                                                      member.user_id ===
+                                                                                      currentCheckbox.updated_by
+                                                                                  )
+                                                                                    ?.color;
 
-                                                                            return (
-                                                                              <TableCell
-                                                                                key={
-                                                                                  currentCheckbox.id +
-                                                                                  "cell"
-                                                                                }
-                                                                                className={`font-medium text-center whitespace-nowrap py-4 `}
-                                                                              >
-                                                                                <div
-                                                                                  className={`p-1  flex justify-center items-center rounded-xl `}
-                                                                                  style={{
-                                                                                    backgroundColor:
-                                                                                      color ||
-                                                                                      "#ffffff",
-                                                                                  }}
-                                                                                >
-                                                                                  <Checkbox
-                                                                                    data-field-id={
-                                                                                      currentCheckbox.id
+                                                                                return (
+                                                                                  <TableCell
+                                                                                    key={
+                                                                                      currentCheckbox.id +
+                                                                                      "cell"
                                                                                     }
-                                                                                    disabled={
-                                                                                      monitoring
-                                                                                    }
-                                                                                    checked={
-                                                                                      currentCheckbox.checked
-                                                                                    }
-                                                                                    onClick={() => {
-                                                                                      console.log(
-                                                                                        "need to increase over time",
-                                                                                        selectedByUser
-                                                                                      );
-                                                                                      setSelectedByUser(
-                                                                                        (
-                                                                                          prev
-                                                                                        ) => [
-                                                                                          ...prev,
-                                                                                          currentCheckbox.id,
-                                                                                        ]
-                                                                                      );
-                                                                                      handleCheckSubCheckbox(
-                                                                                        mainCheckbox.id,
-                                                                                        currentCheckbox.id,
-                                                                                        selectionGroup,
-                                                                                        task.id
-                                                                                      );
-                                                                                    }}
-                                                                                  ></Checkbox>
-                                                                                </div>
-                                                                              </TableCell>
-                                                                            );
-                                                                          }
-                                                                        )}
-                                                                    </TableRow>
-                                                                  );
-                                                                })}
-                                                            </TableBody>
-                                                          </Table>
-                                                        ) : (
-                                                          <div>
-                                                            {fillableMainCheckboxes[
-                                                              selectionGroup.id
-                                                            ]
-                                                              .sort(
-                                                                sortMainCheckboxes
-                                                              )
-                                                              .map(
-                                                                (
-                                                                  mainCheckbox
-                                                                ) => {
-                                                                  let color =
-                                                                    mainCheckbox.checked &&
-                                                                    mainCheckbox.updated_by &&
-                                                                    teamMembers?.find(
-                                                                      (
-                                                                        member
-                                                                      ) =>
-                                                                        member.user_id ===
-                                                                        mainCheckbox.updated_by
-                                                                    )?.color;
-                                                                  return (
-                                                                    <div
-                                                                      className={`flex items-center space-x-2 `}
-                                                                      key={
-                                                                        mainCheckbox.id
-                                                                      }
-                                                                    >
+                                                                                    className={`font-medium text-center whitespace-nowrap py-4 `}
+                                                                                  >
+                                                                                    <div
+                                                                                      className={`p-1  flex justify-center items-center rounded-xl `}
+                                                                                      style={{
+                                                                                        backgroundColor:
+                                                                                          color ||
+                                                                                          "#ffffff",
+                                                                                      }}
+                                                                                    >
+                                                                                      <Checkbox
+                                                                                        data-field-id={
+                                                                                          currentCheckbox.id
+                                                                                        }
+                                                                                        disabled={
+                                                                                          monitoring
+                                                                                        }
+                                                                                        checked={
+                                                                                          currentCheckbox.checked
+                                                                                        }
+                                                                                        onClick={() => {
+                                                                                          console.log(
+                                                                                            "need to increase over time",
+                                                                                            selectedByUser
+                                                                                          );
+                                                                                          setSelectedByUser(
+                                                                                            (
+                                                                                              prev
+                                                                                            ) => [
+                                                                                              ...prev,
+                                                                                              currentCheckbox.id,
+                                                                                            ]
+                                                                                          );
+                                                                                          handleCheckSubCheckbox(
+                                                                                            mainCheckbox.id,
+                                                                                            currentCheckbox.id,
+                                                                                            selectionGroup,
+                                                                                            task.id
+                                                                                          );
+                                                                                        }}
+                                                                                      ></Checkbox>
+                                                                                    </div>
+                                                                                  </TableCell>
+                                                                                );
+                                                                              }
+                                                                            )}
+                                                                        </TableRow>
+                                                                      );
+                                                                    }
+                                                                  )}
+                                                              </TableBody>
+                                                            </Table>
+                                                          ) : (
+                                                            <div>
+                                                              {fillableMainCheckboxes[
+                                                                selectionGroup
+                                                                  .id
+                                                              ]
+                                                                .sort(
+                                                                  sortMainCheckboxes
+                                                                )
+                                                                .map(
+                                                                  (
+                                                                    mainCheckbox
+                                                                  ) => {
+                                                                    let color =
+                                                                      mainCheckbox.checked &&
+                                                                      mainCheckbox.updated_by &&
+                                                                      teamMembers?.find(
+                                                                        (
+                                                                          member
+                                                                        ) =>
+                                                                          member.user_id ===
+                                                                          mainCheckbox.updated_by
+                                                                      )?.color;
+                                                                    return (
                                                                       <div
-                                                                        className={`pl-2 pr-2 space-x-3 flex justify-center items-center rounded-xl `}
-                                                                        style={{
-                                                                          backgroundColor:
-                                                                            color ||
-                                                                            "#ffffff",
-                                                                        }}
+                                                                        className={`flex items-center space-x-2 `}
+                                                                        key={
+                                                                          mainCheckbox.id
+                                                                        }
                                                                       >
-                                                                        <Checkbox
-                                                                          data-field-id={
-                                                                            mainCheckbox.id
-                                                                          }
-                                                                          disabled={
-                                                                            monitoring
-                                                                          }
-                                                                          checked={
-                                                                            mainCheckbox.checked
-                                                                          }
-                                                                          onClick={() => {
-                                                                            handleCheckMainCheckbox(
-                                                                              mainCheckbox.id,
-                                                                              selectionGroup
-                                                                            );
+                                                                        <div
+                                                                          className={`pl-2 pr-2 space-x-3 flex justify-center items-center rounded-xl `}
+                                                                          style={{
+                                                                            backgroundColor:
+                                                                              color ||
+                                                                              "#ffffff",
                                                                           }}
-                                                                        ></Checkbox>
+                                                                        >
+                                                                          <Checkbox
+                                                                            data-field-id={
+                                                                              mainCheckbox.id
+                                                                            }
+                                                                            disabled={
+                                                                              monitoring
+                                                                            }
+                                                                            checked={
+                                                                              mainCheckbox.checked
+                                                                            }
+                                                                            onClick={() => {
+                                                                              handleCheckMainCheckbox(
+                                                                                mainCheckbox.id,
+                                                                                selectionGroup
+                                                                              );
+                                                                            }}
+                                                                          ></Checkbox>
 
-                                                                        <p>
-                                                                          {
-                                                                            mainCheckbox.label
-                                                                          }
-                                                                        </p>
+                                                                          <p>
+                                                                            {
+                                                                              mainCheckbox.label
+                                                                            }
+                                                                          </p>
+                                                                        </div>
                                                                       </div>
-                                                                    </div>
-                                                                  );
-                                                                }
-                                                              )}
-                                                          </div>
-                                                        )}
-                                                      </CardContent>
-                                                    </Card>
-                                                  </li>
-                                                </ul>
-                                              </li>
-                                            )
-                                          )}
-                                        </ul>
-                                        <Separator className="mt-5"></Separator>
-                                        {(
-                                          fillableTextInputFields[
-                                            subSection.id
-                                          ] ?? []
-                                        ).length > 0 && (
-                                          <ul className="mt-5">
-                                            {fillableTextInputFields[
-                                              subSection.id
-                                            ]
-                                              .sort(sortTextInputFields)
-                                              .map((inputField) => {
-                                                return (
-                                                  <li key={inputField.id}>
-                                                    <TextInputField
-                                                      teamMembers={teamMembers}
-                                                      disabled={monitoring}
-                                                      aiSelectedFields={
-                                                        aiSelectedFields
-                                                      }
-                                                      handleSaveNewTextInput={
-                                                        handleSaveNewTextInput
-                                                      }
-                                                      fillableInputField={
-                                                        inputField
-                                                      }
-                                                    ></TextInputField>
-                                                  </li>
-                                                );
-                                              })}
+                                                                    );
+                                                                  }
+                                                                )}
+                                                            </div>
+                                                          )}
+                                                        </CardContent>
+                                                      </Card>
+                                                    </li>
+                                                  </ul>
+                                                </li>
+                                              )
+                                            )}
                                           </ul>
-                                        )}
-                                      </CardContent>
-                                    </motion.div>
-                                  )}
-                                </AnimatePresence>
-                              </Card>
-                            </li>
-                          ))}
-                      </ul>
-                    </CardContent>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </Card>
-          </li>
-        ))}
+                                          <Separator className="mt-5"></Separator>
+                                          {(
+                                            fillableTextInputFields[
+                                              subSection.id
+                                            ] ?? []
+                                          ).length > 0 && (
+                                            <ul className="mt-5">
+                                              {fillableTextInputFields[
+                                                subSection.id
+                                              ]
+                                                .sort(sortTextInputFields)
+                                                .map((inputField) => {
+                                                  return (
+                                                    <li key={inputField.id}>
+                                                      <TextInputField
+                                                        teamMembers={
+                                                          teamMembers
+                                                        }
+                                                        disabled={monitoring}
+                                                        aiSelectedFields={
+                                                          aiSelectedFields
+                                                        }
+                                                        handleSaveNewTextInput={
+                                                          handleSaveNewTextInput
+                                                        }
+                                                        fillableInputField={
+                                                          inputField
+                                                        }
+                                                      ></TextInputField>
+                                                    </li>
+                                                  );
+                                                })}
+                                            </ul>
+                                          )}
+                                        </CardContent>
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+                                </Card>
+                              </li>
+                            ))}
+                        </ul>
+                      </CardContent>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Card>
+            </li>
+          );
+        })}
       </ul>
       {!monitoring && (
         <>

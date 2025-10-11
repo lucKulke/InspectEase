@@ -1,3 +1,4 @@
+"use server";
 import { MainNavBar } from "@/components/MainNavBar";
 import Link from "next/link";
 import { Edit3, Wrench } from "lucide-react";

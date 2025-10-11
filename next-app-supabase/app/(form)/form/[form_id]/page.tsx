@@ -33,7 +33,6 @@ export default async function FormPage({
     redirect("/auth/login");
   }
 
-  const formBuilderSupabase = await createClient("form_builder");
   const formFillerSupabase = await createClient("form_filler");
   const supabaseStorage = await createClient();
 

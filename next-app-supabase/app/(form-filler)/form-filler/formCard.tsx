@@ -157,7 +157,7 @@ export const FormCard = ({
   };
 
   let currentUsers = teamMembers?.filter((member) => {
-    if (isBeeingEdited.includes(member.user_id)) {
+    if (isBeeingEdited.includes(member.user_id) && member.user_id !== userId) {
       return true;
     }
   });

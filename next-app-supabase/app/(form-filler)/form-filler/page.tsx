@@ -1,3 +1,4 @@
+"use server";
 import React from "react";
 
 import { Bike, Car, Truck, Cog, Plus } from "lucide-react";
@@ -70,11 +71,16 @@ export default async function FormFillerPage() {
       if (member.picture_id) {
         const { bucketResponse, bucketError } =
           await bucket.downloadProfilePicutreViaSignedUrl(member.picture_id);
-        profilePictures[member.user_id] =
-          bucketResponse?.signedUrl || undefined;
+        if (bucketError) {
+          profilePictures[member.user_id] = undefined;
+        } else {
+          console.log("bucketResponse: ", bucketResponse);
+          profilePictures[member.user_id] = bucketResponse?.signedUrl;
+        }
       }
     }
   }
+  console.log("profilePictures: ", profilePictures);
 
   return (
     <>
