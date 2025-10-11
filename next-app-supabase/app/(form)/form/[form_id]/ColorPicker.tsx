@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Popover,
   PopoverContent,
@@ -13,6 +13,7 @@ import {
 import { Users, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IUserProfileResponse } from "@/lib/database/public/publicInterface";
+import { UUID } from "crypto";
 
 const colorOptions = [
   "#ef4444",
@@ -38,6 +39,7 @@ interface ColorPickerProps {
   currentUser: IUserProfileResponse | undefined;
   teammates: (IUserProfileResponse | undefined)[];
   onColorChange: (color: string) => void;
+  profilePictures: Record<UUID, string | undefined>;
 }
 
 export const ColorPicker = ({
@@ -45,6 +47,7 @@ export const ColorPicker = ({
   currentUser,
   teammates,
   onColorChange,
+  profilePictures,
 }: ColorPickerProps) => {
   if (!currentUser) return null;
 
@@ -109,6 +112,10 @@ export const ColorPicker = ({
                         style={{ backgroundColor: member?.color ?? undefined }}
                       />
                       <Avatar className="h-6 w-6">
+                        <AvatarImage
+                          src={profilePictures[member?.user_id as UUID]}
+                          alt="profile picture"
+                        />
                         <AvatarFallback
                           className="text-xs"
                           style={{
@@ -124,6 +131,8 @@ export const ColorPicker = ({
                       <span className="text-sm flex-1 truncate">
                         {member?.user_id === currentUser.user_id
                           ? "You"
+                          : member?.first_name && member?.last_name
+                          ? member?.first_name + " " + member?.last_name
                           : member?.email}
                       </span>
                     </motion.div>

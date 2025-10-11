@@ -1135,6 +1135,7 @@ export const FormComp = ({
       )}
       {teamMembers && (
         <ColorPicker
+          profilePictures={profilePictures}
           disabled={monitoring}
           currentUser={teamMembers.find((member) => member.user_id === userId)}
           teammates={involvedUsers.map((id) =>
