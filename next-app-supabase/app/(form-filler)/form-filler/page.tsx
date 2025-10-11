@@ -50,12 +50,6 @@ export default async function FormFillerPage() {
     redirect("/auth/login");
   }
 
-  const wsUrl = `ws${
-    process.env.APP_ENVIROMENT === "development" ? "" : "s"
-  }://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/ws/dashboard?token=${
-    process.env.SESSION_AWARENESS_FEATURE_TOKEN
-  }`;
-
   const { forms, formsError } = await dbActionsFormFiller.fetchAllFillableForms(
     user.id as UUID
   );
@@ -102,7 +96,6 @@ export default async function FormFillerPage() {
           userId={user.id}
           teamId={userProfile.active_team_id}
           teamMembers={teamMembers}
-          wsUrl={wsUrl}
           forms={forms}
           teamMemberProfilePictures={profilePictures}
         ></FormFilter>

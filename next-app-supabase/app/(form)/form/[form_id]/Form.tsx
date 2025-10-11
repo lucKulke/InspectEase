@@ -37,23 +37,20 @@ import {
 } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
 import { Separator } from "@/components/ui/separator";
-import { useFormActivity } from "@/hooks/useFormActivity";
+
 import { motion, AnimatePresence } from "framer-motion";
 //import Bar, { useQueueProcessor, QueueLog } from "./Bar";
 import Bar, { QueueLog, RecordingItem } from "./Bar";
 import { createClient } from "@/utils/supabase/client";
-import { useWebSocket } from "@/hooks/useWebSocket";
-import { ActiveForm } from "@/lib/globalInterfaces";
+
 import { IUserProfileResponse } from "@/lib/database/public/publicInterface";
 import UserIndicatorOverlay from "@/components/UserIndicatorOverlay";
 import { v4 as uuidv4 } from "uuid";
 import { UUID } from "crypto";
 import { useFormRealtime } from "@/hooks/useFormRealtime";
-import { useFocusSync } from "@/hooks/useFocusSync";
+
 import { scrollToSection } from "@/utils/general";
 import { ColorPicker } from "./ColorPicker";
-import axios from "axios";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -67,8 +64,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { useFormEditorPresence } from "@/hooks/useFormEditorPresence";
-import { useFormChannel } from "@/hooks/useFormChannel";
+
 import { PresenceDots } from "./SectionPresenceDots";
 
 interface FormCompProps {
@@ -79,11 +75,6 @@ interface FormCompProps {
   subCheckboxes: Record<string, ISubCheckboxResponse[]>;
   mainCheckboxes: Record<string, IMainCheckboxResponse[]>;
   textInputFields: Record<string, ITextInputResponse[]>;
-  sessionAwarenessRegistrationUrl: string;
-  sessionAwarenessFormActivityWsUrl: string;
-  sessionAwarenessFocusWsUrl: string;
-  sessionAwarenessColorChangeWsUrl: string;
-  sessionAwarenessColorChangeUrl: string;
   teamMemberList: IUserProfileResponse[] | null;
   profilePictures: Record<UUID, string | undefined>;
 }
@@ -94,25 +85,10 @@ type FormMember = {
   tab_id: string;
 };
 
-// const getSessionData = () => {
-//   let sessionId = sessionStorage.getItem("formSessionId");
-
-//   if (!sessionId) {
-//     sessionId = uuidv4();
-//     sessionStorage.setItem("formSessionId", sessionId);
-//   }
-
-//   return { sessionId };
-// };
 export const FormComp = ({
   teamId,
   sessionId,
   userId,
-  sessionAwarenessRegistrationUrl,
-  sessionAwarenessFormActivityWsUrl,
-  sessionAwarenessFocusWsUrl,
-  sessionAwarenessColorChangeWsUrl,
-  sessionAwarenessColorChangeUrl,
   formData,
   subCheckboxes,
   mainCheckboxes,
@@ -530,8 +506,6 @@ export const FormComp = ({
         prev.filter((subSection) => subSection !== lastOpendSubSection)
       );
       setLastOpendSubSection(null);
-
-      setLastOpendMainSection(mainSectionId);
     }
   };
 

@@ -92,12 +92,6 @@ export default async function FormPage({
     });
   });
 
-  const formActivityWsUrl = `ws${
-    process.env.APP_ENVIROMENT === "development" ? "" : "s"
-  }://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/ws/form/${formId}?token=${
-    process.env.SESSION_AWARENESS_FEATURE_TOKEN
-  }`;
-
   const { teamMembers, teamMembersError } =
     await pubilcFetch.fetchTeamMembers();
 
@@ -130,37 +124,12 @@ export default async function FormPage({
           teamId={userProfile.active_team_id}
           sessionId={sessionId}
           userId={user.id}
-          sessionAwarenessRegistrationUrl={`http${
-            process.env.APP_ENVIROMENT === "development" ? "" : "s"
-          }://${
-            process.env.SESSION_AWARENESS_FEATURE_DOMAIN
-          }/api/form-activity?token=${
-            process.env.SESSION_AWARENESS_FEATURE_TOKEN
-          }`}
           formData={formData}
           subCheckboxes={subCheckboxes}
           mainCheckboxes={mainCheckboxes}
           textInputFields={textInputFields}
-          sessionAwarenessFormActivityWsUrl={formActivityWsUrl}
           teamMemberList={teamMembers}
           profilePictures={profilePictures}
-          sessionAwarenessFocusWsUrl={`ws${
-            process.env.APP_ENVIROMENT === "development" ? "" : "s"
-          }://${
-            process.env.SESSION_AWARENESS_FEATURE_DOMAIN
-          }/ws/form/${formId}/focus?token=Hallo`}
-          sessionAwarenessColorChangeWsUrl={`ws${
-            process.env.APP_ENVIROMENT === "development" ? "" : "s"
-          }://${
-            process.env.SESSION_AWARENESS_FEATURE_DOMAIN
-          }/ws/form/${formId}/color?token=Hallo`}
-          sessionAwarenessColorChangeUrl={`http${
-            process.env.APP_ENVIROMENT === "development" ? "" : "s"
-          }://${
-            process.env.SESSION_AWARENESS_FEATURE_DOMAIN
-          }/api/user-color?token=${
-            process.env.SESSION_AWARENESS_FEATURE_TOKEN
-          }`}
         ></FormComp>
       </div>
     </div>

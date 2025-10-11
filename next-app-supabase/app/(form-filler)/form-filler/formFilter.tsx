@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IFillableFormPlusFillableFields } from "@/lib/database/form-filler/formFillerInterfaces";
 import { FormCard } from "./formCard";
 import { useNotification } from "@/app/context/NotificationContext";
-import { useWebSocket } from "@/hooks/useWebSocket";
+
 import { ActiveForm, DashboardActiveForm } from "@/lib/globalInterfaces";
 import { useRouter, useSearchParams } from "next/navigation";
 import { UUID } from "crypto";
@@ -31,7 +31,6 @@ interface FormFilterProps {
   userId: string;
   teamId: UUID | null;
   forms: IFillableFormPlusFillableFields[] | null;
-  wsUrl: string;
   teamMembers: IUserProfileResponse[] | null;
   teamMemberProfilePictures: Record<UUID, string | undefined>;
 }
@@ -40,7 +39,7 @@ export const FormFilter = ({
   userId,
   teamId,
   forms,
-  wsUrl,
+
   teamMembers,
   teamMemberProfilePictures,
 }: FormFilterProps) => {
