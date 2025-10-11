@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { ITeamResponse } from "@/lib/database/public/publicInterface";
-import { getTeamsSvgUrl } from "./actions";
+import { getTeamProfilePictureUrls } from "./actions";
 import { Button } from "../ui/button";
 import {
   ContextMenu,
@@ -59,12 +59,10 @@ export function TeamSwitcher({
   const fetchTeamSvg = async (team: ITeamResponse) => {
     if (!team.picture_id) return;
 
-    const { bucketResponse, bucketError } = await getTeamsSvgUrl(
-      team.picture_id
-    );
+    const signedUrl = await getTeamProfilePictureUrls(team.picture_id);
     setSvgUrl((prev) => ({
       ...prev,
-      [team.id]: bucketResponse?.signedUrl,
+      [team.id]: signedUrl,
     }));
   };
 

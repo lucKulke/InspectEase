@@ -33,13 +33,20 @@ export default async function FormPage({
     redirect("/auth/login");
   }
 
-  const formBuilderSupabase = await createClient("form_builder");
   const formFillerSupabase = await createClient("form_filler");
   const supabaseStorage = await createClient();
 
   const pubilcFetch = new DBActionsPublicFetch(supabase);
   const formFillerDbActions = new DBActionsFormFillerFetch(formFillerSupabase);
   const storageActions = new DBActionsBucket(supabaseStorage);
+
+  const { userProfile, userProfileError } = await pubilcFetch.fetchUserProfile(
+    user.id as UUID
+  );
+
+  if (!userProfile) {
+    redirect("/auth/login");
+  }
 
   const { formData, formDataError } =
     await formFillerDbActions.fetchFillableFormData(formId);
@@ -85,12 +92,6 @@ export default async function FormPage({
     });
   });
 
-  const formActivityWsUrl = `ws${
-    process.env.APP_ENVIROMENT === "development" ? "" : "s"
-  }://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/ws/form/${formId}?token=${
-    process.env.SESSION_AWARENESS_FEATURE_TOKEN
-  }`;
-
   const { teamMembers, teamMembersError } =
     await pubilcFetch.fetchTeamMembers();
 
@@ -114,50 +115,21 @@ export default async function FormPage({
 
   return (
     <div>
-      <div className="m-2">
-        <Link href="/form-filler">
-          <X></X>
-        </Link>
-      </div>
       <div>
         <div className="flex justify-center mt-6">
           <h1 className="font-bold underline">{formData.identifier_string}</h1>
         </div>
 
         <FormComp
+          teamId={userProfile.active_team_id}
           sessionId={sessionId}
           userId={user.id}
-          sessionAwarenessRegistrationUrl={`http${
-            process.env.APP_ENVIROMENT === "development" ? "" : "s"
-          }://${
-            process.env.SESSION_AWARENESS_FEATURE_DOMAIN
-          }/api/form-activity?token=${
-            process.env.SESSION_AWARENESS_FEATURE_TOKEN
-          }`}
           formData={formData}
           subCheckboxes={subCheckboxes}
           mainCheckboxes={mainCheckboxes}
           textInputFields={textInputFields}
-          sessionAwarenessFormActivityWsUrl={formActivityWsUrl}
           teamMemberList={teamMembers}
           profilePictures={profilePictures}
-          sessionAwarenessFocusWsUrl={`ws${
-            process.env.APP_ENVIROMENT === "development" ? "" : "s"
-          }://${
-            process.env.SESSION_AWARENESS_FEATURE_DOMAIN
-          }/ws/form/${formId}/focus?token=Hallo`}
-          sessionAwarenessColorChangeWsUrl={`ws${
-            process.env.APP_ENVIROMENT === "development" ? "" : "s"
-          }://${
-            process.env.SESSION_AWARENESS_FEATURE_DOMAIN
-          }/ws/form/${formId}/color?token=Hallo`}
-          sessionAwarenessColorChangeUrl={`http${
-            process.env.APP_ENVIROMENT === "development" ? "" : "s"
-          }://${
-            process.env.SESSION_AWARENESS_FEATURE_DOMAIN
-          }/api/user-color?token=${
-            process.env.SESSION_AWARENESS_FEATURE_TOKEN
-          }`}
         ></FormComp>
       </div>
     </div>

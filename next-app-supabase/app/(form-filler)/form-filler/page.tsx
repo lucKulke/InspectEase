@@ -1,3 +1,4 @@
+"use server";
 import React from "react";
 
 import { Bike, Car, Truck, Cog, Plus } from "lucide-react";
@@ -31,6 +32,8 @@ export default async function FormFillerPage() {
   const supabaseFormFiller = await createClient("form_filler");
   const supabasePublic = await createClient();
   const bucket = new DBActionsBucket(supabasePublic);
+  const dbActionsFormFiller = new DBActionsFormFillerFetch(supabaseFormFiller);
+  const dbActionsPublic = new DBActionsPublicFetch(supabasePublic);
 
   const {
     data: { user },
@@ -40,13 +43,12 @@ export default async function FormFillerPage() {
     redirect("/auth/login");
   }
 
-  const dbActionsFormFiller = new DBActionsFormFillerFetch(supabaseFormFiller);
-  const dbActionsPublic = new DBActionsPublicFetch(supabasePublic);
-  const wsUrl = `ws${
-    process.env.APP_ENVIROMENT === "development" ? "" : "s"
-  }://${process.env.SESSION_AWARENESS_FEATURE_DOMAIN}/ws/dashboard?token=${
-    process.env.SESSION_AWARENESS_FEATURE_TOKEN
-  }`;
+  const { userProfile, userProfileError } =
+    await dbActionsPublic.fetchUserProfile(user.id as UUID);
+
+  if (!userProfile) {
+    redirect("/auth/login");
+  }
 
   const { forms, formsError } = await dbActionsFormFiller.fetchAllFillableForms(
     user.id as UUID
@@ -63,11 +65,16 @@ export default async function FormFillerPage() {
       if (member.picture_id) {
         const { bucketResponse, bucketError } =
           await bucket.downloadProfilePicutreViaSignedUrl(member.picture_id);
-        profilePictures[member.user_id] =
-          bucketResponse?.signedUrl || undefined;
+        if (bucketError) {
+          profilePictures[member.user_id] = undefined;
+        } else {
+          console.log("bucketResponse: ", bucketResponse);
+          profilePictures[member.user_id] = bucketResponse?.signedUrl;
+        }
       }
     }
   }
+  console.log("profilePictures: ", profilePictures);
 
   return (
     <>
@@ -87,8 +94,8 @@ export default async function FormFillerPage() {
       <div className="m-5 ml-8 mr-8">
         <FormFilter
           userId={user.id}
+          teamId={userProfile.active_team_id}
           teamMembers={teamMembers}
-          wsUrl={wsUrl}
           forms={forms}
           teamMemberProfilePictures={profilePictures}
         ></FormFilter>
