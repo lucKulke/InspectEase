@@ -39,7 +39,6 @@ export const FormFilter = ({
   userId,
   teamId,
   forms,
-
   teamMembers,
   teamMemberProfilePictures,
 }: FormFilterProps) => {
@@ -57,27 +56,6 @@ export const FormFilter = ({
   const { byForm, members } = enabled
     ? useTeamPresence(String(teamId), userId, supabase)
     : { byForm: new Map<string, string[]>() };
-
-  // const { members } = useTeamPresence(
-  //   teamId,
-  //   {
-  //     user_id: userId,
-  //     user_name: teamMembers?.find((m) => m.user_id === userId)?.email || "",
-  //     current_form_id: null,
-  //   },
-  //   supabase
-  // );
-
-  // const byForm = useMemo(() => {
-  //   const map = new Map<string, { names: string[] }>();
-  //   for (const m of members) {
-  //     const key = m.current_form_id ?? "_idle";
-  //     const bucket = map.get(key) ?? { names: [] };
-  //     bucket.names.push(m.user_name);
-  //     map.set(key, bucket);
-  //   }
-  //   return map;
-  // }, [members]);
 
   const [fillableForms, setFillableForms] = useState<
     IFillableFormPlusFillableFields[]

@@ -30,7 +30,9 @@ import {
   changeUserColor,
   takeoverSession,
   updateMainCheckboxValue,
+  updateMainCheckboxValueFormEngine,
   updateSubCheckboxValue,
+  updateSubCheckboxValueFormEngine,
   updateTextInputFieldValue,
   upsertMainCheckboxesValues,
   upsertSubCheckboxesValues,
@@ -66,6 +68,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 import { PresenceDots } from "./SectionPresenceDots";
+import { set } from "date-fns";
 
 interface FormCompProps {
   teamId: UUID | null;
@@ -331,8 +334,12 @@ export const FormComp = ({
 
     setFillableSubCheckboxes(copy);
     handleAutoCheckMainCheckbox(selectionGroup);
-    await updateSubCheckboxValue(formData.id, checkboxId, newValue);
-    await upsertSubCheckboxesValues(checkboxesThatNeedToBeUnchecked);
+
+    const response = await updateSubCheckboxValueFormEngine(
+      formData.id,
+      checkboxId,
+      newValue
+    );
   };
 
   const currentFillState = (selectionGroup: ICheckboxGroupData) => {
@@ -478,8 +485,12 @@ export const FormComp = ({
     });
 
     setFillableMainCheckboxes(copy);
-    await updateMainCheckboxValue(formData.id, checkboxId, newValue);
-    await upsertMainCheckboxesValues(unCheck);
+
+    const response = await updateMainCheckboxValueFormEngine(
+      formData.id,
+      checkboxId,
+      newValue
+    );
   };
 
   // ----------------------------
@@ -665,28 +676,27 @@ export const FormComp = ({
         </button>
       </div>
 
-      {
-        <AlertDialog
-          open={supabaseRealtimeChannelDisconnected}
-          onOpenChange={setSupabaseRealtimeChannelDisconnected}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="text-red-500">
-                Realtime chanal disconnected..
-              </AlertDialogTitle>
-              <AlertDialogDescription className="flex justify-end">
-                <Button
-                  variant={"outline"}
-                  onClick={() => window.location.reload()}
-                >
-                  Reconnect Now
-                </Button>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-          </AlertDialogContent>
-        </AlertDialog>
-      }
+      <AlertDialog
+        open={supabaseRealtimeChannelDisconnected}
+        onOpenChange={setSupabaseRealtimeChannelDisconnected}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-500">
+              Realtime chanal disconnected..
+            </AlertDialogTitle>
+            <AlertDialogDescription className="flex justify-end">
+              <Button
+                variant={"outline"}
+                onClick={() => window.location.reload()}
+              >
+                Reconnect Now
+              </Button>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {monitoring && (
         <div className="fixed  left-1/2 transform -translate-x-1/2 top-2 flex items-center space-x-2 border p-2 rounded-lg shadow-xl bg-white">
           <Monitor className="text-blue-500" size={16}></Monitor>

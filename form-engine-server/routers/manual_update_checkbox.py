@@ -144,6 +144,7 @@ async def update_sub_checkbox(payload: CheckboxUpdatePayload, user: Session = De
     form_id = payload.form_id
     checkbox_id = payload.checkbox_id
     new_value = payload.new_value
+
     
     try:
         # Create client with user's JWT token for RLS authentication
@@ -169,7 +170,6 @@ async def update_sub_checkbox(payload: CheckboxUpdatePayload, user: Session = De
                         sub_cb["checked"] = updated["checked"]
         
         db_update_sub_checkbox_response = client.schema("form_filler").table("sub_checkbox").upsert(updateable_sub_checkboxes).execute()
-
         updateable_main_checkboxes = auto_select_main_checkbox_selection(data, user_id)
         
         if updateable_main_checkboxes:
@@ -179,7 +179,7 @@ async def update_sub_checkbox(payload: CheckboxUpdatePayload, user: Session = De
     except Exception as e:
         print(f"Database error: {e}", flush=True)
         raise HTTPException(status_code=500, detail=f"Database operation failed: {str(e)}")
-
+    
     return {"status": "success", "updated_main_checkboxes": db_update_main_checkbox_response.data, "updated_sub_checkboxes": db_update_sub_checkbox_response.data}
 
 

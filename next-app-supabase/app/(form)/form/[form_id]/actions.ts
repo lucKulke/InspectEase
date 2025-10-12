@@ -48,25 +48,25 @@ export const takeoverSession = async (
   }
 };
 
-// export async function updateMainCheckboxValue(
-//   formId: UUID,
-//   checkboxId: UUID,
-//   value: boolean
-// ) {
-//   const supabase = await createClient();
-//   const formEngine = new FormEngine(supabase);
-//   formEngine.updateMainCheckbox(formId, checkboxId, value);
-// }
+export async function updateMainCheckboxValueFormEngine(
+  formId: UUID,
+  checkboxId: UUID,
+  value: boolean
+) {
+  const supabase = await createClient();
+  const formEngine = new FormEngine(supabase);
+  return formEngine.updateMainCheckbox(formId, checkboxId, value);
+}
 
-// export async function updateSubCheckboxValue(
-//   formId: UUID,
-//   checkboxId: UUID,
-//   value: boolean
-// ) {
-//   const supabase = await createClient();
-//   const formEngine = new FormEngine(supabase);
-//   formEngine.updateSubCheckbox(formId, checkboxId, value);
-// }
+export async function updateSubCheckboxValueFormEngine(
+  formId: UUID,
+  checkboxId: UUID,
+  value: boolean
+) {
+  const supabase = await createClient();
+  const formEngine = new FormEngine(supabase);
+  formEngine.updateSubCheckbox(formId, checkboxId, value);
+}
 
 export async function changeUserColor(userId: UUID, colorCode: string) {
   const supabase = await createClient();

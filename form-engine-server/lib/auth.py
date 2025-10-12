@@ -1,30 +1,33 @@
 from fastapi import Request, HTTPException
 from pydantic import BaseModel
-from jose import jwt, JWTError
 from supabase import create_client, Client
 import os
 
-
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+
 class Session(BaseModel):
     user_id: str
     token: str
 
 async def get_current_user(request: Request) -> Session:
+    
     auth = request.headers.get("Authorization")
     if not auth or not auth.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid token")
-    
+
     token = auth.split(" ")[1]
-    
-    try:
-        # Decode and verify the JWT token
-        payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
-        return Session(user_id=payload["sub"], token=token)
-    except JWTError:
+
+    # Build a client and ask Supabase to resolve the user from the token
+    supa = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+    supa.auth.set_session(access_token=token, refresh_token="")
+    # v2 client supports this:
+    user_resp = supa.auth.get_user(token)  # raises on invalid/expired
+    user = user_resp.user
+    if not user:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+    return Session(user_id=user.id, token=token)
 
 def get_authenticated_client(user_token: str) -> Client:
     """Create a Supabase client with the user's JWT token for RLS"""

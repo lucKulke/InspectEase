@@ -31,6 +31,7 @@ export class FormEngine {
     subCheckboxId: string,
     newValue: boolean
   ) {
+    console.log("updateSubCheckbox", formId, subCheckboxId, newValue);
     // 1. Build request
     const url = `http${this.enviroment === "development" ? "" : "s"}://${
       this.formEngineDomain
@@ -48,8 +49,8 @@ export class FormEngine {
       const errorText = await response.text();
       throw new Error(`Failed to update sub checkbox: ${errorText}`);
     }
-
-    return response.json();
+    const jsonResponse = await response.json();
+    return jsonResponse;
   }
 
   async updateMainCheckbox(
@@ -75,6 +76,6 @@ export class FormEngine {
       throw new Error(`Failed to update main checkbox: ${errorText}`);
     }
 
-    return response.json();
+    return await response.json();
   }
 }
