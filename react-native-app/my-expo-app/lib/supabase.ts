@@ -20,3 +20,15 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false, // not needed on native
   },
 });
+
+export interface SupabaseError {
+  code: string;
+  details: string | null;
+  hint: string | null;
+  message: string;
+}
+
+export interface StorageError {
+  code: string;
+  message: string;
+}
