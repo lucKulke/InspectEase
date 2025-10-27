@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { View, Pressable, Text, Modal, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Image } from 'react-native';
-import { BOTTOM_BAR_HEIGHT } from '@/app/(app)/_layout';
+
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { supabase } from '@/lib/supabase';
-
+export const BOTTOM_BAR_HEIGHT = 72;
 export default function BottomBar() {
   const router = useRouter();
   const [teamOpen, setTeamOpen] = useState(false);
