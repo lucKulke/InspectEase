@@ -59,7 +59,7 @@ export class DBActionsPublicFetch {
       userApiKeysError: error as SupabaseError,
     };
   }
-  async fetchAllTeams(user_id: string): Promise<{
+  async fetchAllTeams(): Promise<{
     teams: ITeamResponse[] | null;
     teamsError: SupabaseError | null;
   }> {

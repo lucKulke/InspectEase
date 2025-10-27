@@ -1,20 +1,53 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Pressable, Text, Modal, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Image } from 'react-native';
-
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { supabase } from '@/lib/supabase';
+import { DBActionsPublicFetch } from '@/lib/db/public/fetch';
+import { ITeamResponse, IUserProfile, IUserProfileResponse } from '@/lib/db/public/interfaces';
 export const BOTTOM_BAR_HEIGHT = 72;
-export default function BottomBar() {
+
+interface BottomBarProps {
+  userId: string;
+}
+export default function BottomBar({ userId }: BottomBarProps) {
   const router = useRouter();
+  const publicFetch = new DBActionsPublicFetch(supabase);
   const [teamOpen, setTeamOpen] = useState(false);
+  const [teams, setTeams] = useState<ITeamResponse[]>([]);
+  const [userProfile, setUserProfile] = useState<IUserProfileResponse | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
 
   async function signOut() {
     const { error } = await supabase.auth.signOut();
     if (error) Alert.alert('Sign out failed', error.message);
   }
+
+  async function fetchUserProfile() {
+    const { userProfile, userProfileError } = await publicFetch.fetchUserProfile(userId);
+    if (userProfileError) {
+      Alert.alert('Fetch user profile failed', userProfileError.message);
+      return;
+    }
+    if (userProfile) {
+      setUserProfile(userProfile);
+    }
+  }
+
+  async function fetchTeams() {
+    const { teams, teamsError } = await publicFetch.fetchAllTeams();
+    if (teamsError) {
+      Alert.alert('Fetch teams failed', teamsError.message);
+      return;
+    }
+    if (teams) setTeams(teams);
+  }
+
+  useEffect(() => {
+    fetchTeams();
+    fetchUserProfile();
+  }, []);
 
   return (
     <>
@@ -70,18 +103,25 @@ export default function BottomBar() {
           <View className="mt-auto w-1/2 px-4 pb-6">
             <View className="mb-16 rounded-2xl bg-white p-4 dark:bg-neutral-900">
               <Text className="mb-2 text-lg font-semibold">Switch Team</Text>
+              <Text className="text-base font-semibold underline">
+                {teams.filter((team) => team.id === userProfile?.active_team_id)[0]?.name}
+              </Text>
               {/* Example teams; wire these up to your data */}
-              {['Alpha', 'Beta', 'Gamma'].map((team) => (
-                <Pressable
-                  key={team}
-                  onPress={() => {
-                    // TODO: call your team switch action
-                    setTeamOpen(false);
-                  }}
-                  className="py-3">
-                  <Text className="text-base">{team}</Text>
-                </Pressable>
-              ))}
+              {teams
+                .filter((team) => team.id !== userProfile?.active_team_id)
+                .map((team) => {
+                  return (
+                    <Pressable
+                      key={team.id}
+                      onPress={() => {
+                        // TODO: call your team switch action
+                        setTeamOpen(false);
+                      }}
+                      className="py-3">
+                      <Text className={`text-base`}>{team.name}</Text>
+                    </Pressable>
+                  );
+                })}
             </View>
           </View>
         </Pressable>

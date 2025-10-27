@@ -7,6 +7,7 @@ import { UserCtx } from '@/lib/context/user-context';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import TopBar from '@/components/TopBar';
 import { FilterProvider } from '@/lib/context/filter-context';
+import { useEffect } from 'react';
 
 export default function AppLayout() {
   const { session, isLoading } = useSession();
@@ -33,7 +34,7 @@ export default function AppLayout() {
                 header: () => <TopBar />,
               }}
             />
-            {user ? <BottomBar /> : null}
+            {user ? <BottomBar userId={user.id} /> : null}
           </View>
           {!user ? <Redirect href="/login" /> : null}
         </FilterProvider>
