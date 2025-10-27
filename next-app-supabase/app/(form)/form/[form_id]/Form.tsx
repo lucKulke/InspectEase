@@ -69,6 +69,7 @@ import { Button } from "@/components/ui/button";
 
 import { PresenceDots } from "./SectionPresenceDots";
 import { set } from "date-fns";
+import { ActionBar } from "./ActionBar";
 
 interface FormCompProps {
   teamId: UUID | null;
@@ -1137,23 +1138,19 @@ export const FormComp = ({
           );
         })}
       </ul>
-      {!monitoring && (
-        <>
-          <QueueLog queue={queue} />
-          <Bar queue={queue} setQueue={setQueue} />
-        </>
-      )}
-      {teamMembers && (
-        <ColorPicker
-          profilePictures={profilePictures}
-          disabled={monitoring}
-          currentUser={teamMembers.find((member) => member.user_id === userId)}
-          teammates={involvedUsers.map((id) =>
-            teamMembers.find((member) => member.user_id === id)
-          )}
-          onColorChange={handleChangeUserColor}
-        />
-      )}
+
+      {/* <QueueLog queue={queue} />
+      <Bar queue={queue} setQueue={setQueue} /> */}
+
+      <ActionBar
+        profilePictures={profilePictures}
+        disabled={monitoring}
+        currentUser={teamMembers.find((member) => member.user_id === userId)}
+        involvedUsers={involvedUsers.map((id) =>
+          teamMembers.find((member) => member.user_id === id)
+        )}
+        onColorChange={handleChangeUserColor}
+      ></ActionBar>
     </div>
   );
 };
