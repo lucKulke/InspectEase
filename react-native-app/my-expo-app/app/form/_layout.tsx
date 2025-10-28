@@ -1,16 +1,15 @@
-// app/_layout.tsx
-import { Stack, Redirect } from 'expo-router';
-import { useSession } from '@/lib/session';
-import { View, ActivityIndicator } from 'react-native';
-import BottomBar from '@/components/BottomBar';
-import { UserCtx } from '@/lib/context/user-context';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import TopBar from '@/components/TopBar';
-import { FilterProvider } from '@/lib/context/filter-context';
-import { useEffect } from 'react';
-import { TeamProvider } from '@/lib/context/team-context';
+// app/form/_layout.tsx
+import { Redirect, Stack, useRouter } from 'expo-router';
+import { ActivityIndicator, Pressable } from 'react-native';
 
-export default function AppLayout() {
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { View } from 'lucide-react-native';
+import { useSession } from '@/lib/session';
+import { UserCtx } from '@/lib/context/user-context';
+import { TeamProvider } from '@/lib/context/team-context';
+import { FilterProvider } from '@/lib/context/filter-context';
+
+export default function FormLayout() {
   const { session, isLoading } = useSession();
   const user = session?.user ?? null;
 
@@ -23,17 +22,14 @@ export default function AppLayout() {
       </SafeAreaProvider>
     );
   }
-
+  const router = useRouter();
   return (
     <SafeAreaProvider>
       <UserCtx.Provider value={user}>
         {user ? (
           <TeamProvider userId={user.id}>
             <FilterProvider>
-              <View className="flex-1 bg-white dark:bg-neutral-950">
-                <Stack screenOptions={{ header: () => <TopBar /> }} />
-                <BottomBar userId={user.id} />
-              </View>
+              <Stack />
             </FilterProvider>
           </TeamProvider>
         ) : null}

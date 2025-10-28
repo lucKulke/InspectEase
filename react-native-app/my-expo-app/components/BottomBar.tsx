@@ -1,23 +1,45 @@
-import { useEffect, useState } from 'react';
-import { View, Pressable, Text, Modal, Alert } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { View, Pressable, Text, Modal, Alert, ActivityIndicator, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Image } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Picker } from '@react-native-picker/picker';
 import { supabase } from '@/lib/supabase';
 import { DBActionsPublicFetch } from '@/lib/db/public/fetch';
-import { ITeamResponse, IUserProfile, IUserProfileResponse } from '@/lib/db/public/interfaces';
+import { ITeamResponse, IUserProfileResponse } from '@/lib/db/public/interfaces';
+import { DBActionsBucket } from '@/lib/db/bucket';
+import { DBActionsPublicUpdate } from '@/lib/db/public/update';
+import { useTeam } from '@/lib/context/team-context';
 export const BOTTOM_BAR_HEIGHT = 72;
 
 interface BottomBarProps {
   userId: string;
 }
+
 export default function BottomBar({ userId }: BottomBarProps) {
+  const { setActiveTeamId, refreshProfile } = useTeam();
   const router = useRouter();
   const publicFetch = new DBActionsPublicFetch(supabase);
-  const [teamOpen, setTeamOpen] = useState(false);
+  const publicUpdate = new DBActionsPublicUpdate(supabase);
+  const bucket = new DBActionsBucket(supabase);
+
   const [teams, setTeams] = useState<ITeamResponse[]>([]);
   const [userProfile, setUserProfile] = useState<IUserProfileResponse | null>(null);
+  const [userProfilePicture, setUserProfilePicture] = useState<string | undefined>(undefined);
+  const [teamsProfilePictures, setTeamMemberProfilePictures] = useState<
+    Record<string, string | undefined>
+  >({});
+
+  const [teamPickerOpen, setTeamPickerOpen] = useState(false);
+  const [tempSelectedTeamId, setTempSelectedTeamId] = useState<string | null>(null);
+  const [switching, setSwitching] = useState(false);
+
   const [profileOpen, setProfileOpen] = useState(false);
+
+  const activeTeam = useMemo(
+    () => teams.find((t) => t.id === userProfile?.active_team_id) || null,
+    [teams, userProfile?.active_team_id]
+  );
+  const activeTeamName = activeTeam?.name ?? 'Select team';
 
   async function signOut() {
     const { error } = await supabase.auth.signOut();
@@ -32,6 +54,13 @@ export default function BottomBar({ userId }: BottomBarProps) {
     }
     if (userProfile) {
       setUserProfile(userProfile);
+      setTempSelectedTeamId(userProfile.active_team_id ?? null);
+
+      if (userProfile.picture_id) {
+        bucket
+          .downloadProfilePicutreViaSignedUrl(userProfile.picture_id)
+          .then(({ bucketResponse }) => setUserProfilePicture(bucketResponse?.signedUrl));
+      }
     }
   }
 
@@ -41,7 +70,52 @@ export default function BottomBar({ userId }: BottomBarProps) {
       Alert.alert('Fetch teams failed', teamsError.message);
       return;
     }
-    if (teams) setTeams(teams);
+    if (teams) {
+      setTeams(teams);
+
+      const teamMemberProfilePictures: Record<string, string | undefined> = {};
+      for (const team of teams) {
+        if (team.picture_id) {
+          bucket
+            .downloadProfilePicutreViaSignedUrl(team.picture_id)
+            .then(
+              ({ bucketResponse }) =>
+                (teamMemberProfilePictures[team.id] = bucketResponse?.signedUrl)
+            );
+        }
+      }
+      setTeamMemberProfilePictures(teamMemberProfilePictures);
+    }
+  }
+
+  // Update the active team for the current user
+  async function switchTeam(teamId: string | null) {
+    if (!userProfile || !teamId || teamId === userProfile.active_team_id) {
+      setTeamPickerOpen(false);
+      return;
+    }
+    try {
+      setSwitching(true);
+      // Direct Supabase example — adjust table/column names to your schema
+      const { updatedProfile, updatedProfileError } = await publicUpdate.switchActiveTeam(
+        userId,
+        teamId
+      );
+
+      if (updatedProfileError) throw updatedProfileError;
+
+      if (updatedProfile) {
+        setUserProfile(updatedProfile);
+        setActiveTeamId(updatedProfile.active_team_id ?? null);
+      }
+      // Optimistic local update
+      setUserProfile((prev) => (prev ? { ...prev, active_team_id: teamId } : prev));
+      setTeamPickerOpen(false);
+    } catch (e: any) {
+      Alert.alert('Could not switch team', e.message ?? String(e));
+    } finally {
+      setSwitching(false);
+    }
   }
 
   useEffect(() => {
@@ -53,25 +127,37 @@ export default function BottomBar({ userId }: BottomBarProps) {
     <>
       <View className="absolute bottom-0 left-0 right-0" style={{ height: BOTTOM_BAR_HEIGHT }}>
         <View className="flex-1 border-t border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-          <View className="flex-1 flex-row items-center justify-between px-5">
-            {/* Team Switcher */}
-            <Pressable
-              onPress={() => setTeamOpen(true)}
-              className="h-10 flex-row items-center gap-2 rounded-xl px-3">
-              <Ionicons name="people-outline" size={22} />
-              <Text className="text-base font-medium">Team</Text>
-            </Pressable>
+          {/* Make this container relative so we can overlay the centered FAB */}
+          <View className="relative flex-1 flex-row items-center px-5">
+            {/* LEFT: Team trigger (flex-1 so left/right are symmetrical) */}
+            <View className="flex-1">
+              <Pressable
+                onPress={() => {
+                  setTempSelectedTeamId(userProfile?.active_team_id ?? null);
+                  setTeamPickerOpen(true);
+                }}
+                className="h-10 w-36 flex-row items-center gap-2 rounded-3xl bg-neutral-100 px-3 dark:bg-neutral-900"
+                accessibilityRole="button"
+                accessibilityLabel="Select team">
+                {teams.length > 0 && userProfile?.active_team_id ? (
+                  <Image
+                    source={{ uri: teamsProfilePictures[userProfile.active_team_id] }}
+                    resizeMode="cover"
+                    className="h-8 w-8 rounded-full"
+                  />
+                ) : (
+                  <Ionicons name="people-outline" size={20} />
+                )}
 
-            {/* Big Create Button */}
-            <Pressable
-              onPress={() => router.push('/create')}
-              className="-mt-12 h-16 w-16 items-center justify-center rounded-full bg-blue-600 shadow-lg"
-              style={{ elevation: 6 }}>
-              <Ionicons name="add" size={32} color="#fff" />
-            </Pressable>
+                <Text className="flex-1 text-base font-medium" numberOfLines={1}>
+                  {activeTeamName}
+                </Text>
+                <Ionicons name="chevron-down" size={18} />
+              </Pressable>
+            </View>
 
-            {/* Right cluster: Settings + Avatar */}
-            <View className="flex-row items-center gap-3">
+            {/* RIGHT: Settings + Avatar (flex-1, right-aligned) */}
+            <View className="flex-1 flex-row items-center justify-end gap-3">
               <Pressable
                 onPress={() => router.push('/settings')}
                 className="h-10 w-10 items-center justify-center rounded-full">
@@ -81,53 +167,56 @@ export default function BottomBar({ userId }: BottomBarProps) {
               <Pressable
                 onPress={() => setProfileOpen(true)}
                 className="h-10 w-10 overflow-hidden rounded-full border border-neutral-300 dark:border-neutral-700">
-                {/* Replace with your user image */}
                 <Image
-                  source={{ uri: 'https://i.pravatar.cc/100?img=3' }}
+                  source={{ uri: userProfilePicture ?? 'https://i.pravatar.cc/100?img=3' }}
                   resizeMode="cover"
                   className="h-full w-full"
                 />
+              </Pressable>
+            </View>
+
+            {/* CENTER: Create FAB — absolutely centered over the row */}
+            <View className="absolute left-0 right-0 items-center">
+              <Pressable
+                onPress={() => router.push('/create')}
+                className="-mt-12 h-16 w-16 items-center justify-center rounded-full bg-blue-600 shadow-lg"
+                style={{ elevation: 6 }}>
+                <Ionicons name="add" size={32} color="#fff" />
               </Pressable>
             </View>
           </View>
         </View>
       </View>
 
-      {/* Team Switcher Modal */}
+      {/* Native Picker in a modal “select” (instant apply) */}
       <Modal
         animationType="fade"
         transparent
-        visible={teamOpen}
-        onRequestClose={() => setTeamOpen(false)}>
-        <Pressable className="flex-1 items-start bg-black/40" onPress={() => setTeamOpen(false)}>
-          <View className="mt-auto w-1/2 px-4 pb-6">
-            <View className="mb-16 rounded-2xl bg-white p-4 dark:bg-neutral-900">
-              <Text className="mb-2 text-lg font-semibold">Switch Team</Text>
-              <Text className="text-base font-semibold underline">
-                {teams.filter((team) => team.id === userProfile?.active_team_id)[0]?.name}
-              </Text>
-              {/* Example teams; wire these up to your data */}
-              {teams
-                .filter((team) => team.id !== userProfile?.active_team_id)
-                .map((team) => {
-                  return (
-                    <Pressable
-                      key={team.id}
-                      onPress={() => {
-                        // TODO: call your team switch action
-                        setTeamOpen(false);
-                      }}
-                      className="py-3">
-                      <Text className={`text-base`}>{team.name}</Text>
-                    </Pressable>
-                  );
-                })}
+        visible={teamPickerOpen}
+        onRequestClose={() => setTeamPickerOpen(false)}>
+        <Pressable className="flex-1 bg-black/40" onPress={() => setTeamPickerOpen(false)}>
+          <View className="mt-auto w-full rounded-t-2xl bg-white p-4 dark:bg-neutral-900">
+            <View className="mb-3 flex-row items-center justify-between">
+              <Text className="text-lg font-semibold">Select team</Text>
+              {switching ? <ActivityIndicator /> : null}
             </View>
+
+            <Picker
+              selectedValue={tempSelectedTeamId ?? undefined}
+              onValueChange={(v) => {
+                setTempSelectedTeamId(v as string);
+                // instant apply
+                switchTeam(v as string);
+              }}>
+              {teams.map((t) => (
+                <Picker.Item key={t.id} label={t.name} value={t.id} />
+              ))}
+            </Picker>
           </View>
         </Pressable>
       </Modal>
 
-      {/* Profile Menu Modal */}
+      {/* Profile Menu Modal (unchanged) */}
       <Modal
         animationType="fade"
         transparent
@@ -145,21 +234,12 @@ export default function BottomBar({ userId }: BottomBarProps) {
                 }}>
                 <Text className="text-base">View profile</Text>
               </Pressable>
-              <Pressable
-                className="py-3"
-                onPress={() => {
-                  setProfileOpen(false);
-                  router.push('/billing'); // optional
-                }}>
-                <Text className="text-base">Billing</Text>
-              </Pressable>
+
               <Pressable
                 className="py-3"
                 onPress={() => {
                   setProfileOpen(false);
                   signOut();
-                  // call your sign out method from useSession()
-                  // e.g., signOut();
                 }}>
                 <Text className="text-base text-red-600">Sign out</Text>
               </Pressable>

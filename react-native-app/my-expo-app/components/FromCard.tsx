@@ -1,9 +1,20 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, Pressable, Image, Modal, ScrollView, Alert, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  Image,
+  Modal,
+  ScrollView,
+  Alert,
+  Platform,
+  FlatList,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { format } from 'date-fns';
 import { FileDown, Settings2, Trash2, Users2 } from 'lucide-react-native';
 import { IUserProfileResponse } from '@/lib/db/public/interfaces';
+import { IconType, profileIcons } from '@/lib/availableIcons';
 /**
  * NOTE:
  * - Styling uses NativeWind (className).
@@ -16,13 +27,6 @@ import { IUserProfileResponse } from '@/lib/db/public/interfaces';
 // Types
 // --------------------
 export type UUID = string;
-
-export type IconType = keyof typeof profileIcons;
-
-// Stub your profile icons map for RN (swap to your own icon set)
-export const profileIcons: Record<string, React.ReactNode> = {
-  building: <Users2 size={20} />, // example only
-};
 
 export interface IFillableFormPlusFillableFields {
   id: UUID;
@@ -149,21 +153,26 @@ export default function FormCard({
   // Render
   // --------------------
   return (
-    <View
+    <Pressable
+      onLongPress={() => setSheetOpen(true)}
       className={cn(
         'relative max-w-[400px] overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900',
         anyEditing ? 'border-blue-600' : ''
-      )}>
+      )}
+      accessibilityLabel="Form card"
+      accessibilityHint="Long press to open actions">
       {/* Your editing badge */}
       {youAreEditing && (
-        <View className="absolute left-2 top-2 z-10 flex-row items-center gap-2 rounded-full bg-blue-600 px-3 py-1 text-white shadow">
+        <View
+          pointerEvents="box-none"
+          className="absolute left-2 top-2 z-10 flex-row items-center gap-2 rounded-full bg-blue-600 px-3 py-1 text-white shadow">
           <Text className="text-xs font-medium">You’re working on this</Text>
         </View>
       )}
 
       {/* Others editing overlay */}
       {anyEditing && (
-        <View className="absolute right-2 top-2 z-10">
+        <View pointerEvents="box-none" className="absolute right-2 top-2 z-10">
           <AvatarStack users={othersEditing} images={teamMemberProfilePictures} size={24} />
         </View>
       )}
@@ -177,7 +186,7 @@ export default function FormCard({
 
         {/* HoverCard replacement: tap to open details */}
         <Pressable onPress={() => setProfileOpen(true)} className="rounded-xl p-2">
-          {profileIcons[form.object_profile_icon ?? 'building'] ?? <Users2 size={20} />}
+          {form.object_profile_icon && profileIcons[form.object_profile_icon as IconType]}
         </Pressable>
       </View>
 
@@ -239,8 +248,14 @@ export default function FormCard({
 
         {form.in_progress ? (
           <Pressable
-            onPress={() => router.push(`/form/${form.id}`)}
-            className="rounded-xl bg-blue-600 px-4 py-2">
+            hitSlop={6}
+            onPress={() => {
+              console.log(`/form/${form.id}`);
+              router.push(`/form/${form.id}`);
+            }}
+            className="rounded-xl bg-blue-600 px-4 py-2"
+            accessibilityRole="button"
+            accessibilityLabel="Continue editing this form">
             <Text className="font-medium text-white">Continue</Text>
           </Pressable>
         ) : (
@@ -250,13 +265,7 @@ export default function FormCard({
         )}
       </View>
 
-      {/* Context Menu (long-press) */}
-      <Pressable
-        onLongPress={() => setSheetOpen(true)}
-        className="absolute inset-0"
-        accessibilityLabel="Open actions"
-        accessibilityHint="Long press to open card actions"
-      />
+      {/* Context Menu Sheet (no full-card overlay anymore) */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetSection>
           <SheetItem
@@ -286,7 +295,7 @@ export default function FormCard({
           </SheetItem>
         </SheetSection>
       </Sheet>
-    </View>
+    </Pressable>
   );
 }
 
@@ -359,45 +368,126 @@ export function AvatarStack({
   users,
   images,
   size = 24,
+  title = 'Currently editing',
+  onUserPress, // optional per-user tap inside the expanded list
 }: {
   users: IUserProfileResponse[];
   images: Record<UUID, string | undefined>;
   size?: number;
+  title?: string;
+  onUserPress?: (user: IUserProfileResponse) => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const visible = users.slice(0, 3);
+  const extra = users.length - visible.length;
+
+  if (users.length === 0) return null;
+
   return (
-    <View className="flex-row">
-      {users.slice(0, 3).map((u, idx) => (
-        <View
-          key={u.user_id}
-          style={{ marginLeft: idx === 0 ? 0 : -size / 3 }}
-          className="overflow-hidden rounded-full border border-white dark:border-neutral-900">
-          {images[u.user_id] ? (
-            <Image
-              source={{ uri: images[u.user_id]! }}
-              style={{ width: size, height: size, borderRadius: size / 2 }}
+    <>
+      {/* Collapsed stack */}
+      <Pressable className="flex-row" onPress={() => setOpen(true)} accessibilityRole="button">
+        {visible.map((u, idx) => (
+          <View
+            key={u.user_id}
+            style={{ marginLeft: idx === 0 ? 0 : -size / 3 }}
+            className="overflow-hidden rounded-full border border-white bg-white dark:border-neutral-900">
+            {images[u.user_id] ? (
+              <Image
+                source={{ uri: images[u.user_id]! }}
+                style={{ width: size, height: size, borderRadius: size / 2 }}
+              />
+            ) : (
+              <View
+                style={{ width: size, height: size, borderRadius: size / 2 }}
+                className="items-center justify-center bg-neutral-300">
+                <Text className="text-[10px] font-semibold">
+                  {getInitials(
+                    (u.first_name ? `${u.first_name} ` : '') + (u.last_name ?? '') || u.email
+                  )}
+                </Text>
+              </View>
+            )}
+          </View>
+        ))}
+        {extra > 0 && (
+          <View
+            style={{ marginLeft: -size / 3, width: size, height: size, borderRadius: size / 2 }}
+            className="items-center justify-center border border-white bg-neutral-300 dark:border-neutral-900">
+            <Text className="text-[10px] font-semibold">+{extra}</Text>
+          </View>
+        )}
+      </Pressable>
+
+      {/* Expanded list modal */}
+      <Modal transparent animationType="fade" visible={open} onRequestClose={() => setOpen(false)}>
+        <Pressable className="flex-1 bg-black/40" onPress={() => setOpen(false)}>
+          <View className="mt-auto w-full rounded-t-2xl bg-white p-4 dark:bg-neutral-900">
+            <Text className="mb-3 text-lg font-semibold">{title}</Text>
+
+            <FlatList
+              data={users}
+              keyExtractor={(u) => u.user_id}
+              ItemSeparatorComponent={() => (
+                <View className="h-[1px] bg-neutral-200 dark:bg-neutral-800" />
+              )}
+              renderItem={({ item }) => (
+                <Pressable
+                  className="flex-row items-center gap-3 py-3"
+                  onPress={() => {
+                    onUserPress?.(item);
+                    // keep open or close—your choice; comment next line to keep it open
+                    setOpen(false);
+                  }}>
+                  <Avatar
+                    uri={images[item.user_id]}
+                    label={
+                      (item.first_name ? `${item.first_name} ` : '') + (item.last_name ?? '') ||
+                      item.email
+                    }
+                    size={32}
+                  />
+                  <View className="flex-1">
+                    <Text className="text-base" numberOfLines={1}>
+                      {displayName(item)}
+                    </Text>
+                    {!!item.email && (
+                      <Text className="text-xs text-neutral-500" numberOfLines={1}>
+                        {item.email}
+                      </Text>
+                    )}
+                  </View>
+                </Pressable>
+              )}
+              style={{ maxHeight: 320 }}
             />
-          ) : (
-            <View
-              style={{ width: size, height: size, borderRadius: size / 2 }}
-              className="items-center justify-center bg-neutral-300">
-              <Text className="text-[10px] font-semibold">
-                {getInitials(u.first_name + ' ' + u.last_name || u.email)}
-              </Text>
-            </View>
-          )}
-        </View>
-      ))}
-      {users.length > 3 && (
-        <View
-          style={{ marginLeft: -size / 3, width: size, height: size, borderRadius: size / 2 }}
-          className="items-center justify-center border border-white bg-neutral-300 dark:border-neutral-900">
-          <Text className="text-[10px] font-semibold">+{users.length - 3}</Text>
-        </View>
-      )}
+          </View>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}
+
+/** Small avatar with initials fallback */
+function Avatar({ uri, label, size = 28 }: { uri?: string; label: string; size?: number }) {
+  const initials = useMemo(() => getInitials(label), [label]);
+
+  if (uri) {
+    return <Image source={{ uri }} style={{ width: size, height: size, borderRadius: size / 2 }} />;
+  }
+  return (
+    <View
+      style={{ width: size, height: size, borderRadius: size / 2 }}
+      className="items-center justify-center bg-neutral-300">
+      <Text className="text-[10px] font-semibold">{initials}</Text>
     </View>
   );
 }
 
+function displayName(u: IUserProfileResponse) {
+  const full = [u.first_name, u.last_name].filter(Boolean).join(' ').trim();
+  return full.length > 0 ? full : (u.email ?? 'Unknown user');
+}
 function getInitials(name?: string) {
   if (!name) return '';
   return name
