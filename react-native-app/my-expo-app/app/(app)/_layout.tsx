@@ -14,6 +14,7 @@ export default function AppLayout() {
   const { session, isLoading } = useSession();
   const user = session?.user ?? null;
 
+  if (!user) return <Redirect href="/login" />;
   if (isLoading) {
     return (
       <SafeAreaProvider>
@@ -37,7 +38,6 @@ export default function AppLayout() {
             </FilterProvider>
           </TeamProvider>
         ) : null}
-        {!user ? <Redirect href="/login" /> : null}
       </UserCtx.Provider>
     </SafeAreaProvider>
   );
