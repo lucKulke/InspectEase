@@ -17,23 +17,8 @@ export default function Login() {
     router.replace('/'); // success
   }
 
-  async function pingAuth() {
-    try {
-      const url = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/auth/v1/settings`;
-      const res = await fetch(url, {
-        headers: { apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY! },
-      });
-      console.log('status:', res.status);
-      console.log('ok?', res.ok);
-      console.log('json:', await res.json());
-    } catch (e) {
-      console.log('PING ERROR:', e); // If you see TypeError: Network request failed → network/URL issue
-    }
-  }
-
   return (
     <View className="flex-1 justify-center bg-white px-6">
-      <Button title="PING" onPress={pingAuth} color="red"></Button>
       <Text className="mb-6 text-3xl font-bold">Welcome back</Text>
 
       <TextInput

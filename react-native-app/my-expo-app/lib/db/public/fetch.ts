@@ -28,10 +28,10 @@ export class DBActionsPublicFetch {
       .eq('user_id', userId)
       .single();
 
-    if (error) {
-      console.error('fetch user profile in db error: ', error);
-    }
-    console.log('fetch user profile in db:', data);
+    // if (error) {
+    //   console.error('fetch user profile in db error: ', error);
+    // }
+    // console.log('fetch user profile in db:', data);
 
     return {
       userProfile: data,

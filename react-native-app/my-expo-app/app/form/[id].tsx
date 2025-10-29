@@ -89,7 +89,7 @@ export default function FormDetail() {
           title: form?.identifier_string ?? 'Form',
           headerLeft: () => (
             <Pressable
-              onPress={() => router.push('/')}
+              onPress={() => router.back()}
               className="px-2 py-1"
               accessibilityLabel="Go back">
               <Ionicons name="chevron-back" size={24} />

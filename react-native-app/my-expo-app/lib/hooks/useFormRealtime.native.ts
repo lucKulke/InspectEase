@@ -106,6 +106,7 @@ export function useFormRealtime({
   // ---------- per-form channel ----------
   const getOrCreateFormChannel = useCallback(() => {
     const existing = supabase.getChannels().find((c) => c.topic === formTopic);
+    console.log('existing channel?:', existing);
     return existing ?? supabase.channel(formTopic, { config: { presence: { key: user.id } } });
   }, [supabase, formTopic, user.id]);
 
@@ -284,13 +285,17 @@ export function useFormRealtime({
     aliveRef.current = true;
     if (!formIdStr) return;
 
+    console.log('channelRef.current', channelRef.current?.state);
     const channel = getOrCreateFormChannel();
 
     if ((channel as any).state === 'joined') {
+      console.log('channel was joined allready');
       channelRef.current = channel;
       discRef.current?.(false);
+      console.log('channelRef.current', channelRef.current?.state);
       writeTeamPresence(formIdStr, { allowSubscribe: true });
     } else {
+      console.log('cannel was not joined allready');
       channel
         .on('presence', { event: 'sync' }, () => {
           if (!aliveRef.current) return;
@@ -381,18 +386,58 @@ export function useFormRealtime({
     }
 
     return () => {
+      //supabase.realtime.reconnectAfterMs(1);
       aliveRef.current = false;
+      console.log('UNSUBSCRIBING FROM FORM CHANNEL starting..');
 
+      console.log('chanel state:', channel.state);
+      console.log('chanellRef.current.state:', channelRef.current?.state);
       // Tell peers to clear this tab’s section markers and clear team form
+
+      const disconnectCompletely = async () => {
+        try {
+          const resChannelRef = await channelRef.current?.unsubscribe();
+          console.log('resChannelRef:', resChannelRef);
+          const resChannel = await channel.unsubscribe();
+          console.log('resChannel:', resChannel);
+          const respRemoveChannel = await supabase.removeAllChannels();
+          console.log('respRemoveChannel:', respRemoveChannel);
+
+          // supabase.realtime.();
+
+          supabase.realtime.disconnect();
+          console.log('chanel state after disconnect:', channel.state);
+          console.log('chanellRef.current.state after disconnect:', channelRef.current?.state);
+          channelRef.current = null;
+          perTabSectionRef.current.clear();
+
+          console.log('disconnected');
+        } catch {
+          console.log('disconnect error');
+        }
+        return;
+      };
+
+      if (channelRef.current?.state === 'joined') {
+        try {
+          disconnectCompletely();
+        } catch {}
+        return;
+      }
       try {
         sendSectionReset();
+        console.log('sent section reset');
       } catch {}
       writeTeamPresence(null, { allowSubscribe: false });
+      console.log('wrote team presence');
 
       try {
         channel.untrack();
+        console.log('untracked');
       } catch {}
+
       supabase.removeChannel(channel);
+      console.log('remove channel');
       channelRef.current = null;
 
       setMembers([]);

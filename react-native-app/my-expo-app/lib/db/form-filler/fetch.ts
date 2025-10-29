@@ -20,10 +20,10 @@ export class DBActionsFormFillerFetch {
         `*, main_section(sub_section(text_input(value),checkbox_group(main_checkbox(checked,sub_checkbox(checked)))))`
       );
 
-    console.log('fetch all fillable form in db:', data);
-    if (error) {
-      console.error('fetch all fillable form in db error: ', error);
-    }
+    // console.log('fetch all fillable form in db:', data);
+    // if (error) {
+    //   console.error('fetch all fillable form in db error: ', error);
+    // }
 
     return {
       forms: data,
@@ -44,10 +44,10 @@ export class DBActionsFormFillerFetch {
       .eq('id', formId)
       .single();
 
-    console.log('fetch fillable form data from db:', data);
-    if (error) {
-      console.error('fetch fillable form data from db error: ', error);
-    }
+    // console.log('fetch fillable form data from db:', data);
+    // if (error) {
+    //   console.error('fetch fillable form data from db error: ', error);
+    // }
 
     return {
       formData: data,

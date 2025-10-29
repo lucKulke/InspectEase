@@ -32,7 +32,7 @@ export default function AppLayout() {
           <TeamProvider userId={user.id}>
             <FilterProvider>
               <View className="flex-1 bg-white dark:bg-neutral-950">
-                <Stack screenOptions={{ header: () => <TopBar /> }} />
+                <Stack />
                 <BottomBar userId={user.id} />
               </View>
             </FilterProvider>

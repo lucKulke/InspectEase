@@ -126,64 +126,34 @@ export default function BottomBar({ userId }: BottomBarProps) {
   return (
     <>
       <View className="absolute bottom-0 left-0 right-0" style={{ height: BOTTOM_BAR_HEIGHT }}>
-        <View className="flex-1 border-t border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+        <View className="flex-1 border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
           {/* Make this container relative so we can overlay the centered FAB */}
-          <View className="relative flex-1 flex-row items-center px-5">
-            {/* LEFT: Team trigger (flex-1 so left/right are symmetrical) */}
-            <View className="flex-1">
-              <Pressable
-                onPress={() => {
-                  setTempSelectedTeamId(userProfile?.active_team_id ?? null);
-                  setTeamPickerOpen(true);
-                }}
-                className="h-10 w-36 flex-row items-center gap-2 rounded-3xl bg-neutral-100 px-3 dark:bg-neutral-900"
-                accessibilityRole="button"
-                accessibilityLabel="Select team">
-                {teams.length > 0 && userProfile?.active_team_id ? (
-                  <Image
-                    source={{ uri: teamsProfilePictures[userProfile.active_team_id] }}
-                    resizeMode="cover"
-                    className="h-8 w-8 rounded-full"
-                  />
-                ) : (
-                  <Ionicons name="people-outline" size={20} />
-                )}
 
-                <Text className="flex-1 text-base font-medium" numberOfLines={1}>
-                  {activeTeamName}
-                </Text>
-                <Ionicons name="chevron-down" size={18} />
-              </Pressable>
-            </View>
-
-            {/* RIGHT: Settings + Avatar (flex-1, right-aligned) */}
-            <View className="flex-1 flex-row items-center justify-end gap-3">
-              <Pressable
-                onPress={() => router.push('/settings')}
-                className="h-10 w-10 items-center justify-center rounded-full">
-                <Ionicons name="settings-outline" size={22} />
-              </Pressable>
-
-              <Pressable
-                onPress={() => setProfileOpen(true)}
-                className="h-10 w-10 overflow-hidden rounded-full border border-neutral-300 dark:border-neutral-700">
+          {/* CENTER: Create FAB — absolutely centered over the row */}
+          <View className="absolute left-0 right-0 items-center">
+            <Pressable
+              onPress={() => {
+                setTempSelectedTeamId(userProfile?.active_team_id ?? null);
+                setTeamPickerOpen(true);
+              }}
+              className={`h-10 w-1/2 flex-row items-center gap-2 rounded-3xl bg-neutral-100 px-3 dark:bg-neutral-900`}
+              accessibilityRole="button"
+              accessibilityLabel="Select team">
+              {teams.length > 0 && userProfile?.active_team_id ? (
                 <Image
-                  source={{ uri: userProfilePicture ?? 'https://i.pravatar.cc/100?img=3' }}
+                  source={{ uri: teamsProfilePictures[userProfile.active_team_id] }}
                   resizeMode="cover"
-                  className="h-full w-full"
+                  className="h-8 w-8 rounded-full"
                 />
-              </Pressable>
-            </View>
+              ) : (
+                <Ionicons name="people-outline" size={20} />
+              )}
 
-            {/* CENTER: Create FAB — absolutely centered over the row */}
-            <View className="absolute left-0 right-0 items-center">
-              <Pressable
-                onPress={() => router.push('/create')}
-                className="-mt-12 h-16 w-16 items-center justify-center rounded-full bg-blue-600 shadow-lg"
-                style={{ elevation: 6 }}>
-                <Ionicons name="add" size={32} color="#fff" />
-              </Pressable>
-            </View>
+              <Text className="flex-1 text-base font-medium" numberOfLines={1}>
+                {activeTeamName}
+              </Text>
+              <Ionicons name="chevron-down" size={18} />
+            </Pressable>
           </View>
         </View>
       </View>
@@ -212,38 +182,6 @@ export default function BottomBar({ userId }: BottomBarProps) {
                 <Picker.Item key={t.id} label={t.name} value={t.id} />
               ))}
             </Picker>
-          </View>
-        </Pressable>
-      </Modal>
-
-      {/* Profile Menu Modal (unchanged) */}
-      <Modal
-        animationType="fade"
-        transparent
-        visible={profileOpen}
-        onRequestClose={() => setProfileOpen(false)}>
-        <Pressable className="flex-1 items-end bg-black/40" onPress={() => setProfileOpen(false)}>
-          <View className="mb-16 mt-auto w-1/2 px-4 pb-6">
-            <View className="rounded-3xl bg-white p-4 dark:bg-neutral-900">
-              <Text className="mb-2 text-lg font-semibold">Account</Text>
-              <Pressable
-                className="py-3"
-                onPress={() => {
-                  setProfileOpen(false);
-                  router.push('/profile');
-                }}>
-                <Text className="text-base">View profile</Text>
-              </Pressable>
-
-              <Pressable
-                className="py-3"
-                onPress={() => {
-                  setProfileOpen(false);
-                  signOut();
-                }}>
-                <Text className="text-base text-red-600">Sign out</Text>
-              </Pressable>
-            </View>
           </View>
         </Pressable>
       </Modal>

@@ -23,7 +23,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 
-import React, { useState } from "react";
+import React, { JSX, useState } from "react";
 
 import {
   ContextMenu,
@@ -31,7 +31,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { Trash2 } from "lucide-react";
+import { QrCode, Trash2 } from "lucide-react";
 import { UUID } from "crypto";
 import { fillPDF, updateFormProgressState } from "./actions";
 import { useNotification } from "@/app/context/NotificationContext";
@@ -42,9 +42,19 @@ import { IUserProfileResponse } from "@/lib/database/public/publicInterface";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Clock, Eye, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, qrDataUrl } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import UserIndicatorOverlay from "@/components/UserIndicatorOverlay";
+
+import QRCode from "qrcode";
+
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface FormCardProps {
   userId: string;
@@ -74,6 +84,9 @@ export const FormCard = ({
   const router = useRouter();
   const { showNotification } = useNotification();
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const [openQrCode, setOpenQrCode] = useState(false);
+
   let max = 0;
   let filled = 0;
   form.main_section.forEach((main) => {
@@ -162,6 +175,30 @@ export const FormCard = ({
     }
   });
 
+  const [qrSrc, setQrSrc] = useState<string>("");
+  const [qrLoading, setQrLoading] = useState<boolean>(false);
+  const [qrError, setQrError] = useState<string>("");
+  async function generateQrCode(text: string) {
+    try {
+      setQrLoading(true);
+      setQrError("");
+      // 320px, margin 2, ECC Q (good balance)
+      const dataUrl = await QRCode.toDataURL(text, {
+        width: 320,
+        margin: 2,
+        errorCorrectionLevel: "Q",
+        color: { dark: "#000000", light: "#ffffff" },
+      });
+      setQrSrc(dataUrl);
+    } catch (e) {
+      setQrError("Failed to generate QR code.");
+      setQrSrc("");
+      // optional: console.error(e);
+    } finally {
+      setQrLoading(false);
+    }
+  }
+
   let allreadyWorkingOnIt = isBeeingEdited.length > 0;
 
   //currentUsers
@@ -218,7 +255,17 @@ export const FormCard = ({
               <CardTitle>ID: {form.identifier_string} </CardTitle>
               <CardDescription>{form.form_type}</CardDescription>
             </CardHeader>
-            <div className="m-7">
+            <div className="m-7 flex items-center gap-3">
+              <Button
+                variant={"outline"}
+                onClick={() => {
+                  generateQrCode(form.identifier_string);
+                  setOpenQrCode(true);
+                }}
+              >
+                <QrCode></QrCode>
+              </Button>
+
               <HoverCard>
                 <HoverCardTrigger className="cursor-pointer">
                   {profileIcons[form.object_profile_icon as IconType]}
@@ -332,6 +379,39 @@ export const FormCard = ({
           delete <Trash2></Trash2>
         </ContextMenuItem>
       </ContextMenuContent>
+      <AlertDialog open={openQrCode} onOpenChange={setOpenQrCode}>
+        <AlertDialogContent>
+          <AlertDialogTitle>
+            Scan to enter: {form.identifier_string}
+          </AlertDialogTitle>
+          <div className="flex flex-col items-center py-2">
+            {qrError ? (
+              <p className="text-sm text-red-500">{qrError}</p>
+            ) : qrLoading || !qrSrc ? (
+              <div
+                className="animate-pulse rounded-xl border bg-muted"
+                style={{ width: 320, height: 320 }}
+                aria-label="Loading QR…"
+              />
+            ) : (
+              <img
+                src={qrSrc}
+                alt={`QR for ${form.identifier_string}`}
+                width={320}
+                height={320}
+                className="rounded-xl border bg-white p-2 shadow-sm"
+              />
+            )}
+
+            <div className="mt-3 text-xs text-muted-foreground select-all font-mono">
+              {form.identifier_string}
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Close</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ContextMenu>
   );
 };
