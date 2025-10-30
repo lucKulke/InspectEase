@@ -125,36 +125,35 @@ export default function BottomBar({ userId }: BottomBarProps) {
 
   return (
     <>
-      <View className="absolute bottom-0 left-0 right-0" style={{ height: BOTTOM_BAR_HEIGHT }}>
-        <View className="flex-1 border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+      <View className="absolute bottom-0 left-0 right-0 " style={{ height: BOTTOM_BAR_HEIGHT }}>
+        <View className=" flex-1 items-center border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
           {/* Make this container relative so we can overlay the centered FAB */}
 
           {/* CENTER: Create FAB — absolutely centered over the row */}
-          <View className="absolute left-0 right-0 items-center">
-            <Pressable
-              onPress={() => {
-                setTempSelectedTeamId(userProfile?.active_team_id ?? null);
-                setTeamPickerOpen(true);
-              }}
-              className={`h-10 w-1/2 flex-row items-center gap-2 rounded-3xl bg-neutral-100 px-3 dark:bg-neutral-900`}
-              accessibilityRole="button"
-              accessibilityLabel="Select team">
-              {teams.length > 0 && userProfile?.active_team_id ? (
-                <Image
-                  source={{ uri: teamsProfilePictures[userProfile.active_team_id] }}
-                  resizeMode="cover"
-                  className="h-8 w-8 rounded-full"
-                />
-              ) : (
-                <Ionicons name="people-outline" size={20} />
-              )}
 
-              <Text className="flex-1 text-base font-medium" numberOfLines={1}>
-                {activeTeamName}
-              </Text>
-              <Ionicons name="chevron-down" size={18} />
-            </Pressable>
-          </View>
+          <Pressable
+            onPress={() => {
+              setTempSelectedTeamId(userProfile?.active_team_id ?? null);
+              setTeamPickerOpen(true);
+            }}
+            className={`mt-2 h-10 w-1/2 flex-row items-center gap-2 rounded-3xl bg-neutral-100 px-3 dark:bg-neutral-900`}
+            accessibilityRole="button"
+            accessibilityLabel="Select team">
+            {teams.length > 0 && userProfile?.active_team_id ? (
+              <Image
+                source={{ uri: teamsProfilePictures[userProfile.active_team_id] }}
+                resizeMode="cover"
+                className="h-8 w-8 rounded-full"
+              />
+            ) : (
+              <Ionicons name="people-outline" size={20} />
+            )}
+
+            <Text className="flex-1 text-base font-medium" numberOfLines={1}>
+              {activeTeamName}
+            </Text>
+            <Ionicons name="chevron-down" size={18} />
+          </Pressable>
         </View>
       </View>
 

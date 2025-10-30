@@ -38,7 +38,7 @@ type AvatarProps = {
 };
 
 export default function Avatar({
-  size = 38,
+  size = 35,
   roundedClass = 'rounded-full',
   profileUrl = '/api/me',
   fetchOptions,

@@ -20,6 +20,9 @@ import { BOTTOM_BAR_HEIGHT } from '@/components/BottomBar';
 import { useFilters } from '@/lib/context/filter-context';
 import FormCard from '@/components/FromCard';
 import { useTeam } from '@/lib/context/team-context';
+import { saveRecentForm } from '@/lib/recent-forms';
+import { loadRecentForms, RecentForm, clearRecentForms } from '@/lib/recent-forms';
+import { useFocusEffect } from 'expo-router';
 
 import {
   Text,
@@ -35,6 +38,8 @@ import Avatar from '@/components/Avatar';
 
 export default function Home() {
   const user = useUser();
+  const { activeTeamId, userProfile } = useTeam();
+  console.log('######userProfile:', userProfile);
   const [permission, requestPermission] = useCameraPermissions();
   const [showScanner, setShowScanner] = useState(false);
   const [scanningEnabled, setScanningEnabled] = useState(false);
@@ -67,11 +72,30 @@ export default function Home() {
     return formId;
   };
 
+  const [recents, setRecents] = useState<RecentForm[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
+      (async () => {
+        const data = await loadRecentForms();
+        if (alive) setRecents(data);
+      })();
+      return () => {
+        alive = false;
+      };
+    }, [])
+  );
+
   const handleUseCode = useCallback(async (code: string) => {
     console.log('submitting code:', code);
     const formId = await getFormId(code);
 
     if (!formId) return;
+    await saveRecentForm({
+      id: String(formId),
+      code: code,
+    });
 
     router.push(`/form/${formId}`);
   }, []);
@@ -115,6 +139,10 @@ export default function Home() {
       if (trimmed) {
         const formId = await getFormId(trimmed);
         if (formId) {
+          await saveRecentForm({
+            id: String(formId),
+            code: trimmed,
+          });
           router.push(`/form/${formId}`);
         }
       }
@@ -130,85 +158,112 @@ export default function Home() {
         className="flex-1">
         {/* Press anywhere outside inputs to dismiss */}
         <Pressable className="flex-1" onPress={Keyboard.dismiss}>
-          <ScrollView
-            keyboardDismissMode="on-drag" // dismiss when you drag the content
-            keyboardShouldPersistTaps="handled" // let taps pass through to buttons, then dismiss
-            contentContainerClassName="flex-grow"
-            className="flex-1 bg-white px-5">
-            <View className="flex-1 bg-white px-5">
-              <View className="mt-5 flex items-center">
+          <View className="flex-1 bg-white px-5">
+            <View className="mt-5 flex items-center">
+              <TouchableOpacity
+                onPress={openScanner}
+                className="h-72 w-72 items-center justify-center rounded-2xl bg-black/90"
+                accessibilityRole="button"
+                accessibilityLabel="Open QR Scanner">
+                <Ionicons name="qr-code-outline" size={150} color="white" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Manual fallback */}
+            <View className="mt-5">
+              <Text className="mb-2 text-base text-gray-600">Or enter a code manually:</Text>
+              <View className="flex-row items-center gap-2">
+                <TextInput
+                  value={manualCode}
+                  onChangeText={setManualCode}
+                  placeholder="Paste or type code"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  className="flex-1 rounded-2xl border border-gray-300 px-4 py-3 pb-5 text-xl"
+                  returnKeyType="done"
+                />
                 <TouchableOpacity
-                  onPress={openScanner}
-                  className="h-72 w-72 items-center justify-center rounded-2xl bg-black/90"
-                  accessibilityRole="button"
-                  accessibilityLabel="Open QR Scanner">
-                  <Ionicons name="qr-code-outline" size={150} color="white" />
+                  onPress={() => {
+                    handleUseCode(manualCode);
+                  }}
+                  className="rounded-2xl bg-black/90 p-5">
+                  <Text className="font-medium text-white">Use</Text>
                 </TouchableOpacity>
               </View>
-
-              {/* Manual fallback */}
-              <View className="mt-5">
-                <Text className="mb-2 text-base text-gray-600">Or enter a code manually:</Text>
-                <View className="flex-row items-center gap-2">
-                  <TextInput
-                    value={manualCode}
-                    onChangeText={setManualCode}
-                    placeholder="Paste or type code"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    className="flex-1 rounded-2xl border border-gray-300 px-4 py-3 pb-5 text-xl"
-                    returnKeyType="done"
-                  />
+            </View>
+            {recents.length > 0 && (
+              <View className="mt-4  ">
+                <View className="mb-2 flex-row items-center justify-between">
+                  <Text className="text-sm text-gray-600">History</Text>
+                  {/* Optional clear button */}
                   <TouchableOpacity
                     onPress={() => {
-                      handleUseCode(manualCode);
-                    }}
-                    className="rounded-2xl bg-black/90 p-5">
-                    <Text className="font-medium text-white">Use</Text>
+                      clearRecentForms().then(() => setRecents([]));
+                    }}>
+                    <Text className="text-xs text-gray-500">Clear</Text>
                   </TouchableOpacity>
                 </View>
-              </View>
 
-              {/* Scanner modal */}
-              <Modal
-                visible={showScanner}
-                animationType="slide"
-                onRequestClose={() => {
-                  setScanningEnabled(false);
-                  setShowScanner(false);
-                }}
-                onShow={() => setScanningEnabled(true)} // re-enable when shown
-              >
-                <View className="flex-1 bg-black">
-                  <View className="absolute right-4 top-12 z-10">
-                    <TouchableOpacity
-                      onPress={() => {
-                        setScanningEnabled(false);
-                        setShowScanner(false);
-                      }}
-                      className="rounded-full bg-white/90 p-3"
+                <ScrollView>
+                  {recents.map((r) => (
+                    <Pressable
+                      key={r.id}
+                      onPress={() => router.push(`/form/${r.id}`)}
+                      className="mb-3  rounded-xl border border-gray-200 bg-white px-4 py-3"
                       accessibilityRole="button"
-                      accessibilityLabel="Close scanner">
-                      <Ionicons name="close" size={20} color="black" />
-                    </TouchableOpacity>
-                  </View>
-
-                  <CameraView
-                    className="flex-1"
-                    barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-                    // Only attach the handler while scanningEnabled is true
-                    onBarcodeScanned={scanningEnabled ? onScan : undefined}
-                  />
-
-                  <View className="absolute bottom-10 left-0 right-0 items-center">
-                    <Text className="rounded-full bg-black/60 px-4 py-2 text-base text-white">
-                      Point the camera at a QR code
-                    </Text>
-                  </View>
+                      accessibilityLabel={`Open ${r.name ?? r.code ?? 'form'}`}>
+                      <Text className="text-sm font-semibold text-gray-900" numberOfLines={1}>
+                        {r.code}
+                      </Text>
+                      {r.code ? (
+                        <Text className="mt-0.5 text-xs text-gray-500" numberOfLines={1}>
+                          {r.id}
+                        </Text>
+                      ) : null}
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+            {/* Scanner modal */}
+            <Modal
+              visible={showScanner}
+              animationType="slide"
+              onRequestClose={() => {
+                setScanningEnabled(false);
+                setShowScanner(false);
+              }}
+              onShow={() => setScanningEnabled(true)} // re-enable when shown
+            >
+              <View className="flex-1 bg-black">
+                <View className="absolute right-4 top-12 z-10">
+                  <TouchableOpacity
+                    onPress={() => {
+                      setScanningEnabled(false);
+                      setShowScanner(false);
+                    }}
+                    className="rounded-full bg-white/90 p-3"
+                    accessibilityRole="button"
+                    accessibilityLabel="Close scanner">
+                    <Ionicons name="close" size={20} color="black" />
+                  </TouchableOpacity>
                 </View>
-              </Modal>
-            </View>
-          </ScrollView>
+
+                <CameraView
+                  className="flex-1"
+                  barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+                  // Only attach the handler while scanningEnabled is true
+                  onBarcodeScanned={scanningEnabled ? onScan : undefined}
+                />
+
+                <View className="absolute bottom-10 left-0 right-0 items-center">
+                  <Text className="rounded-full bg-black/60 px-4 py-2 text-base text-white">
+                    Point the camera at a QR code
+                  </Text>
+                </View>
+              </View>
+            </Modal>
+          </View>
         </Pressable>
       </KeyboardAvoidingView>
     </>

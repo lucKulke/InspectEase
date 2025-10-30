@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import type { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
 import { AppState, AppStateStatus } from 'react-native';
 
-// ----------------- Types (same as your web hook) -----------------
+// ----------------- Types -----------------
 type UUID = string;
 type FormMember = { user_id: string; user_name: string; tab_id: string };
 
@@ -22,6 +22,14 @@ type SectionAggregate = {
   main?: string | null;
   sub?: string | null;
 };
+
+type ChannelStatus =
+  | 'idle' // not created yet
+  | 'joining' // created, waiting for SUBSCRIBED
+  | 'subscribed' // live
+  | 'timed_out' // network hiccup
+  | 'closed' // intentionally closed or socket down
+  | 'error'; // CHANNEL_ERROR or similar
 
 interface UseFormRealtimeProps {
   formId: string | UUID;
@@ -103,10 +111,23 @@ export function useFormRealtime({
   const formTopic = `form:${formIdStr}`;
   const teamTopic = teamId ? `presence:team_${String(teamId)}` : null;
 
+  // ---------- channel status machine ----------
+  const [channelStatus, setChannelStatus] = useState<ChannelStatus>('idle');
+  const isChannelHealthy = channelStatus === 'subscribed';
+
+  const getChannelStatus = useCallback<() => ChannelStatus>(() => {
+    const raw = (channelRef.current as any)?.state as string | undefined; // 'closed' | 'errored' | 'joining' | 'joined' | ...
+    if (channelStatus !== 'idle') return channelStatus;
+    if (raw === 'joined') return 'subscribed';
+    if (raw === 'joining') return 'joining';
+    if (raw === 'closed') return 'closed';
+    if (raw === 'errored') return 'error';
+    return 'idle';
+  }, [channelStatus]);
+
   // ---------- per-form channel ----------
   const getOrCreateFormChannel = useCallback(() => {
     const existing = supabase.getChannels().find((c) => c.topic === formTopic);
-    console.log('existing channel?:', existing);
     return existing ?? supabase.channel(formTopic, { config: { presence: { key: user.id } } });
   }, [supabase, formTopic, user.id]);
 
@@ -181,27 +202,6 @@ export function useFormRealtime({
     [recomputeSectionAggregate]
   );
 
-  // helpers to query in UI
-  const getUsersInSection = useCallback(
-    (type: 'main' | 'sub', id: string) =>
-      Object.values(sectionByUser)
-        .filter((a) => (type === 'main' ? a.main === id : a.sub === id))
-        .map((a) => a.user_id),
-    [sectionByUser]
-  );
-
-  const getUsersInMainOrSubs = useCallback(
-    (mainId: string, subIds: string[]) => {
-      const ids = new Set<string>();
-      for (const a of Object.values(sectionByUser)) {
-        if (a.main === mainId) ids.add(a.user_id);
-        if (a.sub && subIds.includes(a.sub)) ids.add(a.user_id);
-      }
-      return Array.from(ids);
-    },
-    [sectionByUser]
-  );
-
   // ---------- broadcasts helpers ----------
   const sendBroadcast = useCallback((event: string, payload: unknown) => {
     channelRef.current?.send({ type: 'broadcast', event, payload });
@@ -250,52 +250,9 @@ export function useFormRealtime({
     channelRef.current?.send({ type: 'broadcast', event: 'section_reset', payload });
   }, [user.id]);
 
-  // ---------- RN lifecycle: track/untrack on app foreground/background ----------
-  useEffect(() => {
-    const onAppState = (next: AppStateStatus) => {
-      const ch = channelRef.current;
-      if (!ch) return;
-      if (next === 'active') {
-        // On resume: re-track presence (form + team)
-        try {
-          ch.track({
-            user_id: user.id,
-            user_name: user.name,
-            tab_id: tabIdRef.current,
-          } as FormMember);
-        } catch {}
-        writeTeamPresence(formIdStr, { allowSubscribe: true });
-      } else if (next === 'background' || next === 'inactive') {
-        // On background: cleanly untrack and reset sections for this tab
-        try {
-          sendSectionReset();
-        } catch {}
-        try {
-          ch.untrack();
-        } catch {}
-        writeTeamPresence(null, { allowSubscribe: false });
-      }
-    };
-    const sub = AppState.addEventListener('change', onAppState);
-    return () => sub.remove();
-  }, [formIdStr, sendSectionReset, user.id, user.name, writeTeamPresence]);
-
-  // ---------- wire everything ----------
-  useEffect(() => {
-    aliveRef.current = true;
-    if (!formIdStr) return;
-
-    console.log('channelRef.current', channelRef.current?.state);
-    const channel = getOrCreateFormChannel();
-
-    if ((channel as any).state === 'joined') {
-      console.log('channel was joined allready');
-      channelRef.current = channel;
-      discRef.current?.(false);
-      console.log('channelRef.current', channelRef.current?.state);
-      writeTeamPresence(formIdStr, { allowSubscribe: true });
-    } else {
-      console.log('cannel was not joined allready');
+  // ---------- reusable binder (initial + reconnect) ----------
+  const bindChannel = useCallback(
+    (channel: RealtimeChannel) => {
       channel
         .on('presence', { event: 'sync' }, () => {
           if (!aliveRef.current) return;
@@ -369,91 +326,169 @@ export function useFormRealtime({
 
       channel.subscribe(async (status) => {
         if (!aliveRef.current) return;
+
         if (status === 'SUBSCRIBED') {
+          setChannelStatus('subscribed');
           discRef.current?.(false);
-          await channel.track({
-            user_id: user.id,
-            user_name: user.name,
-            tab_id: tabIdRef.current,
-          } as FormMember);
+          try {
+            await channel.track({
+              user_id: user.id,
+              user_name: user.name,
+              tab_id: tabIdRef.current,
+            } as FormMember);
+          } catch {}
           writeTeamPresence(formIdStr, { allowSubscribe: true });
-        } else if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+        } else if (status === 'TIMED_OUT') {
+          setChannelStatus('timed_out');
+          discRef.current?.(true);
+        } else if (status === 'CLOSED') {
+          setChannelStatus('closed');
+          discRef.current?.(true);
+        } else if (status === 'CHANNEL_ERROR') {
+          setChannelStatus('error');
           discRef.current?.(true);
         }
       });
 
       channelRef.current = channel;
+    },
+    [
+      formIdStr,
+      user.id,
+      user.name,
+      pruneSectionsAgainstPresence,
+      recomputeSectionAggregate,
+      writeTeamPresence,
+    ]
+  );
+
+  // ---------- reconnect helper ----------
+  const tryReconnect = useCallback(() => {
+    if (!aliveRef.current) return;
+
+    const doIt = async () => {
+      const current = channelRef.current;
+      if ((current as any)?.state === 'joined') return; // already fine
+
+      // remove only this channel to avoid dupes
+      if (current) {
+        try {
+          await supabase.removeChannel(current);
+        } catch {}
+        channelRef.current = null;
+      }
+
+      // ensure socket is up (no-op if already)
+      try {
+        (supabase.realtime as any)?.connect?.();
+      } catch {}
+
+      setChannelStatus('joining');
+      const fresh = supabase.channel(formTopic, { config: { presence: { key: user.id } } });
+      bindChannel(fresh);
+    };
+
+    doIt();
+  }, [bindChannel, formTopic, supabase, user.id]);
+
+  // ---------- RN lifecycle: track/untrack on app foreground/background ----------
+  useEffect(() => {
+    const onAppState = (next: AppStateStatus) => {
+      const ch = channelRef.current;
+      if (!ch) {
+        if (next === 'active') tryReconnect();
+        return;
+      }
+      if (next === 'active') {
+        // On resume: re-track presence (form + team) and heal if needed
+        if ((ch as any).state !== 'joined') tryReconnect();
+        try {
+          ch.track({
+            user_id: user.id,
+            user_name: user.name,
+            tab_id: tabIdRef.current,
+          } as FormMember);
+        } catch {}
+        writeTeamPresence(formIdStr, { allowSubscribe: true });
+      } else if (next === 'background' || next === 'inactive') {
+        // On background: cleanly untrack and reset sections for this tab
+        try {
+          sendSectionReset();
+        } catch {}
+        try {
+          ch.untrack();
+        } catch {}
+        writeTeamPresence(null, { allowSubscribe: false });
+      }
+    };
+    const sub = AppState.addEventListener('change', onAppState);
+    return () => sub.remove();
+  }, [formIdStr, sendSectionReset, tryReconnect, user.id, user.name, writeTeamPresence]);
+
+  // ---------- wire everything ----------
+  useEffect(() => {
+    aliveRef.current = true;
+    if (!formIdStr) return;
+
+    const channel = getOrCreateFormChannel();
+    setChannelStatus((channel as any).state === 'joined' ? 'subscribed' : 'joining');
+
+    if ((channel as any).state === 'joined') {
+      channelRef.current = channel;
+      discRef.current?.(false);
+      writeTeamPresence(formIdStr, { allowSubscribe: true });
+    } else {
+      bindChannel(channel);
     }
 
+    const disconnectCompletely = async () => {
+      try {
+        await channelRef.current?.unsubscribe();
+        await channel.unsubscribe();
+        // Prefer removing just this channel; only use removeAllChannels if you really intend it.
+        await supabase.removeAllChannels();
+        (supabase.realtime as any)?.disconnect?.();
+        channelRef.current = null;
+        perTabSectionRef.current.clear();
+      } catch {
+        // swallow
+      }
+    };
+
     return () => {
-      //supabase.realtime.reconnectAfterMs(1);
       aliveRef.current = false;
-      console.log('UNSUBSCRIBING FROM FORM CHANNEL starting..');
-
-      console.log('chanel state:', channel.state);
-      console.log('chanellRef.current.state:', channelRef.current?.state);
       // Tell peers to clear this tab’s section markers and clear team form
-
-      const disconnectCompletely = async () => {
-        try {
-          const resChannelRef = await channelRef.current?.unsubscribe();
-          console.log('resChannelRef:', resChannelRef);
-          const resChannel = await channel.unsubscribe();
-          console.log('resChannel:', resChannel);
-          const respRemoveChannel = await supabase.removeAllChannels();
-          console.log('respRemoveChannel:', respRemoveChannel);
-
-          // supabase.realtime.();
-
-          supabase.realtime.disconnect();
-          console.log('chanel state after disconnect:', channel.state);
-          console.log('chanellRef.current.state after disconnect:', channelRef.current?.state);
-          channelRef.current = null;
-          perTabSectionRef.current.clear();
-
-          console.log('disconnected');
-        } catch {
-          console.log('disconnect error');
-        }
-        return;
-      };
-
+      try {
+        sendSectionReset();
+      } catch {}
+      writeTeamPresence(null, { allowSubscribe: false });
       if (channelRef.current?.state === 'joined') {
         try {
           disconnectCompletely();
         } catch {}
         return;
       }
-      try {
-        sendSectionReset();
-        console.log('sent section reset');
-      } catch {}
-      writeTeamPresence(null, { allowSubscribe: false });
-      console.log('wrote team presence');
 
       try {
         channel.untrack();
-        console.log('untracked');
       } catch {}
-
-      supabase.removeChannel(channel);
-      console.log('remove channel');
+      try {
+        supabase.removeChannel(channel);
+      } catch {}
       channelRef.current = null;
 
       setMembers([]);
       perTabSectionRef.current.clear();
       setSectionByUser({});
+      setChannelStatus('closed');
     };
   }, [
     formIdStr,
-    user.id,
-    user.name,
     getOrCreateFormChannel,
-    writeTeamPresence,
-    pruneSectionsAgainstPresence,
+    bindChannel,
     sendSectionReset,
     supabase,
-    recomputeSectionAggregate,
+    writeTeamPresence,
   ]);
 
   const memberNames = useMemo(() => members.map((m) => m.user_name), [members]);
@@ -470,10 +505,34 @@ export function useFormRealtime({
     // sections
     sendSection,
     sectionByUser, // { [user_id]: { main?, sub?, user_name, updatedAt } }
-    getUsersInSection,
-    getUsersInMainOrSubs,
+    getUsersInSection: useCallback(
+      (type: 'main' | 'sub', id: string) =>
+        Object.values(sectionByUser)
+          .filter((a) => (type === 'main' ? a.main === id : a.sub === id))
+          .map((a) => a.user_id),
+      [sectionByUser]
+    ),
+    getUsersInMainOrSubs: useCallback(
+      (mainId: string, subIds: string[]) => {
+        const ids = new Set<string>();
+        for (const a of Object.values(sectionByUser)) {
+          if (a.main === mainId) ids.add(a.user_id);
+          if (a.sub && subIds.includes(a.sub)) ids.add(a.user_id);
+        }
+        return Array.from(ids);
+      },
+      [sectionByUser]
+    ),
 
     // user color
     sendUserColor,
+
+    // NEW: channel status + helpers
+    channelStatus,
+    isChannelHealthy,
+    getChannelStatus,
+
+    // optional: manual heal trigger
+    tryReconnect,
   };
 }
